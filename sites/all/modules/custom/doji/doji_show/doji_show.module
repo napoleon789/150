@@ -103,3 +103,18 @@ function doji_show_setting_biendo() {
   $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
   return $form;
 }
+
+function doji_show_form_alter(&$form, &$form_state, $form_id) {
+  if($form_id == 'bien_do_node_form') {
+   unset($form['title']);
+   unset($form['body_field']);
+  }
+}
+
+function doji_show_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+ if($node -> type == 'bien_do') {
+   if($op == 'update') {
+     drupal_goto('<front>');
+   }
+ }
+}
