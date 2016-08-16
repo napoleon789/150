@@ -1,0 +1,1 @@
+Drupal.locale = { 'strings': { "Remove this item": "Xóa mục này" } };

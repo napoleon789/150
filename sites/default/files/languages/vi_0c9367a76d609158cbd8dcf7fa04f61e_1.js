@@ -1,0 +1,1 @@
+Drupal.locale = { 'strings': { "Remove this item": "Xóa mục này", "Alias: @alias": "Đường dẫn ảo: @alias", "No alias": "Chưa có URL", "By @name on @date": "Bởi @name vào lúc @date", "Not in menu": "Không có trong trình đơn", "No revision": "Không có phiên bản nào", "Not restricted": "Không hạn chế" } };

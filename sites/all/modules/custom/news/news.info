@@ -1,0 +1,7 @@
+name = "Tin Tuc"
+description = "Module download tin tức tự động từ trên mạng"
+core = "6.x"
+package = "Doji"
+version = "6.x-1.0"
+project = "giavang"
+

@@ -1,0 +1,1 @@
+Drupal.locale = { 'strings': { "Unspecified error": "Lỗi không xác định", "Remove this item": "Xóa mục này", "By @name on @date": "Bởi @name vào lúc @date", "Not in menu": "Không có trong trình đơn", "No revision": "Không có phiên bản nào", "Not restricted": "Không hạn chế", "By @name": "@name viết", "New revision": "Phiên bản mới" } };

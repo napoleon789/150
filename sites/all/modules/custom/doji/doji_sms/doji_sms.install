@@ -1,0 +1,66 @@
+<?php
+function doji_sms_update_6106() {
+
+ $schema['doji_sms_log'] = array(
+      	'fields' => array(
+      	    'id' => array(
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE
+              ),
+         	'reference' => array(
+      			'description' => t('reference'),
+      			'type' => 'varchar',
+      			'length' => 100,
+         		'not null' => TRUE
+         		),
+         	'time' => array(
+      			'description' => t('gio hien giao dich'),
+      			'type' => 'varchar',
+      			'length' => 100,
+         		'not null' => TRUE
+         		)
+
+      	),
+      	'primary key' => array('id')
+   		);
+  $ret = array();
+  db_create_table($ret, 'doji_sms_log', $schema['doji_sms_log']);
+  return $ret;
+}
+function doji_sms_schema() {
+ $schema['doji_sms_log'] = array(
+      	'fields' => array(
+      	    'id' => array(
+                'type' => 'serial',
+                'unsigned' => TRUE,
+                'not null' => TRUE
+              ),
+         	'reference' => array(
+      			'description' => t('reference'),
+      			'type' => 'varchar',
+      			'length' => 100,
+         		'not null' => TRUE
+         		),
+         	'time' => array(
+      			'description' => t('gio hien giao dich'),
+      			'type' => 'varchar',
+      			'length' => 100,
+         		'not null' => TRUE
+         		)
+
+      	),
+      	'primary key' => array('id')
+   		);
+   		return $schema;
+
+}
+
+function doji_sms_install() {
+  // Create my tables.
+  drupal_install_schema('doji_sms');
+}
+function doji_sms_uninstall() {
+  // Drop my tables.
+  drupal_uninstall_schema('doji_sms');
+}

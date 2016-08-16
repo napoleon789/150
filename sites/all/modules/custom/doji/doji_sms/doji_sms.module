@@ -1,0 +1,356 @@
+<?php // $Id: doji_sms.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+include_once('doji_sms.features.inc');
+
+/**
+ * Implements hook_menu().
+ */
+function doji_sms_menu() {
+  $items = array();
+  $items['doji/admin/cai-dat-sms'] = array(
+    'title' => t('Cài đặt SMS', array(), 'vi'),
+    'page callback' => 'doji_sms_setting',
+    'access arguments' => array('access administration pages'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/admin/thong-ke-sms'] = array(
+    'title' => t('Thống kê SMS', array(), 'vi'),
+    'page callback' => 'doji_sms_report',
+    'access arguments' => array('access administration pages'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/admin/view-sms'] = array(
+    'title' => t('View SMS', array(), 'vi'),
+    'page callback' => 'doji_sms_put_to_sqlserver',
+    'access arguments' => array('access administration pages'),
+    'weight' => 10,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['api/doji/sms'] = array(
+    'title' => t('View SMS', array(), 'vi'),
+    'page callback' => 'doji_sms_get_api',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ */
+function doji_sms_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($node->type == 'doji_sms' && arg(1) != 'admin' && in_array($op, array('view', 'insert', 'update'))) {
+    drupal_get_messages();
+    drupal_set_message(t('Cài đặt SMS thành công!', array(), 'vi'));
+    drupal_goto('doji/admin/cai-dat-sms');
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function doji_sms_theme() {
+  return array(
+    'doji_sms_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+  );
+}
+
+function theme_doji_sms_node_form($form) {
+  global $user;
+  drupal_set_title('');
+  $output = '<fieldset class="clear clear-block"><legend><strong>' . t('Tin nhắn SMS tại thời điểm này:', array(), 'vi') . '</strong></legend>' . doji_sms_push_to_api() . '</fieldset>';
+  $output .= drupal_render($form['group_sms_sort']);
+  $output .= drupal_render($form['field_sms_adv']);
+  $output .= '<fieldset class="clear clear-block"><legend><strong>' . t('Cập SMS tự động', array(), 'vi') . '</strong></legend>' . drupal_render($form['field_sms_auto_update']) . '</fieldset>';
+  $output .= drupal_render($form['buttons']['submit']);
+  $output .= '<div style="display:none">' . drupal_render($form) . '</div>';
+  //doji_sms_push_to_api('insert');
+  return $output;
+}
+
+function doji_sms_setting() {
+  module_load_include('inc', 'node', 'node.pages');
+  $node = doji_get_node('first', 'doji_sms');
+
+  if (!isset($node->nid)) {
+    $node = doji_get_node_base(array('type' => 'doji_sms'));
+  }
+
+  $form = node_page_edit($node);
+  $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+
+  if (isset($_GET['auto_update']) && $_GET['auto_update']) {
+    $node = doji_get_node('last');
+    doji_sms_push_to_api('insert', $node);
+  }
+
+  return $form;
+}
+
+function doji_sms_put_to_sqlserver($op = 'view', $node = NULL) {
+  $sms_node = doji_get_node('first', 'doji_sms');
+
+  if (!isset($node->nid)) {
+    $node = doji_get_node('last');
+  }
+
+  $items = array();
+  $content = '';
+  $timenow = time();
+
+  foreach ($sms_node->field_sms_label as $k => $labels) {
+    $label = isset($labels['value']) ? trim($labels['value']) : '';
+
+    if (empty($label) || strtolower($sms_node->field_sms_status[$k]['value']) != 'on') {
+      continue;
+    }
+
+    $field_name = str_replace('group_', 'field_', $sms_node->field_sms_field[$k]['value']);
+
+    if (!isset($node->{$field_name . '_muavao'}[0]['value']) || !isset($node->{$field_name . '_banra'}[0]['value'])) {
+      continue;
+    }
+
+    $muavao = doji_convert_to_number($node->{$field_name . '_muavao'}[0]['value']);
+    $banra = doji_convert_to_number($node->{$field_name . '_banra'}[0]['value']);
+
+    if (!$muavao || !$banra) {
+      continue;
+    }
+
+    $format_muavao = format_number($muavao, 2);
+    $format_muavao = str_replace('.00', '', $format_muavao);
+    $format_banra = format_number($banra, 2);
+    $format_banra = str_replace('.00', '', $format_banra);
+    $items[] = $label . ':' . $format_muavao . '/' . $format_banra;
+  }
+
+  if (count($items)) {
+    $items[] = format_date($node->created, 'custom', 'H') . 'h' . format_date($node->created, 'custom', 'i') . '-' . format_date($node->created, 'custom', 'd') . '/' . format_date($node->created, 'custom', 'm');
+
+    if (isset($sms_node->field_sms_adv[0]['value'])) {
+      $adv = $sms_node->field_sms_adv[0]['value'];
+    }
+
+    if (!empty($adv)) {
+      $items[] = $adv;
+    }
+
+    $content = implode('; ', $items);
+    $content = str_replace("'", '`', $content);
+  }
+
+  if (!empty($content) && $op == 'insert' && isset($sms_node->field_sms_auto_update[0]['value']) && strtolower($sms_node->field_sms_auto_update[0]['value']) == 'on') {
+    $con = odbc_connect("dojisms", "dojisms", "dojisms");
+    odbc_exec($con, "UPDATE SMS_SJC SET Content='$content' WHERE LOWER(Code) = 'doji'");
+    odbc_exec($con, "UPDATE SMS_SJC SET Content='1' WHERE LOWER(Code) = 'GUI'");
+    odbc_close($con);
+  }
+
+  return $content;
+}
+
+function doji_sms_push_to_api($op = 'view', $node = NULL) {
+  $sms_node = doji_get_node('first', 'doji_sms');
+
+  if (!isset($node->nid)) {
+    $node = doji_get_node('last');
+  }
+
+  $items = array();
+  $content = '';
+  $timenow = time();
+
+  foreach ($sms_node->field_sms_label as $k => $labels) {
+    $label = isset($labels['value']) ? trim($labels['value']) : '';
+
+    if (empty($label) || strtolower($sms_node->field_sms_status[$k]['value']) != 'on') {
+      continue;
+    }
+
+    $field_name = str_replace('group_', 'field_', $sms_node->field_sms_field[$k]['value']);
+
+    if (!isset($node->{$field_name . '_muavao'}[0]['value']) || !isset($node->{$field_name . '_banra'}[0]['value'])) {
+      continue;
+    }
+
+    $muavao = doji_convert_to_number($node->{$field_name . '_muavao'}[0]['value']);
+    $banra = doji_convert_to_number($node->{$field_name . '_banra'}[0]['value']);
+
+    if (!$muavao || !$banra) {
+      continue;
+    }
+
+    $format_muavao = format_number($muavao, 2);
+    $format_muavao = str_replace('.00', '', $format_muavao);
+    $format_banra = format_number($banra, 2);
+    $format_banra = str_replace('.00', '', $format_banra);
+    $item = $label . ':' . $format_muavao . '/' . $format_banra;
+    $item = str_replace(',', '', $item);
+
+    if (!count($items)) {
+      $item = format_date($node->created, 'custom', 'H') . 'h' . format_date($node->created, 'custom', 'i') . '-' . format_date($node->created, 'custom', 'd') . '/' . format_date($node->created, 'custom', 'm') . ', ' . $item;
+    }
+
+    $items[] = $item;
+  }
+
+  if (count($items)) {
+    if (isset($sms_node->field_sms_adv[0]['value'])) {
+      $adv = $sms_node->field_sms_adv[0]['value'];
+    }
+
+    if (!empty($adv)) {
+      $items[] = $adv;
+    }
+
+    $content = implode('; ', $items);
+    $content = str_replace("'", '`', $content);
+  }
+
+  $content = trim($content);
+
+  if (strlen($content) > 160) {
+    drupal_set_message(t('Độ dài của tin nhắn > 160 kí tự. Xin vui lòng chỉnh sửa lại', array(), 'vi'), 'warning');
+  }
+
+  if (!empty($content) && $op == 'insert' && isset($sms_node->field_sms_auto_update[0]['value']) && strtolower($sms_node->field_sms_auto_update[0]['value']) == 'on') {
+    $serialize = serialize($content);
+   // $res = drupal_http_request('http://api.doji.vn', array('serialize' => $serialize, 'type' => 'sms'));
+
+    if (isset($_GET['debug']) && $_GET['debug']) {
+      print_r($serialize);
+      //print_r($res);
+    }
+  }
+
+  return $content;
+
+}
+
+function doji_sms_report_form() {
+  $timenow = time();
+
+  if (strtotime($_GET['from']['date']) || strtotime($_GET['to']['date'])) {
+    $from = strtotime($_GET['from']['date']) ? strtotime($_GET['from']['date']) : strtotime($_GET['to']['date']);
+    $to = strtotime($_GET['to']['date']) ? strtotime($_GET['to']['date']) : strtotime($_GET['from']['date']);
+  }
+  else {
+    $from = $timenow;
+    $to = $timenow;
+  }
+  $form['#id'] = 'doji-statistics-report-form';
+  $form['from'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Từ ngày', array(), 'vi'),
+    '#size' => 20,
+    '#date_format' => 'd/m/Y',
+    '#default_value' => date('c', $from),
+    '#date_year_range' => '-3:+3'
+  );
+  $form['to'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Tới', array(), 'vi'),
+    '#size' => 20,
+    '#date_format' => 'd/m/Y',
+    '#default_value' => date('c', $to),
+    '#date_year_range' => '-3:+3'
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Xem', array(), 'vi'),
+  );
+  return $form;
+}
+
+function doji_sms_report_form_validate($form, &$form_state) {
+  $from = strtotime($form_state['values']['from']);
+  $to = strtotime($form_state['values']['to']);
+  $timenow = time();
+
+  if (!$from && $to) {
+    $from = $to;
+  }
+
+  if (!$to && $from) {
+    $to = $from;
+  }
+
+  if ($from > $timenow || $from > $to) {
+    form_set_error('abc', t('Thời gian nhập vào không hợp lệ', array(), 'vi'));
+    return;
+  }
+
+  $query = 'from[date]=' . format_date($from, 'custom', 'm/d/Y') . '&to[date]='.format_date($to, 'custom', 'm/d/Y');
+  $query = str_replace('/', '%2F', $query);
+  drupal_goto('doji/admin/thong-ke-sms', $query);
+}
+
+function doji_sms_report() {
+  drupal_set_title('');
+  $output = drupal_get_form('doji_sms_report_form');
+  $reqtimes = array();
+  $reqtimes['time1'] = -1;
+  $reqtimes['time2'] = 10000000000;
+
+  if (strtotime($_GET['from']['date']) || strtotime($_GET['to']['date'])) {
+    $from = strtotime($_GET['from']['date']) ? $_GET['from']['date'] : $_GET['to']['date'];
+    $to = strtotime($_GET['to']['date']) ? $_GET['to']['date'] : $_GET['from']['date'];
+    $check_time = doji_statistics_check_time($from, $to);
+
+    if ($check_time['status']) {
+      if ($from == $to) {
+        $string_date = '<h3 class="date">' . t('Ngày ') . format_date($check_time['time1'], 'custom', 'd/m/Y') . '</h3>';
+      }
+      else {
+        $string_date = '<h3 class="date">' . t('Từ ' ) . format_date($check_time['time1'], 'custom', 'd/m/Y') . ' - ' . format_date($check_time['time2'], 'custom', 'd/m/Y') . '</h3>';
+      }
+
+      $reqtimes['time1'] = $check_time['time1'];
+      $reqtimes['time2'] = $check_time['time2'];
+    }
+  }
+
+  $res = drupal_http_request('http://api.doji.vn', array('serialize' => serialize($reqtimes), 'type' => 'smsreport'));
+
+  if (isset($res->code) && $res->code == 200) {
+    $data = isset($res->data) ? unserialize($res->data) : NULL;
+    if (is_array($data) && isset($data['guiden']) && isset($data['guidi'])) {
+      $rows = array();
+      foreach ($data['guiden'] as $mbnumber=>$total) {
+        $row = array();
+        $row[] = $mbnumber;
+        $row[] = $total;
+        $row[] = $data['guidi'][$mbnumber];
+        $rows[] = $row;
+      }
+    }
+
+    $smsreport = theme('table', array(t('Đầu số', array(), 'vi'), t('Gửi đến', array(), 'vi'), t('Gửi đi', array(), 'vi')), $rows, array('class'=>'report'));
+    $output .= '<h2 class="report-title">' . t('THỐNG KÊ SMS', array(), 'vi') . '</h2>' . $string_date . $smsreport;
+  }
+
+  return $output;
+}
+function doji_sms_get_api() {
+  $content = array(
+    'reference' => $_SERVER['HTTP_HOST'] . '/' . request_uri(),
+    'time' => time()
+  );
+  drupal_write_record('doji_sms_log',$content);
+  $params = array(
+    'msgStatus' => 1,
+    'msgText' => doji_sms_push_to_api()
+  );
+  drupal_json($params);
+
+}

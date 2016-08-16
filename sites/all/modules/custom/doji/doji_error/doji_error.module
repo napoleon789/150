@@ -1,0 +1,591 @@
+<?php
+// $Id: doji_api.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+include_once('doji_api.features.inc');
+
+/**
+ * Implements hook_menu().
+ */
+function doji_api_menu() {
+  $weight = 10;
+  $items = array();
+  $items['api'] = array(
+    'title' => 'GOLD PRICE',
+    'page callback' => 'doji_api_page',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['api/led'] = array(
+    'title' => 'GOLD PRICE',
+    'page callback' => 'doji_api_led_page',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['doji/admin/cai-dat-api'] = array(
+    'title' => t('Cài đặt API', array(), 'vi'),
+    'page callback' => 'doji_api_setting',
+    'access arguments' => array('access administration pages'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/admin/cai-dat-api/vneconomy'] = array(
+    'title' => t('Cài đặt Vneconomy API', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_api_vneconomy_setting'),
+    'access arguments' => array('access administration pages'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['api/gold/vnexpress'] = array(
+    'title' => 'GOLD PRICE',
+    'page callback' => 'doji_api_gold_vnexpress_page',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['api/chart/vneconomy'] = array(
+    'title' => 'GOLD PRICE',
+    'page callback' => 'doji_api_chart_vneconomy_page',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ */
+function doji_api_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($node->type == 'api' && arg(1) != 'admin' && in_array($op, array('view', 'insert', 'update'))) {
+    drupal_get_messages();
+    drupal_set_message(t('Cài đặt API thành công!', array(), 'vi'));
+    drupal_goto('doji/admin/cai-dat-api');
+  }
+}
+
+function doji_api_setting() {
+  module_load_include('inc', 'node', 'node.pages');
+  $node = doji_get_node('first', 'api');
+
+  if (!isset($node->nid)) {
+    $node = doji_get_node_base(array('type' => 'api'));
+  }
+  $form = node_page_edit($node);
+
+  $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+  return $form;
+}
+
+function doji_api_vneconomy_setting() {
+  $form = array();
+  $form['doji_api_vneconomy_code'] = array(
+    '#title' => t('Code', array(), 'vi'),
+    '#type' => 'textarea',
+    '#default_value' => variable_get('doji_api_vneconomy_code', ''),
+  );
+  $form['buttons']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Lưu thiết lập', array(), 'vi')
+  );
+  return system_settings_form($form);
+}
+
+function doji_api_page($op) {
+  global $user;
+  $api_key = md5('doji+tpbank');
+
+  if (trim($_REQUEST['api_key']) == $api_key) {
+    variable_set('ip_access_api', ip_address());
+  }
+
+  if (ip_address() != variable_get('ip_access_api', NULL)) {
+    drupal_access_denied();
+    die;
+  }
+  $token = mt_rand(mt_rand(0, time()), time());
+  $global_settings = variable_get('doji_global_settings', array());
+  $global_settings['url_bieudo_giavang_quocte'] .= '?token='  . $token;
+  $gpchart_url = "http://giavang.doji.vn/bieudo/view?token=$token";
+
+  drupal_set_header('Content-Type: text/xml');
+
+  if (!in_array($op, array('new'))) {
+    unset($op);
+  }
+
+  $output .= doji_api_giavang_trongnuoc($op);
+  $output .= doji_api_giavang_quocte('new');
+  $output .= "<IGPChart>\n<Row Name='Biểu đồ quốc tế' Key='Kitco' Url='$global_settings[url_bieudo_giavang_quocte]' />\n</IGPChart>\n";
+  $output .= doji_api_giavang_trangsucthamkhao($op);
+  $output .= "<GPChart>\n<Row Name='Biểu đồ giá vàng' Key='DojiChart' Url='$gpchart_url' />\n</GPChart>\n";
+  $output .= "<Source>DOJI GOLD : http://giavang.doji.vn</Source>\n";
+  $output = "<?xml version='1.0' encoding='utf-8'?>\n<GoldList>$output</GoldList>";
+  echo $output;
+}
+
+function doji_api_led_page($op) {
+  global $user;
+
+  if (!in_array($op, array('new'))) {
+    unset($op);
+  }
+
+  drupal_set_header('Content-Type: text/xml');
+  $output .= doji_api_led($op);
+  $output .= "<Source>DOJI GOLD : http://giavang.doji.vn</Source>\n";
+  $output = "<?xml version='1.0' encoding='utf-8'?>\n<GoldList>$output</GoldList>";
+  echo $output;
+}
+
+function doji_api_led($op) {
+  global $user;
+  $rows = array();
+
+  $data_path_details = doji_get_data_path_details();
+  $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  'api_led.dat';
+  $output = file_get_contents($data_path_details['filepath']);
+
+  if (empty($output) || !$output || $op == 'new') {
+    $node = doji_get_node('last');
+    $node1 = doji_get_node('first', 'api');
+    $content_groups = fieldgroup_groups('goldprice');
+    $datime = '    <DateTime>' . format_date($node->created, 'custom', 'd-m-Y') . '</DateTime>';
+
+    foreach ($node1->field_api_led_status as $k => $v) {
+      $v1 = strtolower($v['value']);
+      if ($v1 != 'on') {
+        continue;
+      }
+
+      $fieldname = str_replace('group_', 'field_', $node1->field_api_led_field[$k]['value']);
+      $muavao = format_number(str_replace(',', '', $node->{$fieldname . '_muavao'}[0]['value']));
+      $banra = format_number(str_replace(',', '', $node->{$fieldname . '_banra'}[0]['value']));
+
+      if ($muavao <= 0) {
+        $muavao = '-';
+      }
+      if ($banra <= 0) {
+        $banra = '-';
+      }
+
+      if ($node1->field_api_led_label[$k]['value'] && !empty($node1->field_api_led_label[$k]['value'])) {
+        $label = $node1->field_api_led_label[$k]['value'];
+      }
+      else {
+        $label = $content_groups[$node1->field_api_led_field[$k]['value']]['label'];
+        $label = preg_replace('|(.*?)\(.*|i', '$1', $label);
+      }
+
+      $key = $node1->field_api_led_key[$k]['value'];
+      $rows[] = "    <Row Name='$label' Key='$key' Sell='$banra' Buy='$muavao' />\n";
+
+    }
+
+    if (count($rows)) {
+      $output = "<LED>\n$datime\n" . implode("", $rows) . "</LED>\n";
+      file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+    }
+  }
+
+  return $output;
+}
+
+function doji_api_giavang_trongnuoc($op) {
+  global $user;
+  $rows = array();
+
+  $data_path_details = doji_get_data_path_details();
+  $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  'api_giavang_trongnuoc.dat';
+  $output = file_get_contents($data_path_details['filepath']);
+
+  if (empty($output) || !$output || $op == 'new') {
+    $node = doji_get_node('last');
+    $node1 = doji_get_node('first', 'api');
+    $content_groups = fieldgroup_groups('goldprice');
+    $datime = '    <DateTime>' . format_date($node->created, 'd/m/Y H:s:iA') . '</DateTime>';
+
+    foreach ($node1->field_api_goldprice_status as $k => $v) {
+      $v1 = strtolower($v['value']);
+      if ($v1 != 'on') {
+        continue;
+      }
+
+      $fieldname = str_replace('group_', 'field_', $node1->field_api_goldprice_field[$k]['value']);
+      $muavao = format_number(str_replace(',', '', $node->{$fieldname . '_muavao'}[0]['value']));
+      $banra = format_number(str_replace(',', '', $node->{$fieldname . '_banra'}[0]['value']));
+
+      if ($muavao <= 0) {
+        $muavao = '-';
+      }
+      if ($banra <= 0) {
+        $banra = '-';
+      }
+
+      if ($node1->field_api_goldprice_label[$k]['value'] && !empty($node1->field_api_goldprice_label[$k]['value'])) {
+        $label = $node1->field_api_goldprice_label[$k]['value'];
+      }
+      else {
+        $label = $content_groups[$node1->field_goldprice_field[$k]['value']]['label'];
+        $label = preg_replace('|(.*?)\(.*|i', '$1', $label);
+      }
+
+      $key = $node1->field_api_goldprice_key[$k]['value'];
+      $rows[] = "    <Row Name='$label' Key='$key' Sell='$banra' Buy='$muavao' />\n";
+
+    }
+
+    if (count($rows)) {
+      $output = "<DGPlist>\n$datime\n" . implode("", $rows) . "</DGPlist>\n";
+      file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+    }
+  }
+
+  return $output;
+}
+
+function doji_api_giavang_quocte($op) {
+  global $user;
+  $rows = array();
+
+  $data_path_details = doji_get_data_path_details();
+  $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  'api_giavang_quocte.dat';
+  $output = file_get_contents($data_path_details['filepath']);
+
+  if (empty($output) || !$output || $op == 'new') {
+    $node = doji_get_node('last');
+    $node1 = doji_get_node('first', 'api');
+    $content_groups = fieldgroup_groups('goldprice');
+    $datime = '    <DateTime>' . format_date(time(), 'd/m/Y H:s:iA') . '</DateTime>';
+
+    foreach ($node1->field_api_goldprice_status_1 as $k => $v) {
+      $v1 = strtolower($v['value']);
+      if ($v1 != 'on') {
+        continue;
+      }
+
+      $fieldname = str_replace('group_', 'field_', $node1->field_api_goldprice_field_1[$k]['value']);
+      $muavao = format_number(str_replace(',', '', $node->{$fieldname . '_muavao'}[0]['value']));
+      $banra = format_number(str_replace(',', '', $node->{$fieldname . '_banra'}[0]['value']));
+
+      if ($muavao <= 0) {
+        $muavao = '-';
+      }
+      if ($banra <= 0) {
+        $banra = '-';
+      }
+
+      if ($node1->field_api_goldprice_label_1[$k]['value'] && !empty($node1->field_api_goldprice_label_1[$k]['value'])) {
+        $label = $node1->field_api_goldprice_label_1[$k]['value'];
+      }
+      else {
+        $label = $content_groups[$node1->field_api_goldprice_field_1[$k]['value']]['label'];
+        $label = preg_replace('|(.*?)\(.*|i', '$1', $label);
+      }
+
+      $key = $node1->field_api_goldprice_key_1[$k]['value'];
+      $rows[] = "    <Row Name='$label' Key='$key' Sell='$banra' Buy='$muavao' />\n";
+
+    }
+
+    if (count($rows)) {
+      $output = "<IGPList>\n$datime\n" . implode("", $rows) . "</IGPList>\n";
+      file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+    }
+  }
+
+  return $output;
+}
+
+function doji_api_giavang_trangsucthamkhao($op) {
+  global $user;
+  $rows = array();
+
+  $data_path_details = doji_get_data_path_details();
+  $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  'api_giavang_trangsucthamkhao.dat';
+  $output = file_get_contents($data_path_details['filepath']);
+
+  if (empty($output) || !$output || $op == 'new') {
+    $node = doji_get_node('last');
+    $node1 = doji_get_node('first', 'api');
+    $content_groups = fieldgroup_groups('goldprice');
+    $datime = '    <DateTime>' . format_date($node->created, 'd/m/Y H:s:iA') . '</DateTime>';
+
+    foreach ($node1->field_api_goldprice_status_2 as $k => $v) {
+      $v1 = strtolower($v['value']);
+      if ($v1 != 'on') {
+        continue;
+      }
+
+      $fieldname = str_replace('group_', 'field_', $node1->field_api_goldprice_field_2[$k]['value']);
+      $muavao = format_number(str_replace(',', '', $node->{$fieldname . '_muavao'}[0]['value']));
+      $banra = format_number(str_replace(',', '', $node->{$fieldname . '_banra'}[0]['value']));
+
+      if ($muavao <= 0) {
+        $muavao = '-';
+      }
+      if ($banra <= 0) {
+        $banra = '-';
+      }
+
+      if ($node1->field_api_goldprice_label_2[$k]['value'] && !empty($node1->field_api_goldprice_label_2[$k]['value'])) {
+        $label = $node1->field_api_goldprice_label_2[$k]['value'];
+      }
+      else {
+        $label = $content_groups[$node1->field_api_goldprice_field_2[$k]['value']]['label'];
+        $label = preg_replace('|(.*?)\(.*|i', '$1', $label);
+      }
+
+      $key = $node1->field_api_goldprice_key_2[$k]['value'];
+      $rows[] = "    <Row Name='$label' Key='$key' Sell='$banra' Buy='$muavao' />\n";
+    }
+
+    if (count($rows)) {
+      $output = "<JewelryList>\n$datime\n" . implode("", $rows) . "</JewelryList>\n";
+      file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+    }
+  }
+
+  return $output;
+}
+
+
+function theme_doji_api_xml_output($content) {
+  $output = "<?xml version='1.0' encoding='utf-8'?>\n";
+  $output .= $content;
+  return $output;
+}
+
+function theme_api_node_form($form) {
+  global $user;
+  drupal_set_title('');
+  $output .= drupal_render($form['group_api_giavang_trongnuoc']);
+
+  $output .= drupal_render($form['group_api_giavang_trangsuc']);
+  $output .= drupal_render($form['group_api_giavang_quocte']);
+  $output .= drupal_render($form['group_api_led']);
+  $output .= drupal_render($form['buttons']['submit']);
+
+  $output .= '<div style="display:none">' . drupal_render($form) . '</div>';
+  return $output;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function doji_api_perm() {
+  return array('Access gold api');
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function doji_api_theme() {
+  return array(
+    'doji_api_xml_output' => array(
+      'arguments' => array(
+        'content' => NULL,
+        'return' => FALSE,
+      )
+    ),
+    'api_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+  );
+}
+
+/**
+ * Render data To XML Structor
+ *
+ * @param $rows
+ *   array.
+ * @return
+ *   content.
+ */
+function _doji_api_xml_render($rows = array()) {
+  $output = '';
+
+  if (is_array($rows) && count($rows) > 0) {
+    foreach ($rows as $key=>$obj) {
+      if (isset($obj->id)) {
+        $id = $obj->id;
+      }
+      elseif (isset($obj->name)) {
+        $id = $obj->name;
+      }
+      elseif (isset($obj->label)) {
+        $id = $obj->label;
+      }
+      $xmltags = _doji_api_create_xmltag($id);
+
+      if (is_array($obj->value)) {
+        $xmlvalue = _doji_api_xml_render($obj->value);
+      }
+      else {
+        $xmlvalue = _doji_api_create_value($obj->value);
+      }
+
+      $output .= "    <$xmltags[tag]>" . $xmlvalue . "</$xmltags[tag]>\n";
+    }
+  }
+
+  return $output;
+}
+
+/**
+ * Create label.
+ *
+ * @param $input
+ *   String to process.
+ * @return
+ *   array().
+ */
+function _doji_api_create_xmltag($id) {
+  $tag = _doji_api_strip_illegal_xml_name_chars(check_plain(html_entity_decode(strip_tags($id))));
+  $endtag = preg_replace("/\s+.*/", "", $tag);
+  return array('tag' => $tag, 'endtag' => $endtag);
+}
+
+/**
+ * Create XML value.
+ *
+ * @param $input
+ *   String to process.
+ * @return
+ *   content.
+ */
+function _doji_api_create_value($value) {
+  $output = _doji_api_strip_illegal_xml_attribute_value_chars(_doji_api_xmlEntities($value));
+  return $output;
+}
+
+/**
+ * Replaces illegal characters in a attribute value string with their encoded entities as well as the " char.
+ *
+ * @param $input
+ *   String to process.
+ * @return
+ *   String with illegal characters stripped away and entities encoded.
+ */
+function _doji_api_strip_illegal_xml_attribute_value_chars($input) {
+  $output = str_replace('<', '&lt;', $input);        // encode left-angled bracket
+  $output = str_replace('>', '&gt;', $output);        // encode right-angled bracket
+  $output = str_replace('"', '&quot;', $output);      // encode quote
+  return $output;
+}
+
+function _doji_api_xmlEntities($str) {
+    $xml = array('&#34;','&#38;','&#38;','&#60;','&#62;','&#160;','&#161;','&#162;','&#163;','&#164;','&#165;','&#166;','&#167;','&#168;','&#169;','&#170;','&#171;','&#172;','&#173;','&#174;','&#175;','&#176;','&#177;','&#178;','&#179;','&#180;','&#181;','&#182;','&#183;','&#184;','&#185;','&#186;','&#187;','&#188;','&#189;','&#190;','&#191;','&#192;','&#193;','&#194;','&#195;','&#196;','&#197;','&#198;','&#199;','&#200;','&#201;','&#202;','&#203;','&#204;','&#205;','&#206;','&#207;','&#208;','&#209;','&#210;','&#211;','&#212;','&#213;','&#214;','&#215;','&#216;','&#217;','&#218;','&#219;','&#220;','&#221;','&#222;','&#223;','&#224;','&#225;','&#226;','&#227;','&#228;','&#229;','&#230;','&#231;','&#232;','&#233;','&#234;','&#235;','&#236;','&#237;','&#238;','&#239;','&#240;','&#241;','&#242;','&#243;','&#244;','&#245;','&#246;','&#247;','&#248;','&#249;','&#250;','&#251;','&#252;','&#253;','&#254;','&#255;');
+    $html = array('&quot;','&amp;','&amp;','&lt;','&gt;','&nbsp;','&iexcl;','&cent;','&pound;','&curren;','&yen;','&brvbar;','&sect;','&uml;','&copy;','&ordf;','&laquo;','&not;','&shy;','&reg;','&macr;','&deg;','&plusmn;','&sup2;','&sup3;','&acute;','&micro;','&para;','&middot;','&cedil;','&sup1;','&ordm;','&raquo;','&frac14;','&frac12;','&frac34;','&iquest;','&Agrave;','&Aacute;','&Acirc;','&Atilde;','&Auml;','&Aring;','&AElig;','&Ccedil;','&Egrave;','&Eacute;','&Ecirc;','&Euml;','&Igrave;','&Iacute;','&Icirc;','&Iuml;','&ETH;','&Ntilde;','&Ograve;','&Oacute;','&Ocirc;','&Otilde;','&Ouml;','&times;','&Oslash;','&Ugrave;','&Uacute;','&Ucirc;','&Uuml;','&Yacute;','&THORN;','&szlig;','&agrave;','&aacute;','&acirc;','&atilde;','&auml;','&aring;','&aelig;','&ccedil;','&egrave;','&eacute;','&ecirc;','&euml;','&igrave;','&iacute;','&icirc;','&iuml;','&eth;','&ntilde;','&ograve;','&oacute;','&ocirc;','&otilde;','&ouml;','&divide;','&oslash;','&ugrave;','&uacute;','&ucirc;','&uuml;','&yacute;','&thorn;','&yuml;');
+    $str = str_replace($html,$xml,$str);
+    $str = str_ireplace($html,$xml,$str);
+    return $str;
+}
+
+/**
+ * Strips characters not matching the XML Name production:
+ *
+ * @param $input
+ *   String to process.
+ * @return
+ *   String with illegal characters stripped.
+ */
+
+function _doji_api_strip_illegal_xml_name_chars($input) {
+  $input = check_plain(html_entity_decode(strip_tags($input)));
+  $output = preg_replace("/(^xml)|([^A-Za-z0-9_\-\.:])/", "", $input);
+  return $output;
+}
+
+function doji_api_gold_vnexpress_page($op = NULL) {
+  $data_path_details = doji_get_data_path_details();
+  $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  'gold_vnexpress.dat';
+  $output = file_get_contents($data_path_details['filepath']);
+
+  if (empty($output) || !$output || $op == 'new') {
+    $node = doji_get_node('last');
+    $sjc_le_buy = str_replace(',', '', $node->field_sjc_le_muavao[0]['value']);
+    $sjc_le_sell = str_replace(',', '', $node->field_sjc_le_banra[0]['value']);
+    $phuc_buy = str_replace(',', '', $node->field_sjc_buon_muavao[0]['value']);
+    $phuc_sell = str_replace(',', '', $node->field_sjc_buon_banra[0]['value']);
+
+    $htv_buy = str_replace(',', '', $node->field_nhan4_muavao[0]['value']);
+    $htv_sell = str_replace(',', '', $node->field_nhan4_banra[0]['value']);
+
+    $ktt_buy = str_replace(',', '', $node->field_ki1_muavao[0]['value']);
+    $ktt_sell = str_replace(',', '', $node->field_ki1_banra[0]['value']);
+
+    if ($sjc_le_buy < 10000) {
+      $sjc_le_buy *= 10;
+    }
+    if ($sjc_le_sell < 10000) {
+      $sjc_le_sell *= 10;
+    }
+    if ($phuc_buy < 10000) {
+      $phuc_buy *= 10;
+    }
+    if ($phuc_sell < 10000) {
+      $phuc_sell *= 10;
+    }
+    //add
+    if ($htv_buy < 10000) {
+      $htv_buy *= 10;
+    }
+    if ($htv_sell < 10000) {
+      $htv_sell *= 10;
+    }
+    if ($ktt_buy < 10000) {
+      $ktt_buy *= 10;
+    }
+    if ($ktt_sell < 10000) {
+      $ktt_sell *= 10;
+    }
+
+
+    $sjc_le_buy = format_number($sjc_le_buy);
+    $sjc_le_sell = format_number($sjc_le_sell);
+    $phuc_buy = format_number($phuc_buy);
+    $phuc_sell = format_number($phuc_sell);
+
+    $htv_buy = format_number($htv_buy);
+    $htv_sell = format_number($htv_sell);
+    $ktt_buy = format_number($ktt_buy);
+    $ktt_sell = format_number($ktt_sell);
+
+    $output = '
+      <root>
+        <area>NOR</area>
+        <date>' . format_date(time(), 'custom', 'd/m/Y') . '</date>
+        <time>' . format_date(time(), 'custom', 'H:i') . '</time>
+        <gold>
+          <item name="SJC" key="SJC_LE" buy="' . $sjc_le_buy . '" sell="' . $sjc_le_sell . '" />
+           <item name="Nhẫn ép vỉ" key="PHUC" buy="' . $phuc_buy . '" sell="' . $phuc_sell . '" />
+           <item name="Hưng Thịnh Vượng" key="HTV" buy="' . $htv_buy . '" sell="' . $htv_sell . '" />
+           <item name="Kim Thần Tài" key="KTT" buy="' . $ktt_buy . '" sell="' . $ktt_sell . '" />
+         </gold>
+       </root>
+    ';
+    file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+  }
+
+  drupal_set_header('Content-Type: text/xml');
+  echo theme('doji_api_xml_output', $output);
+  die;
+}
+
+function doji_api_chart_vneconomy_page($op = NULL) {
+  drupal_set_title(t('Biểu đồ giá vàng', array(), 'vi'));
+  $output = '';
+  if (function_exists('quicktabs_load')) {
+    if ($quicktabs = quicktabs_load('vneconomy_gold_chart')) {
+	  $output = theme('quicktabs', $quicktabs);
+    }
+  }
+  $output .= variable_get('doji_api_vneconomy_code', '');
+  return $output;
+}

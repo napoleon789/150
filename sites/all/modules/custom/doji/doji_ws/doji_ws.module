@@ -1,0 +1,181 @@
+<?php
+// $Id: doji_ws.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+/**
+ * Implements hook_menu().
+ */
+function doji_ws_menu() {
+	$items = array();
+  	$items['api/goldprice'] = array(    	
+    	'page callback' => 'doji_ws_gold_price',
+    	'page arguments' => array(2, 'hn'),
+    	'access arguments' => array('access content'),
+    	'type' => MENU_CALLBACK
+  	);
+  	
+  	$items['api/places'] = array(
+  		'page callback' => 'doji_ws_places',
+    	'page arguments' => array(2),
+    	'access arguments' => array('access content'),
+    	'type' => MENU_CALLBACK
+  	);
+  	
+  	$items['api/charts'] = array(
+  		'page callback' => 'doji_ws_charts',
+    	'page arguments' => array(2),
+    	'access arguments' => array('access content'),
+    	'type' => MENU_CALLBACK
+  	);
+  	return $items;
+}
+
+/**
+ * Gia vang dang json
+ */
+function doji_ws_gold_price($area) {	
+	
+	$currencyrates = doji_get_currencyrate('return');
+	$exchangerates = doji_get_exchangerate('return');
+	$oldvalues = variable_get('goldprice_quocte_oldvalue', array());
+	
+	if (!isset($exchangerates['USD']['BUY'])) {
+		$exchangerates['USD']['BUY'] = $oldvalues['group_usdvnd']['bid'];
+		$exchangerates['USD']['SELL'] = $oldvalues['group_usdvnd']['ask'];
+	} 
+	
+	if ($area) {
+		$rows = doji_ws_gold_price_for_area($area, $currencyrates, $exchangerates);
+		drupal_json($rows);
+		return;
+	}
+	
+	$rows_hn = doji_ws_gold_price_for_area("hn", $currencyrates, $exchangerates);
+  	$rows_hcm = doji_ws_gold_price_for_area("hcm", $currencyrates, $exchangerates);
+  	$rows_qt = doji_ws_gold_price_for_area("qt", $currencyrates, $exchangerates);
+  	
+  	$rows = array_merge((array) $rows_hn, (array)$rows_hcm);
+  	$rows = array_merge((array) $rows, (array)$rows_qt);
+  	
+  	$result = new stdClass();
+  	$node = doji_get_node('last');
+  	$result->updated_time = format_date($node->created, 'custom', 'H:i d/m/Y');
+  	$result->prices = $rows;
+  	
+  	drupal_json($result);  	
+}
+
+function doji_ws_gold_price_for_area($area, $currencyrates, $exchangerates) {
+	$rows = array();
+	
+	if ($area != 'qt') {
+	
+		$node = doji_get_node('last', 'goldprice');
+	    $node1 = doji_get_node('first', 'doji_goldprice_wget');
+	
+	    foreach ($node1->{"field_goldprice_field_status_$area"} as $k => $v) {
+	      $v1 = strtolower($v['value']);
+	      if ($v1 != 'on') {
+	        continue;
+	      }
+	
+	      $group_access[$node1->{"field_goldprice_field_$area"}[$k]['value']] = NULL;
+	
+	      if (isset($node1->{"field_goldprice_label_$area"}[$k]['value']) && $node1->{"field_goldprice_label_$area"}[$k]['value']) {
+	        $group_access[$node1->{"field_goldprice_field_$area"}[$k]['value']]['label'] =  $node1->{"field_goldprice_label_$area"}[$k]['value'];
+	      }
+	    }
+	    
+	    $suffix = array('muavao', 'banra');    	
+	  	$content_groups = fieldgroup_groups('goldprice');	
+		
+	  	foreach ($group_access as $k => $groups) {
+	  		if ($k == 'group_gold') {
+	  			$row = array();
+	  			$row['label'] = 'Gold (usd/oz)';  			  			  			
+	  			  			
+	  			$row['muavao'] = $currencyrates['XAUUSD'][0];
+	  			$row['banra'] = $currencyrates['XAUUSD'][1];
+				$row['area'] = $area;  			
+	  			$rows[] = $row;
+	  		} else {
+	    		$fieldname = str_replace('group_', 'field_', $k);
+	
+		    	if (!isset($node->{$fieldname .'_muavao'}[0]['value'])) {
+		      		continue;
+		    	}
+		
+		    	$row = array();
+		    	foreach ($suffix as $id => $suffix_value) {
+		      		if (isset($node->{$fieldname . '_' . $suffix_value}[0]['value'])) {
+		        		if (!isset($row['label'])) {
+		          			$label = isset($group_access[$k]['label']) ? $group_access[$k]['label'] : $content_groups[$k]['label'];
+		          			$row['label'] = $label;
+		        		}        	
+		
+				        $goldprice = str_replace(',', '', $node->{$fieldname . '_' . $suffix_value}[0]['value']);
+				
+				        /*if ($goldprice < 10000) {
+		          			if (preg_match('|phi_sjc|i', $fieldname . '_' . $suffix_value) || preg_match('|nguyen_lieu|i', $fieldname . '_' . $suffix_value)) {
+		            			$goldprice *= 10;
+		          			}
+		    			}
+		
+		        		$goldprice = format_number($goldprice);*/
+		
+		   			 	$row[$suffix_value] =  $goldprice;
+		      		}
+		    	}
+				$row['area'] = $area;
+		    	$rows[] = $row;
+		    }
+	  	}
+  	} else {
+	  	$row = array();
+	  	$row['label'] = 'Giá vàng quốc tế';  			  			  			
+	  			
+		$row['muavao'] = $currencyrates['XAUUSD'][0];
+		$row['banra'] = $currencyrates['XAUUSD'][1];
+		$row['area'] = "qt";  	// area quoc te		
+		$rows[] = $row;
+	  	 	
+	  	$row['label'] = 'Giá vàng quy đổi';
+	  	//Qui doi = GOLD(USD/oz) * 1.205656 * ty gia USD/VND
+	  	$row['muavao'] = ($currencyrates['XAUUSD'][0] * 1.205656 * str_replace(',', '', $exchangerates['USD']['BUY']))/1000;
+	  	$row['banra'] = ($currencyrates['XAUUSD'][1] * 1.205656 * str_replace(',', '', $exchangerates['USD']['SELL']))/1000;
+	  	$row['area'] = "qt";  	// area quoc te		
+		$rows[] = $row;
+		
+		$row['label'] = 'USD / VNĐ';
+		$row['muavao'] = $exchangerates['USD']['BUY'] ? str_replace(',', '', $exchangerates['USD']['BUY']) : 0;
+		$row['banra'] = $exchangerates['USD']['SELL'] ? str_replace(',', '', $exchangerates['USD']['SELL']) : 0;
+		$row['area'] = "qt";  	// area quoc te		
+		$rows[] = $row;
+	}
+	
+  	return $rows;
+}
+
+function doji_ws_places($area) {
+	if ($area == 'hn')
+		$area = 'Hà Nội';
+	else if ($area == 'hcm')
+		$area = 'Tp HCM';
+
+	$content = doji_get_node('first', 'diadiem');
+	$rows = array();
+	foreach ($content->field_diadiem_ten as $k => $v) {
+		if ($area == '' || $area == $content->field_diadiem_area[$k]['value']) {
+			$row = array();
+			$row['area'] = $content->field_diadiem_area[$k]['value'];
+			$row['name'] = $v['value'];
+			$row['addr'] = $content->field_diadiem_diachi[$k]['value'];
+			$row['phone'] = $content->field_diadiem_phone[$k]['value'];
+			$row['lat'] = $content->field_diadiem_lat[$k]['value'];
+			$row['lon'] = $content->field_diadiem_long[$k]['value'];
+			
+			$rows[] = $row;
+		}
+	}
+	
+	drupal_json($rows);
+}

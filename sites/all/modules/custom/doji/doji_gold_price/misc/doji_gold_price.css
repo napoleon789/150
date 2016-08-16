@@ -1,0 +1,220 @@
+/* $Id: doji_gold_price.css,v 1.0 2011/10/13 13:25:57 tvazone Exp */
+.hide {
+  display:none;
+}
+.lsdown {
+  background: #c00 none !important;
+  color:#fff;   
+}
+.lsup {
+  background: #369 none !important;
+  color:#fff;   
+}
+
+.btn-updown {
+  float: left;
+  margin-left: 1px;
+  position: relative;
+  width: 25px;
+}
+.btn-updown .btn-up, .btn-updown .btn-down {
+  background: transparent url(btn-up.png) no-repeat scroll 0 0;
+  cursor: pointer;
+  width: 25px;
+  height: 20px;
+  clear: both;
+  display: block;
+}
+.btn-updown .btn-down {
+  background: transparent url(btn-down.png) no-repeat scroll 0 bottom;
+}
+#submit_duoi input.form-submit, input.button {
+  background: transparent url(button-bg.png) no-repeat scroll 0 0;  
+  border: medium none;
+  color: #666666;
+  cursor: pointer;
+  /*display: block;*/
+  font-size: 14px;
+  height: 35px;
+  line-height: 35px;
+  padding-bottom: 3px;
+  text-align: center;
+  width: 110px;
+}
+input.button {
+  margin-right: 3px;
+  float: right;
+}
+input.form-submit.button2-bg {
+  background-image: url(button2-bg.png);
+  width: 155px;
+  height: 35px;
+   line-height: 35px;
+    border:none;
+}
+input.form-submit:hover {
+  color: #000;
+}
+.btn-ngunggiaodich, .btn-giaodich {
+  background: transparent url(btn-ngunggiaodich.png) no-repeat scroll 0 0;  
+  text-align: left;
+  display: block;
+  float: left;
+  text-indent: -9999px; 
+  height: 35px;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  width: 144px;
+}
+.btn-giaodich {
+  background-image: url(btn-giaodich.png); 
+  width: 110px;
+}
+.trangthaigiaodich {
+  font-weight: bold;
+  padding-top: 25px;
+  text-align: center;  
+}
+#doji-gold-price-short-form input.form-submit {
+  background: transparent url(update-btn.png) no-repeat scroll 0 0;  
+  text-align: left;
+  text-indent: -9999px;
+}
+.form-footer-container input.form-submit {  
+  float: right;
+  margin-right: 10px;
+}
+#doji-admin-settings input.form-submit {
+  float: right;
+  margin-right: 0;
+}
+#show-messages {
+  float: right;
+  margin-right: 15px;
+}
+#show-messages span.update-time {
+  display: block;
+  font-style: italic;
+  font-size: 13px;
+  color: #666;
+}
+#doji-admin-settings table.admin-tbl-gold input.form-text {
+  background: #eee none;
+}
+#doji-admin-settings table.admin-tbl-gold tr.active input.form-text {
+  background: #fff none;
+}
+#doji-admin-settings table.admin-tbl-gold tr.active a.do-edit {
+  color: #000;
+  font-weight: bold;
+}
+.operator-hidden {
+  display: none;
+}
+#group-display-1-items, #group-display-2-items,
+#group-display-3-items, #group-display-4-items,
+#group-display-6-items, #group-display-7-items,
+#group-display-9-items, #group-display-10-items,
+#group-display-hn-items, #group-display-hcm-items, #group-display-dn-items
+ {
+  width: 49%;
+  float: left;
+}
+#group-display-1-items .form-text, #group-display-2-items .form-text, #group-display-3-items .form-text, 
+#group-display-4-items .form-text, #group-display-6-items .form-text, #group-display-7-items .form-text,
+#group-display-1-items .form-select, #group-display-2-items .form-select, #group-display-3-items .form-select, 
+#group-display-4-items .form-select, #group-display-6-items .form-select, #group-display-7-items .form-select,
+#group-display-9-items .form-select, #group-display-10-items .form-select,
+#group-display-hn-items .form-select, #group-display-hcm-items .form-select  {
+  width: 110px;
+}
+#group-display-4-items, #group-display-hcm-items, #group-display-10-items {
+  float: right;
+}
+#goldfield-item-hidden {
+  background: #EAEAEA none repeat scroll 0 0;
+  border: 1px solid #C3C3C3;
+  padding: 10px 30px;
+  position: absolute;
+  z-index: 9999;  
+  display:none;
+}
+a.close {
+  cursor: pointer;
+  display: block;
+  font-family: verdana;
+  font-weight: normal;
+  position: absolute;
+  right: 7px;
+  top: 0;
+}
+#gv-left {
+  position: relative;
+} 
+#gv-left #gv-left-title, #gv-left #doji-gold-price-short-form {
+  z-index: 5;
+}
+
+#doji-gold-price-add-new-field .form-item {
+  margin: 0;
+}
+#block-doji_gold_price-add_new_field {
+  display: none;
+  float: right;
+  margin: 0;
+  padding: 0;
+}
+#doji-gold-price-add-new-field label, #doji-gold-price-add-new-field .form-item {
+  display: block;
+  float: left;  
+  margin-right: 15px;
+}
+#doji-gold-price-add-new-field label {
+  line-height: 35px;
+}
+#doji-gold-price-add-new-field .form-text {
+  background-color: #FFFFFF;  
+  border-radius: 5px 5px 5px 5px;
+  min-height: 30px;
+  line-height: 30px;
+  width: 300px;
+}
+#doji-gold-price-add-new-field .form-select {
+  background-color: #FFFFFF;  
+  border-radius: 5px 5px 5px 5px;
+  min-height: 20px;
+  padding: 8px;
+  width: 250px;
+}
+#goldprice-form-container {
+  position: relative;
+}
+#goldprice-form-container .form-item .description {
+  display: none;
+}
+#goldprice-form-container #noitce-message ul {
+  margin-left: 45px;
+}
+
+#goldprice-form-v2  .goldprice-form .form-submit.right{
+        background-image: url("button2-bg.png");
+        border: medium none;
+        height: 35px;
+        line-height: 35px;
+        width: 100px;
+        background-size: 100px 35px;
+}
+
+.page-doji #doji-admin-settings .form-submit{
+        background-image: url("button2-bg.png");
+        border: medium none;
+        height: 35px;
+        line-height: 35px;
+        width: 155px;
+}
+/** Bang Gia Theo Vung Mien **/
+#bang-gia-theo-vung-mien div.first,
+#bang-gia-theo-vung-mien div.last {
+  width: 465px;
+}

@@ -1,0 +1,15 @@
+/* $Id: doji.css,v 1.0 2011/10/13 13:25:57 tvazone Exp */
+
+table.currencyrates, table.exchangerates {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+table.currencyrates tr:hover, table.exchangerates tr:hover {
+  background: #f00 none;
+}
+
+table.currencyrates thead th, table.currencyrates tr td,
+table.exchangerates thead th, table.exchangerates tr td {
+  padding: 10px;
+}

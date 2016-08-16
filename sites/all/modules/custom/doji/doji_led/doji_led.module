@@ -1,0 +1,160 @@
+<?php
+
+include_once('doji_led.features.inc');
+
+/**
+ * Implements hook_menu().
+ */
+function doji_led_menu() {  
+  $items = array();     
+  $items['doji/admin/cai-dat-led'] = array(
+    'title' => t('Cài đặt hiển thị trên bảng LED', array(), 'vi'),
+    'page callback' => 'doji_led_setting',    
+    'access arguments' => array('access administration pages'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/admin/view-led'] = array(
+    'title' => t('View led', array(), 'vi'),
+    'page callback' => 'doji_led_put_to_sqlserver',    
+    'access arguments' => array('access administration pages'),
+    'weight' => 10,
+    'type' => MENU_CALLBACK,
+  );  
+  return $items;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ */
+function doji_led_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {  
+  if ($node->type == 'doji_led' && arg(1) != 'admin' && in_array($op, array('view', 'insert', 'update'))) {
+    drupal_get_messages();
+    drupal_set_message(t('Cài đặt led thành công!', array(), 'vi'));
+    drupal_goto('doji/admin/cai-dat-led');   
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function doji_led_theme() {
+  return array(
+    'doji_led_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),            
+  );
+}
+
+function theme_doji_led_node_form($form) {
+  global $user;    
+  drupal_set_title('');      
+  $output = drupal_render($form['group_led_sort']);         
+  $output .= drupal_render($form['buttons']['submit']);
+  $output .= '<div style="display:none">' . drupal_render($form) . '</div>';  
+  doji_led_put_to_mysqlserver('insert');
+  return $output;
+}
+
+function doji_led_setting() {
+  module_load_include('inc', 'node', 'node.pages');
+  $node = doji_get_node('first', 'doji_led', 0);
+  
+  if (!isset($node->nid)) {
+    $node = doji_get_node_base(array('type' => 'doji_led'));     
+  }
+  
+  $form = node_page_edit($node);
+  $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+  return $form;
+}
+
+function doji_led_put_to_sqlserver($op = 'view') {
+  $led_node = doji_get_node('first', 'doji_led');
+
+  if (!isset($node->nid)) {
+    $node = doji_get_node('last');  
+  }
+  
+  $content_groups = fieldgroup_groups('goldprice');
+  $items = array();
+  $content = '';
+  $timenow = time();
+  $con = odbc_connect("dojiled", "dojisms", "dojisms");    
+  odbc_exec($con, "DELETE FROM [view] WHERE 1=1");  
+      
+  foreach ($led_node->field_led_field as $k => $values) {
+    $group_name = $values['value'];
+    $label = $led_node->field_led_label[$k]['value'] && !empty($led_node->field_led_label[$k]['value']) ? trim($led_node->field_led_label[$k]['value']) : $content_groups[$group_name]['label'];
+    if (empty($label) || strtolower($led_node->field_led_status[$k]['value']) != 'on') {
+      continue;
+    }  
+    
+    $field_name = str_replace('group_', 'field_', $group_name);
+
+    if (!isset($node->{$field_name . '_muavao'}[0]['value']) || !isset($node->{$field_name . '_banra'}[0]['value'])) {
+      continue;
+    }
+    
+    $muavao = doji_convert_to_number($node->{$field_name . '_muavao'}[0]['value']);
+    $banra = doji_convert_to_number($node->{$field_name . '_banra'}[0]['value']);
+    
+    if (!$muavao || !$banra) {
+      continue;
+    }
+    
+    $format_label = $label;
+    $format_muavao = format_number($muavao, 2);
+    $format_muavao = str_replace('.00', '', $format_muavao);
+    $format_banra = format_number($banra, 2);    
+    $format_banra = str_replace('.00', '', $format_banra);   
+    $sqlinsert = "INSERT INTO [view] VALUES ('$format_label', '$format_muavao', '$format_banra', $k)";
+    odbc_exec($con, $sqlinsert);           
+  }
+  odbc_close($con);  
+  return $content;
+}
+
+function doji_led_put_to_mysqlserver($op = 'view') {  
+  $led_node = doji_get_node('first', 'doji_led', 0);
+  $node = doji_get_node('last');
+
+  $content_groups = fieldgroup_groups('goldprice');
+  $items = array();
+  $content = '';
+  $timenow = time();
+  db_query('DELETE FROM {led} WHERE 1=1');
+    
+  foreach ($led_node->field_led_field as $k => $values) {
+    $group_name = $values['value'];
+    $label = $led_node->field_led_label[$k]['value'] && !empty($led_node->field_led_label[$k]['value']) ? trim($led_node->field_led_label[$k]['value']) : $content_groups[$group_name]['label'];
+    if (empty($label) || strtolower($led_node->field_led_status[$k]['value']) != 'on') {
+      continue;
+    }  
+    
+    $field_name = str_replace('group_', 'field_', $group_name);
+
+    if (!isset($node->{$field_name . '_muavao'}[0]['value']) || !isset($node->{$field_name . '_banra'}[0]['value'])) {
+      continue;
+    }
+    
+    $muavao = doji_convert_to_number($node->{$field_name . '_muavao'}[0]['value']);
+    $banra = doji_convert_to_number($node->{$field_name . '_banra'}[0]['value']);
+    
+    if (!$muavao || !$banra) {
+      continue;
+    }
+    
+    $format_label = $label;
+    $format_muavao = format_number($muavao, 2);
+    $format_muavao = str_replace('.00', '', $format_muavao);
+    $format_banra = format_number($banra, 2);    
+    $format_banra = str_replace('.00', '', $format_banra);   
+    $sqlinsert = "INSERT INTO {led} VALUES ('$format_label', '$format_muavao', '$format_banra', $k)";
+    db_query($sqlinsert);        
+  }   
+  return $content;
+}

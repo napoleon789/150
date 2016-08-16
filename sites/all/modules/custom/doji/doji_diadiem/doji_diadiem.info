@@ -1,0 +1,7 @@
+name = "Dia Diem"
+description = "Module quan ly vi tri cua hang vang cua Doji"
+core = "6.x"
+package = "Doji"
+version = "6.x-1.0"
+project = "giavang"
+

@@ -1,0 +1,264 @@
+@import url(http://fonts.googleapis.com/css?family=Noto+Serif:400,700);
+/* Welcome to Compass.
+ * In this file you should write your main styles. (or centralize your imports)
+ * Import this file using the following HTML or equivalent:
+ * <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css" /> */
+/* line 17, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  font-size: 100%;
+  vertical-align: baseline;
+}
+
+/* line 22, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+html {
+  line-height: 1;
+}
+
+/* line 24, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+ol, ul {
+  list-style: none;
+}
+
+/* line 26, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* line 28, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+caption, th, td {
+  text-align: left;
+  font-weight: normal;
+  vertical-align: middle;
+}
+
+/* line 30, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+q, blockquote {
+  quotes: none;
+}
+/* line 103, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+q:before, q:after, blockquote:before, blockquote:after {
+  content: "";
+  content: none;
+}
+
+/* line 32, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+a img {
+  border: none;
+}
+
+/* line 116, C:/Ruby200-x64/lib/ruby/gems/2.0.0/gems/compass-0.12.2/frameworks/compass/stylesheets/compass/reset/_utilities.scss */
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section, summary {
+  display: block;
+}
+
+@font-face {
+  font-family: 'Digital-7';
+  src: url("./../font/digital-7.eot");
+  src: local("Digital-7"), url("./../font/digital-7.ttf") format("TrueType");
+}
+
+/* Variable
+==================================================*/
+/*mixin
+====================================================*/
+/* style
+=====================================================*/
+/* line 60, ../sass/screen.scss */
+body {
+  font-family: "Noto Serif", serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 1.5px;
+}
+/* line 62, ../sass/screen.scss */
+body .banggia {
+  width: 1040px;
+  margin: 0 auto;
+  background: #111111;
+  min-height: 200px;
+  padding-top: 40px;
+}
+/* line 63, ../sass/screen.scss */
+body .banggia .table {
+  display: table;
+  width: 100%;
+}
+/* line 64, ../sass/screen.scss */
+body .banggia .table .table-cell {
+  display: table-cell;
+  font-family: "Noto Serif", serif;
+  font-weight: 400;
+  background: black;
+  width: 432px;
+  color: white;
+  border-bottom: 10px solid #111111;
+  border-left: 5px solid #111111;
+  border-right: 5px solid #111111;
+  padding: 15px 20px;
+  vertical-align: middle;
+  letter-spacing: 1.5px;
+}
+/* line 66, ../sass/screen.scss */
+body .banggia .table .table-cell span {
+  font-family: "Digital-7", serif;
+  font-weight: 400;
+}
+/* line 67, ../sass/screen.scss */
+body .banggia .table .table-cell span.color-red {
+  color: red;
+}
+/* line 68, ../sass/screen.scss */
+body .banggia .table .table-cell span.color-green {
+  color: lime;
+}
+/* line 72, ../sass/screen.scss */
+body .banggia header {
+  padding: 0 25px 38px;
+  margin-bottom:80px;
+  margin-top:40px
+}
+/* line 73, ../sass/screen.scss */
+body .banggia header .logo {
+  display: table;
+}
+/* line 74, ../sass/screen.scss */
+body .banggia header .logo img {
+  display: block;
+    height: 70px;
+  margin-right: 25px;
+  margin-left: 12px;
+}
+/* line 76, ../sass/screen.scss */
+body .banggia header .doji {
+  font-family: "Noto Serif", serif;
+  font-weight: 400;
+  font-size: 26px;
+  text-transform: uppercase;
+  color: white;
+  display: table-cell;
+  vertical-align: middle;
+  padding-top: 20px;
+}
+/* line 78, ../sass/screen.scss */
+body .banggia header h1 {
+  font-family: "Noto Serif", serif;
+  font-weight: 700;
+  font-size: 45px;
+  display: block;
+  margin: 40px auto 40px;
+  text-align: center;
+  text-transform: uppercase;
+  color: white;
+}
+/* line 79, ../sass/screen.scss */
+body .banggia header .table .table-cell {
+  font-size: 36px;
+}
+/* line 80, ../sass/screen.scss */
+body .banggia header .table .table-cell em {
+  width: 138px;
+  display: inline-block;
+  text-transform: uppercase;
+}
+/* line 81, ../sass/screen.scss */
+body .banggia header .table .table-cell span {
+  font-size: 60px;
+  text-transform: uppercase;
+}
+/* line 82, ../sass/screen.scss */
+body .banggia header .table .table-cell .second {
+  color: #ddd;
+}
+/* line 86, ../sass/screen.scss */
+body .banggia aside .table.lable .table-cell {
+  background: #e51937;
+}
+/* line 87, ../sass/screen.scss */
+body .banggia aside .table .table-cell {
+  text-transform: uppercase;
+}
+/* line 88, ../sass/screen.scss */
+body .banggia aside .table .table-cell.class {
+  width: 364px;
+  max-width: 364px;
+  border-left: 0;
+  padding: 0 0 0 30px;
+  text-align: left;
+  font-size: 36px;
+  font-family: "Noto Serif", serif;
+  font-weight: 400;
+  vertical-align: middle;
+}
+/* line 89, ../sass/screen.scss */
+body .banggia aside .table .table-cell.class.g em {
+  font-size: 28px;
+}
+/* line 91, ../sass/screen.scss */
+body .banggia aside .table .table-cell.buy {
+  width: 280px;
+  max-width: 280px;
+  padding: 0 30px 0 0;
+  text-align: right;
+  font-family: "Digital-7", serif;
+  font-weight: 400;
+  font-size: 100px;
+  vertical-align: middle;
+}
+/* line 92, ../sass/screen.scss */
+body .banggia aside .table .table-cell.buy.g {
+  color: red;
+}
+/* line 94, ../sass/screen.scss */
+body .banggia aside .table .table-cell.send {
+  width: 270px;
+  max-width: 270px;
+  border-right: 0;
+  padding: 0 30px 0 0;
+  text-align: right;
+  font-family: "Digital-7", serif;
+  font-weight: 400;
+  font-size: 100px;
+  vertical-align: middle;
+}
+/* line 95, ../sass/screen.scss */
+body .banggia aside .table .table-cell.send.g {
+  color: lime;
+}
+/* line 97, ../sass/screen.scss */
+body .banggia aside .table .table-cell span {
+  font-family: "Noto Serif", serif;
+  font-weight: 400;
+  font-size: 48px;
+  vertical-align: middle;
+}
+/* line 100, ../sass/screen.scss */
+body .banggia footer {
+  padding: 40px 0 20px 30px;
+  font-size: 28px;
+  color: white;
+  background: #e51937;
+  margin-top: 0px;
+  letter-spacing: 1.2px;
+}
+/* line 101, ../sass/screen.scss */
+body .banggia footer .hotline {
+  margin-right: 50px;
+}

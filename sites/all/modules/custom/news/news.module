@@ -1,0 +1,385 @@
+﻿<?php
+// $Id: news.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+require_once('rss_php.php');
+
+define('NEWS_PER_PAGE', 10);
+
+/**
+ * Implements hook_menu().
+ */
+function news_menu() {
+
+  $items = array();
+
+  $items['doji/admin/news'] = array(
+    'title' => t('Cài đặt tin tức', array(), 'vi'),
+    //'page callback' => 'news_setting_page',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('news_template_get'),
+    'access arguments' => array('access administration'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['doji/tintuc'] = array(
+    'title' => t('Tin Tức', array(), 'vi'),
+    'page callback' => 'news_content_page',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['api/tintuc'] = array(
+  	'page callback' => 'news_json',
+  	'page arguments' => array(2, 3),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK
+  );
+
+  $items['admin/get/news'] = array(
+    'page callback' => 'news_import_node',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['api/page/gioithieu'] = array(
+    'title' => t('Giới thiệu', array(), 'vi'),
+    'page callback' => 'my_intro',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['api/page/huongdan'] = array(
+    'title' => t('Giới thiệu', array(), 'vi'),
+    'page callback' => 'my_intro',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+
+  return $items;
+}
+function my_intro() {
+  if(arg(2) == 'gioithieu') {
+    $nid = 33251;
+  }
+  elseif (arg(2) == 'huongdan') {
+    $nid = 33252;
+  }
+   $result = db_query("SELECT * FROM {node_revisions} WHERE nid ='%s'",$nid);
+   while($row = db_fetch_array($result)) {
+     $arr['title'] = $row['title'];
+     $arr['mota'] = $row['body'];
+   }
+  drupal_set_header('Content-Type: application/json');
+  echo json_encode($arr);
+
+}
+
+function news_template_get() {
+  $form = array();
+  $form['template'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Thiết lập nguồn tin', array(), 'vi'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['template']['nguon'] = array(
+    '#title' => t('Tên nguồn', array(), 'vi'),
+    '#type' => 'textfield',
+  );
+  $form['template']['url'] = array(
+    '#title' => t('Đường dẫn tin', array(), 'vi'),
+    '#type' => 'textfield',
+  );
+  $form['template']['hot'] = array(
+     '#type' => 'checkbox',
+     '#title' => t('Hot'),
+   );
+  $form['dangtin'] = array(
+    '#type' => 'submit',
+    '#value' => t('Đăng tin', array(), 'vi'),
+
+  );
+  return $form;
+}
+
+function news_template_get_submit() {
+  $source = $_POST['nguon'];
+  $url = $_POST['url'];
+  $hot = $_POST['hot'];
+  news_import_node($source,$url,$hot);
+  db_query("DELETE FROM {cache_page};");
+  drupal_goto('doji/tintuc');
+}
+function news_import_node($source ,$url,$hot) {
+  $sites_html = file_get_contents($url);
+  $html = new DOMDocument();
+  @$html->loadHTML('<?xml encoding="UTF-8">' . $sites_html);
+  //@$html->loadHTML($sites_html);
+
+  $meta_og_img = null;
+//Get all meta tags and loop through them.
+  foreach($html->getElementsByTagName('meta') as $meta) {
+
+    //If the property attribute of the meta tag is og:image
+    if($meta->getAttribute('property')=='og:image'){
+      //Assign the value from content attribute to $meta_og_img
+      $meta_og_img = $meta->getAttribute('content');
+    }
+    if($meta->getAttribute('property')=='og:title'){
+      //Assign the value from content attribute to $meta_og_img
+      $meta_og_title = $meta->getAttribute('content');
+    }
+    if($meta->getAttribute('property')=='og:description'){
+      //Assign the value from content attribute to $meta_og_img
+      $meta_og_des = $meta->getAttribute('content');
+    }
+    if($meta->getAttribute('itemprop')=='datePublished'){
+      //Assign the value from content attribute to $meta_og_img
+      $meta_og_time = $meta->getAttribute('content');
+    }
+  }
+
+  $news = new stdClass();
+  $news->type = 'news';
+  $news->title = $meta_og_title;
+  $news->field_teaser[0]['value'] = $meta_og_des;
+  $news->field_avatar_url[0]['value'] = '<img width="134" src="'.$meta_og_img.'">';
+  $news->field_post[0]['value'] = date("Y-m-d H:i:s");
+  if($hot == 1){
+  $news -> field_hot[0]['value'] = 'Hot';
+  }
+  $news->field_source[0]['value'] = $source;
+  //$news->field_published[0]['value'] = news_correct_date_time($settings->field_source_name[$k]['value'],$items[$i]['pubDate']);
+  $news->field_guid[0]['value'] = $url;
+
+ // $news = node_submit($news);
+  node_save($news);
+}
+function news_setting_page() {
+	module_load_include('inc', 'node', 'node.pages');
+	$node = doji_get_node('first', 'newsettings');
+
+	if (!isset($node->nid)) {
+    	$node = doji_get_node_base(array('type' => 'newsettings'));
+  	}
+
+  	$form = node_page_edit($node);
+  	$form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+  	return $form;
+
+}
+
+function news_is_exist($guid) {
+
+  	$result = db_result(db_query('SELECT nid FROM {content_type_news} WHERE field_guid_value = "%s" order by field_hot_value DESC, nid DESC', $guid));
+  	return $result;
+}
+
+function news_update_page() {
+	global $user;
+
+	$settings = doji_get_node('first', 'newsettings');
+
+	$output = '<div>';
+	foreach ($settings->field_source_url as $k => $v) {
+		$rss = new rss_php;
+		$rss->load($v['value']);
+		$items = $rss->getItems();
+
+		for ($i = 0; $i < count($items); $i++) {
+			$news = new stdClass();
+			$news->type = 'news';
+			$news->title = $items[$i]['title'];
+			$news->field_teaser[0]['value'] = strip_tags($items[$i]['description']);
+
+			preg_match_all('/<img[^>]+>/i',$items[$i]['description'], $r);
+			$news->field_avatar_url[0]['value'] = $r[0][0];
+			$news->field_source[0]['value'] = $settings->field_source_name[$k]['value'];
+			$news->field_published[0]['value'] = news_correct_date_time($settings->field_source_name[$k]['value'],$items[$i]['pubDate']);
+			$news->field_guid[0]['value'] = $items[$i]['guid'];
+
+			if (!news_is_exist($items[$i]['guid'])) {
+				$news = node_submit($news);
+				node_save($news);
+			}
+		}
+	}
+	$output .= '</div>';
+	return $output;
+}
+
+/**
+ * Convert datetime of news source to standard yyyy-MM-dd HH:mm:ss
+ */
+function news_correct_date_time($source, $d) {
+	$dFormat = 'm/d/Y h:i:s a';
+	$stdFormat = "Y-m-d H:i:s";
+	if (strpos($source,'VnExpress') !== false) {
+		$dFormat = 'D, d M Y H:i:s O';
+	} else if (strpos($source,'DanTri') !== false) {
+		$dFormat = 'm/d/Y g:i:s a';
+	}
+
+	$date = DateTime::createFromFormat($dFormat, $d);
+
+	return $date->format($stdFormat);
+}
+
+function news_get_total() {
+	$result = db_result(db_query("SELECT count(*) from {node} where type = '%s'", 'news'));
+	return $result;
+}
+
+function news_content_page($page) {
+	$page = (isset($page) && is_numeric($page)) ? $page : 1;
+	$total = news_get_total();
+	$total_pages = ceil($total / NEWS_PER_PAGE);
+	drupal_set_title('');
+	$content = array();
+  	$results = db_query("SELECT n.nid FROM {node} n LEFT JOIN {content_type_news} f ON n.nid = f.nid AND n.vid = f.vid WHERE n.type = '%s' ORDER BY f.field_hot_value DESC,f.nid DESC LIMIT %d OFFSET %d ", 'news', NEWS_PER_PAGE, ($page - 1) * NEWS_PER_PAGE);
+  	while($nid = db_result($results)) {
+    	$content[] = node_load($nid);
+  	}
+
+	$output = theme('list_news', $content, $page, $total_pages);
+	return $output;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ */
+function news_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($node->type == 'newsettings' && arg(1) != 'admin' && in_array($op, array('view', 'insert', 'update'))) {
+    drupal_get_messages();
+    drupal_set_message(t('Thêm nguồn tin thành công!', array(), 'vi'));
+    drupal_goto('doji/admin/news');
+  }
+
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function news_theme() {
+  return array(
+    'newsettings_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+    'list_news' => array(
+    	'arguments' => array('content' => NULL,
+    						 'page' => NULL,
+    						 'total' => NULL),
+    	'template' => 'list_news',
+    	'path' => drupal_get_path('module', 'news') . '/templates',
+    	)
+  );
+}
+
+function theme_newsettings_node_form($form) {
+
+  drupal_set_title('');
+
+  $output = drupal_render($form['group_news_settings']);
+  $output .= drupal_render($form['buttons']['submit']);
+  $output .= '<div style="display:none">' . drupal_render($form) . '</div>';
+  return $output;
+}
+
+function news_json($offset, $size) {
+	$offset = $offset ? $offset : 0;
+	$size = $size ? $size : 10;
+	$content = array();
+  	$results = db_query("SELECT n.nid FROM {node} n LEFT JOIN {content_type_news} f ON n.nid = f.nid AND n.vid = f.vid WHERE n.type = '%s' ORDER BY n.nid DESC LIMIT " . $size . " OFFSET " . $offset, 'news');
+  	while($nid = db_result($results)) {
+    	$content[] = node_load($nid);
+  	}
+
+  	$news = array();
+
+  	foreach ($content as $post) {
+
+  		$p = new stdClass();
+  		$p->title = htmlspecialchars_decode(trim($post->title));
+  		$p->post_date = date('m/d/Y H:i',$post->created);
+  		$p->source = $post->field_source[0]['value'];
+
+  		preg_match_all('/(alt|title|src)=("[^"]*")/i',$post->field_avatar_url[0]['value'], $img);
+  		$p->avarta = str_replace('"', '', $img[2][0]);
+
+  		$p->link = $post->field_guid[0]['value'];
+  		$news[] = $p;
+  	}
+  drupal_set_header('Content-Type: application/json');
+  echo json_encode($news);die;
+  drupal_json($news);
+
+}
+
+function news_getPaginagtionCode($i, $p)
+{
+    if ($i == $p)
+        return "<span class='current'>$i</span>";
+    else
+        return "<a href='/doji/tintuc/$i'>$i</a>";
+}
+
+function news_pagination($p, $total)
+{
+    if ($total <= 1)
+	 return;
+
+    $stages = 3;
+    $pagination = "<div class='paginate'>";
+    $prev = $p - 1;
+    $next = $p + 1;
+
+    if ($p > 1) { // Previous
+        $pagination .= "<a class='prev' href='/doji/tintuc/$prev'>Trang tr??c</a>";
+    }
+    if ($total < 7 + ($stages * 2)) {
+        for ($i = 1; $i <= $total; $i++) {
+            $pagination .= news_getPaginagtionCode($i, $p);
+        }
+    } elseif ($total > 5 + ($stages * 2)) {
+        if ($p < 1 + ($stages * 2)) {
+            for ($i = 1; $i < 4 + ($stages * 2); $i++) {
+                $pagination .= news_getPaginagtionCode($i, $p);
+            }
+            $pagination .= "...";
+            $pagination .= "<a href='/doji/tintuc/" . ($total - 1) . "'>" . ($total - 1) . "</a>";
+            $pagination .= "<a href='/doji/tintuc/$total'>$total</a>";
+        } elseif ($total - ($stages * 2) > $p && $p > ($stages * 2)) {
+            $pagination .= "<a href='/doji/tintuc/1'>1</a>";
+            $pagination .= "<a href='/doji/tintuc/2'>2</a>";
+            $pagination .= "...";
+            for ($i = $p - $stages; $i <= $p + $stages; $i++) {
+                $pagination .= news_getPaginagtionCode($i, $p);
+            }
+            $pagination .= "...";
+            $pagination .= "<a href='/doji/tintuc/" . ($total - 1) . "'>" . ($total - 1) . "</a>";
+            $pagination .= "<a href='/doji/tintuc/$total'>$total</a>";
+        } else {
+            $pagination .= "<a href='/doji/tintuc/1'>1</a>";
+            $pagination .= "<a href='/doji/tintuc/2'>2</a>";
+            $pagination .= "...";
+
+            for ($i = $total - (2 + ($stages * 2)); $i <= $total; $i++) {
+                $pagination .= news_getPaginagtionCode($i, $p);
+            }
+        }
+    }
+
+    if ($p < $total) { // Previous
+        $pagination .= "<a class='next' href='/doji/tintuc/$next'>Trang sau</a>";
+    }
+
+    $pagination .= "</div>";
+    return $pagination;
+}

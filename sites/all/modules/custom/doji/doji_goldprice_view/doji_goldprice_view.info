@@ -1,0 +1,5 @@
+; $Id: doji_goldprice_view.info,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+name = Hien Thi Gia Vang
+package = Doji
+core = 6.x
+version = 6.x

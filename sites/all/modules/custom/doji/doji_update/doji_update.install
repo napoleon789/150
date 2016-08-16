@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the doji_update module.
+ */
+
+/**
+ * Update WGET display
+ */
+function doji_update_update_6200() {
+  $ret = array();
+  $serialize = file_get_contents(drupal_get_path('module', 'doji_update') . '/node_export/wget.txt');
+  $node = unserialize($serialize);
+
+  if (isset($node->nid)) {
+    node_save($node);
+  }
+
+  return $ret;
+}

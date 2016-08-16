@@ -1,0 +1,6 @@
+; $Id: doji_ws.info,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+name = Doji Web Services
+package = Doji
+description = Web services for doji content
+core = 6.x
+version = VERSION

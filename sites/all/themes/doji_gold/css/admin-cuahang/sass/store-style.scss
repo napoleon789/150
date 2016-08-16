@@ -1,0 +1,243 @@
+/* Welcome to Compass.
+ * In this file you should write your main styles. (or centralize your imports)
+ * Import this file using the following HTML or equivalent:
+ * <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css" /> */
+
+//@import "compass/reset";
+@font-face {
+  font-family: 'icomoon';
+  src:url('../fonts/icomoon.eot?-npzu59');
+  src:url('../fonts/icomoon.eot?#iefix-npzu59') format('embedded-opentype'),
+  url('../fonts/icomoon.woff?-npzu59') format('woff'),
+  url('../fonts/icomoon.ttf?-npzu59') format('truetype'),
+  url('../fonts/icomoon.svg?-npzu59#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+@import './../../font.css';
+//=============== variable ===================
+$page-container-width: 1260px;
+
+
+$title-color          : #0d0d0d;
+$table-cell-color     : #000;
+$gray1                : #dfdfdf;
+$gray2                : #a6a6a6;
+$gray3                : #666;
+$red1                 : #e51937;
+$red2                 : #f00;
+$red3                 : #a50119;
+$green                : #0f0;
+
+
+$border1: 1px solid $gray1;
+$border2: 1px solid $gray2;
+
+$width-page-add-store: 600px;
+
+$base-font:'OpenSansRegular', serif;
+$sb-font:'OpenSansSemibold', serif;
+$font-size1: 13px;
+$font-size2: 18px;
+
+$form-item-bg:url(../../../images/banggia/store-form-item-bg.png) repeat-x 0 0;
+$input-bg :url(../../../images/banggia/input-bg.png) repeat-x 0 -1px;
+$store_view :url(../../../images/banggia/xem-bang-hien-thi.png) no-repeat 0 0;
+$store_save :url(../../../images/banggia/tao-bang-hien-thi.png) no-repeat 0 0;
+$store_add :url(../../../images/banggia/them-giatri.png)  no-repeat -4px 0;
+$path-bg:url(../../../images/banggia/path-bg.png)  repeat-x 0 -1px;
+$copy-path-bg:url(../../../images/banggia/copy-path-bg.png)  repeat-x 0 -1px;
+$title-bg:url(../../../images/banggia/title-bg.png)  repeat-x 0 0;
+$remove-item:url(../../../images/banggia/remove-item.png)  repeat-x 0 0;
+$control-bg:url(../../../images/banggia/hethong-banle.png)  no-repeat;
+/*mixin
+====================================================*/
+
+@mixin fonts($style:default) {
+
+    @if $style == sb{
+      font-family: $sb-font;
+    } @else {
+      font-family: $base-font;
+    }
+}
+
+//==================== style ====================
+.page-store{
+  h1.page-title{display: none}
+  #container{width:$page-container-width; @include fonts;
+      .content-middle{ width: auto!important;
+                .system_store{ margin-top: 25px;}
+      }
+      .table_four{width: 100%; display: table; margin: 0 0 45px;
+          .num_table{max-width: 25%;padding: 0 10px; display: table-cell;float: left;position: relative;
+              &:first-child{padding-left: 0}
+              &:last-child{padding-right: 0}
+              h2.title{@include fonts(sb); font-size:$font-size1;color: $red3; text-align: center;background: $title-bg;padding: 8px 0 6px;margin: 0;border: $border1; border-bottom: none;max-width: 290px; }
+              tr.even, tr.odd,tr.even td{ background: #fff;}
+              .item_table {max-width: 290px;border: $border1; border-bottom: none;
+                  table.sticky-table{ width:100%;
+                      thead{
+                          tr th{background:$form-item-bg ; padding: 13px 0 10px; @include fonts(sb);font-size: $font-size1; color: $gray3;line-height: 1;border-left: $border1;border-bottom: $border1;
+                            &:nth-child(1){border-left: none; text-indent: 15px;width: 107px;}
+                            &:nth-child(2),&:nth-child(3){text-align: right; padding-right: 15px;max-width: 90px;width: 74px;}
+                          }}
+                      tbody{tr td{font-size: $font-size1; color: $gray3;line-height: 1;border-left: $border1;border-bottom: $border1;
+                          &:nth-child(1){border-left: none; padding-left: 15px;width: 92px;@include fonts();}
+                          &:nth-child(2),&:nth-child(3){text-align: right; max-width: 90px;width: 74px;@include fonts(sb); vertical-align: middle;font-size: $font-size2;padding: 11px 15px 12px 0;}
+                      }}
+                  }
+              }
+              .system_footer {width: 100%; display: block;
+                  ul {display:table;width: 100%;padding: 0 0 0 7px;margin: 11px 0 0;
+                      li{display:table-cell;
+                          a{background: $control-bg;height: 38px;display: block; width: 82px;text-indent: -9999px;}
+                          &.view a{background-position: -14px -3px;}
+                          &.edit a{background-position: -108px -3px;}
+                          &.delete a{background-position: -201px -3px;}
+                      }
+                  }
+              }
+          }
+      }
+  }
+  .system_store{
+    ul, li{
+      list-style-image: none;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    > ul{
+      margin-bottom: 25px;
+      li{
+        display: inline-block;
+        *display: inline;
+        *zoom:1;
+        margin-right: 5px;
+        font-weight: bold;
+        a{
+          padding: 6px 15px 7px;
+        }
+        .active-tab{
+          background:url("../../../images/banggia/title-bg.png") repeat-x scroll 0 0 rgba(0, 0, 0, 0);
+          display: inline-block;
+          -webkit-border-radius: 3px;
+          -moz-border-radius: 3px;
+          -ms-border-radius: 3px;
+          -o-border-radius: 3px;
+          border-radius: 3px;
+          border:1px solid #dfdfdf;
+          color:#000;
+
+        }
+      }
+    }
+  }
+}
+
+//========================= style page admin bang gia ================================
+.page-store,
+.node-type-store.logged-in,{@include fonts(); color:$gray3 ;
+  #col-center-middle form{
+          .form-item {margin: 0;
+              input,select{ margin: 4px 0;border: $border2;@include fonts();background: $input-bg; color: $title-color;}
+              select{padding:3px 0 3px 9px;}
+              input {padding: 3px 0 5px 9px;}
+          }
+      header {/*width:($width-page-add-store - 2 );*/width: 850px; margin: 0 auto; border: $border1;
+          .form-item{ display: table; width: 100%;background: $form-item-bg; margin: 0;border-top:$border1 ;border-top:$border1 ;
+              label{padding-left: 12px;width:86px;}
+              label,input,select{display: table-cell; vertical-align: middle;@include fonts();}
+          }
+          h2.title{@include fonts(sb);font-size: $font-size2;text-align: center; color: $title-color;line-height:1; padding:12px 0;background:$title-bg;margin:0;
+                :first-letter{text-transform: uppercase;}}
+          .store-name input{ width: 518px;}
+          .groupAndHotLine{ display: table; width: 100%;
+              input,select{width: 200px;}
+              .store_group{display: table-cell; width: 188px;max-width: 188px;
+                    label{width: 86px;}
+                  select{width: 150px;}
+              }
+              .store_hotline{display: table-cell;width: 355px;max-width: 355px;
+                    label{width: 76px;padding-left: 7px;}
+                  select{width: 250px;}
+              }
+          }}
+      .content{/*width:$width-page-add-store;*/width: 852px; margin: 0 auto;position: relative;
+          .store_item fieldset{
+                background: #fff;
+                border: none;
+                padding: 0;
+            -webkit-margin-start: 0;
+            -webkit-margin-end: 0;
+            -webkit-padding-before: 0;
+            -webkit-padding-start: 0;
+            -webkit-padding-end: 0;
+            -webkit-padding-after: 0;
+            -o-margin-start: 0;
+            -o-margin-end: 0;
+            -o-padding-before: 0;
+            -o-padding-start: 0;
+            -o-padding-end: 0;
+            -o-padding-after: 0;
+            -moz-margin-start: 0;
+            -moz-margin-end: 0;
+            -moz-padding-before: 0;
+            -moz-padding-start: 0;
+            -moz-padding-end: 0;
+            -mos-padding-after: 0;
+               legend{display: none}
+            .content-multigroup-edit-table-multiple-columns{border:$border1;border-top: none; }
+                tr.even, tr.odd,tr.even td{background: transparent;}
+                thead th{ background: transparent;border-bottom:$border1;border-left:$border1;color: $gray3; text-indent: 12px;height: 38px; vertical-align: middle;}
+                tbody tr td{ border-right:$border1;
+                    &:last-child{border-right: none;}
+                    &.content-multiple-drag{ width: 40px; height: 37px;padding-left: 12px;
+                        .tabledrag-handle{float: none;padding: 0; margin: 0;
+                          .handle{margin-top: 0px;}}
+                    }
+                    &.content-multigroup-cell-field-dlieu-ch-1 select{ width: 137px; margin:2px 6px;}
+                    &.content-multigroup-cell-field-label-ch-1 input{width: 157px;margin:2px 6px;}
+                    &.content-multigroup-cell-field-mua-ch-1 input,
+                    &.content-multigroup-cell-field-ban-ch-1 input {width: 68px;margin:2px 6px; background: none; border: none; color: $title-color}
+                    &.content-multiple-remove-cell .content-multiple-remove-button{ width: 32px; margin:0 3px 2px 2px; background: $remove-item; border:$border1; border: none; height: 32px;padding: 0;
+                      }
+                }
+            .content-add-more{position: absolute; bottom:15px;
+                input.form-submit{background: transparent; border: none;text-indent: -9999px;width: 120px;}}
+          }
+          .store_control { display: table;padding: 2px 0;
+               .store_add,.store_view,.store_save{display: table-cell;vertical-align: middle;
+                    a,input{ text-indent: -9999px; display: block; border: none;}
+               }
+               .store_add { max-width: 292px; width: 292px;
+                    input{ background: $store_add; width: 129px; height: 44px;}
+               }
+               .store_view { max-width: 175px; width: 175px;
+                    a { background: $store_view;width: 169px; height: 44px;}}
+               .store_save{width: 161px;
+                    input{ background: $store_save;width: 161px; height: 37px;}}
+          }
+          #store_path{position: relative;;font-size:$font-size1; margin-top: 18px;display: inline-block;
+              .form-item{
+                  label{color: $gray3;@include fonts(); margin-left: 15px;}
+                  input{@include fonts(sb);font-size:$font-size2; background: $path-bg;padding:7px 0 9px 15px;width: 610px; }
+              }
+              .copy-path{position: absolute;right: 4px ;bottom: 6px; background: $copy-path-bg; text-indent: -9999px;width: 85px;height: 37px;border: none;}
+          }
+          .content-multigroup-cell-field-chenh-mua, .content-multigroup-cell-field-chenh-ban{
+            input{
+              margin: 2px 6px;
+            }
+          }
+          .content-multiple-remove-cell{
+            vertical-align: middle;
+            .content-multiple-remove-button{
+              margin: 0 !important;
+              float: none;
+            }
+          }
+      }
+
+  }}

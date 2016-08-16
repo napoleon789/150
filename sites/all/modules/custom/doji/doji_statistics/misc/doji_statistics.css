@@ -1,0 +1,109 @@
+/* $Id: doji_statistics.css,v 1.0 2011/10/13 13:25:57 tvazone Exp */
+#doji-statistics-report-form {
+  padding: 20px 0 40px 0;
+}
+
+#doji-statistics-report-form  .container-inline-date {
+  clear: none;
+  float: left;
+  margin: 0;
+}
+
+#doji-statistics-report-form .form-item .form-text,
+#doji-statistics-report-form .form-item .form-select {
+  border: 1px solid #CCCCCC;
+  height: 28px;
+
+  margin-right: 5px;
+  padding-left: 10px;
+  width: 175px;
+}
+
+#doji-statistics-report-form .form-item .form-select {
+  height: 35px;
+  line-height: 35px;
+  padding: 5px;  
+  margin-right: 10px; 
+  float:left;
+}
+
+#doji-statistics-report-form .form-item label {
+  float: left;
+  line-height: 35px;
+  margin-right: 10px; 
+}
+
+#doji-statistics-report-form .form-submit {
+  margin: 0;
+}
+
+table.report {
+  width: 100%;  
+}
+
+table.report thead th {
+  border-left: 1px solid #CCCCCC;
+  border-right: 1px solid #CCCCCC;
+  border-top: 1px solid #CCCCCC;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 10px 35px;
+  text-align: center;
+}   
+
+table.report thead th.first {
+  border-right: medium none;
+}
+
+table.report tbody tr td, 
+table.report tbody tr th  {
+  border-bottom: 1px solid #CCCCCC;
+  border-left: 1px solid #CCCCCC;
+  border-right: 1px solid #CCCCCC;
+  padding: 8px;
+  text-align: center;
+  vertical-align: middle;
+}     
+
+table.report tbody tr td.views-field-field-sjc-le-muavao-value,
+table.report tbody tr th.views-field-field-sjc-le-muavao-value {
+  border-left: 1px solid #CCCCCC;
+}
+
+table.report tr.subheader td {
+  font-weight: bold;
+}
+
+h2.report-title {
+  clear: both;
+  margin: 0;
+  padding-top: 30px;
+}
+
+h3.date {
+  font-weight: normal;
+  margin: 0;
+  padding-bottom: 20px;
+}
+
+#statistics-print {
+  float: right;
+  height: 35px;
+  padding-top: 5px;
+  width: 75px;
+  z-index: 99999;
+}
+
+#statistics-print .export, #statistics-print .print {
+  background: transparent url(print-export-btn.png) no-repeat scroll 0 0;
+  display: block;
+  cursor: pointer;
+  float: left;
+  width: 35px;
+  height: 35px;
+}
+
+#statistics-print .print {
+  background-position: right 0;
+  float: right;
+}

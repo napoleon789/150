@@ -1,0 +1,7 @@
+name = "cua hang"
+description = "Module quan ly he thong cua hang cua Doji"
+core = "6.x"
+package = "Doji"
+version = "6.x-1.0"
+project = "giavang"
+

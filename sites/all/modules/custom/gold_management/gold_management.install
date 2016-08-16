@@ -1,0 +1,50 @@
+<?php
+
+function gold_management_schema() {
+	$schema['gold_management_transactions'] = array(
+     	'fields' => array(
+     		'uid' => array(
+     			'description' => t('User id'),
+     			'type' => 'int',
+     			'unsigned' => TRUE,
+        		'not null' => TRUE
+        		),
+        	'gold_label' => array(
+     			'description' => t('Ten loai vang'),
+     			'type' => 'varchar',
+     			'length' => 100,     			
+        		'not null' => TRUE
+        		),
+        	'date' => array(
+     			'description' => t('ngay thuc hien giao dich'),
+     			'type' => 'varchar',
+     			'length' => 100,     			
+        		'not null' => TRUE
+        		),
+        	'amount' => array(
+        		'description' => 'so luong',
+        		'type' => 'float',
+        		'not null' => TRUE,
+        		),
+        	'price' => array(
+        		'description' => 'gia mot don vi',
+        		'type' => 'float',
+        		'not null' => TRUE
+        		)
+     	),
+     	'indexes' => array(
+   			'uid'                 => array('uid'),
+   		)
+  		);
+  	
+  	return $schema;
+}
+
+function gold_management_install() {
+  // Create my tables.
+  drupal_install_schema('gold_management');
+}
+function gold_management_uninstall() {
+  // Drop my tables.
+  drupal_uninstall_schema('gold_management');
+}

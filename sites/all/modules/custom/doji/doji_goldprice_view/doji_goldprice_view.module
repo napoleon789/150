@@ -1,0 +1,866 @@
+<?php // $Id: doji_goldprice_view.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+function doji_goldprice_view_build_css($attributes = array()) {
+  if (is_array($attributes)) {
+    $t = '';
+    foreach ($attributes as $key => $value) {
+      $t .= $key . ':' .check_plain($value) .';';
+    }
+    $t = "style=$t";
+    return $t;
+  }
+  return '';
+}
+
+function doji_goldprice_view_extract_attribute_from_url($url = NULL) {
+  if (!$url) {
+    $url = $_GET['q'];
+  }
+
+  $attribgutes = array();
+
+  preg_match('|w\/([\d]+)|i', $url, $t);
+
+  if (!empty($t[1])) {
+    $attribgutes['width'] = $t[1] . 'px';
+  }
+
+  preg_match('|h\/([\d]+)|i', $url, $t);
+
+  if (!empty($t[1])) {
+    $attribgutes['height'] = $t[1] . 'px';
+  }
+
+  return $attribgutes;
+}
+
+function doji_goldprice_view_jsonp($object = NULL) {
+  // We are returning JavaScript, so tell the browser.
+  drupal_set_header('Content-Type: text/javascript; charset=utf-8');
+  print $_GET['callback'] . '(' . drupal_to_js($object) . ');';
+  exit;
+}
+
+/**
+ * Implements hook_init().
+ */
+function doji_goldprice_view_init() {
+  drupal_add_js(drupal_get_path('module', 'doji_goldprice_view') .'/misc/doji_goldprice_view.js');
+  drupal_add_css(drupal_get_path('module', 'doji_goldprice_view') .'/misc/doji_goldprice_view.css');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function doji_goldprice_view_menu() {
+  $weight = 0;
+  $items = array();
+  $items['view/giavang'] = array(
+    'title' => t('Xem bảng giá vàng', array(), 'vi'),
+    'page callback' => 'api/goldprice',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['view/doji.vn/giavang'] = array(
+    'title' => t('Giá vàng hiển thị trên trang doji.vn', array(), 'vi'),
+    'page callback' => 'doji_view_doji_gia_vang',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['view/sjchanoi.com.vn/giavang'] = array(
+    'title' => t('Giá vàng hiển thị trên trang sjchanoi.com.vn', array(), 'vi'),
+    'page callback' => 'doji_view_sjchanoi_gia_vang',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['view/bangdoi/giavang'] = array(
+    'title' => t('Lấy dữ liệu giá vàng', array(), 'vi'),
+    'page callback' => 'doji_view_bangdoi_gia_vang',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['view/gia_vang_quocte'] = array(
+    'title' => t('Lấy dữ liệu giá vàng quốc tế', array(), 'vi'),
+    'page callback' => 'doji_view_gia_vang_quocte',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function doji_goldprice_view_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+  if ($form_id == 'doji_goldprice_wget_node_form') {
+    $form['#redirect'] = $_GET['q'];
+    $messages = drupal_get_messages('status');
+    if (count($messages)) {
+      drupal_set_message(t('Lưu <strong>Sắp xếp hiển thị</strong> thành công'));
+    }
+  }
+}
+
+function doji_view_gia_vang($op = 'view', $suffix = 1) {
+
+  $provinces = array();
+
+  $provinces['hn'] = t('Hà Nội', array(), 'vi');
+  $provinces['hcm'] = t('Tp.Hồ Chí Minh', array(), 'vi');
+  $provinces['dn'] = t('Đà Nẵng', array(), 'vi');
+
+  if (!array_key_exists($suffix, $provinces)) {
+    $suffix = '1';
+  }
+
+  $data_path_details = doji_get_data_path_details();
+  $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  '_vungmien_' . $suffix . '.dat';
+
+  if (!$data_path_details['transaction_status']) {
+   // $data_path_details['filepath'] = $data_path_details['path'] . '/transaction_vungmien.dat';
+  }
+
+  $output = file_get_contents($data_path_details['filepath']);
+
+  if (empty($output) || !$output) {
+    $node = doji_get_node('last', 'goldprice');
+    $node1 = doji_get_node('first', 'doji_goldprice_wget');
+    foreach ($node1->{"field_goldprice_field_status_$suffix"} as $k => $v) {
+      $v1 = strtolower($v['value']);
+      if ($v1 != 'on') {
+        continue;
+      }
+
+      $group_access[$node1->{"field_goldprice_field_$suffix"}[$k]['value']] = NULL;
+
+      if (isset($node1->{"field_goldprice_label_$suffix"}[$k]['value']) && $node1->{"field_goldprice_label_$suffix"}[$k]['value']) {
+        $group_access[$node1->{"field_goldprice_field_$suffix"}[$k]['value']]['label'] =  $node1->{"field_goldprice_label_$suffix"}[$k]['value'];
+      }
+    }
+
+    if (count($group_access)) {
+      $output = theme('doji_goldprice_view_1', $node, NULL, NULL, $group_access);
+    }
+    else {
+      $output = t('Hiện không có dữ liệu phù hợp yêu cầu', array(), 'vi');
+    }
+    file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+  }
+
+  if ($op == 'json') {
+    $object = new stdClass;
+    $object->output = $output;
+    $object->status = 1;
+    doji_goldprice_view_jsonp($object);
+  }
+
+  return $output;
+}
+
+function doji_view_doji_gia_vang($op = 'view') {
+  $node = doji_get_node('last', 'goldprice');
+  $node1 = doji_get_node('first', 'doji_goldprice_wget');
+  //Gia Vang
+  foreach ($node1->field_goldprice_field_status_1 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+
+    $group_access[$node1->field_goldprice_field_1[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_1[$k]['value']) && $node1->field_goldprice_label_1[$k]['value']) {
+      $group_access[$node1->field_goldprice_field_1[$k]['value']]['label'] =  $node1->field_goldprice_label_1[$k]['value'];
+    }
+  }
+
+  $footer_message = '<em>' . t('Cập nhật lúc @time1h@time2 ngày @time3', array('@time1' => format_date($node->created, 'custom', 'H'), '@time2' => format_date($node->created, 'custom', 'i'), '@time3' => format_date($node->created, 'custom', 'd/m/Y')), 'vi') . '</em>';
+  $footer_message .= '<br />' . l(t('Nguồn: www.giavang.doji.vn', array()), '', array('absolute' => true));
+  $footer_message .= '<br />' . '<span id="fsms">SMS giá vàng: <b>DOJI</b> gửi <b>8188</b></span>';
+  $footer_message = '<div class="footer-message">' . $footer_message . '</div>';
+  $gold = theme('doji_goldprice_view_1', $node, NULL, $footer_message, $group_access);
+  $gold = '<h3><span id="Cours1_lblLabel_GoldPrice">' . t('Giá vàng', array(), 'vi') . '</span></h3>' . $gold;
+
+  //3Cap gia PhiSJC NL999 NL99
+  $group_access = array();
+  foreach ($node1->field_goldprice_field_status_8 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+
+    $group_access[$node1->field_goldprice_field_8[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_8[$k]['value']) && $node1->field_goldprice_label_8[$k]['value']) {
+      $group_access[$node1->field_goldprice_field_8[$k]['value']]['label'] =  $node1->field_goldprice_label_8[$k]['value'];
+    }
+  }
+  $giavang_nguyenlieu = theme('doji_goldprice_view_1', $node, NULL, $footer_message, $group_access);
+  $giavang_nguyenlieu = '<h3><span id="Cours1_lblLabel_GoldPrice">' . t('Giá vàng nguyên liệu', array(), 'vi') . '</span></h3>' . $giavang_nguyenlieu;
+
+  //Bang gia theo vung mien
+  $group_access = array();
+  foreach ($node1->field_goldprice_field_status_9 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+
+    $group_access[$node1->field_goldprice_field_9[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_9[$k]['value']) && $node1->field_goldprice_label_9[$k]['value']) {
+      $group_access[$node1->field_goldprice_field_9[$k]['value']]['label'] =  $node1->field_goldprice_label_9[$k]['value'];
+    }
+  }
+  $giavang_hn = theme('doji_goldprice_view_1', $node, NULL, $footer_message, $group_access);
+  $giavang_hn = '<div class="giavang-vm-hn">' . $giavang_hn . '</div>';
+
+  $group_access = array();
+  foreach ($node1->field_goldprice_field_status_10 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+
+    $group_access[$node1->field_goldprice_field_10[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_10[$k]['value']) && $node1->field_goldprice_label_10[$k]['value']) {
+      $group_access[$node1->field_goldprice_field_10[$k]['value']]['label'] =  $node1->field_goldprice_label_10[$k]['value'];
+    }
+  }
+  $giavang_hcm = theme('doji_goldprice_view_1', $node, NULL, $footer_message, $group_access);
+  $giavang_hcm = '<div class="giavang-vm-hcm">' . $giavang_hcm . '</div>';
+  //dn
+  $group_access = array();
+  foreach ($node1->field_goldprice_field_status_11 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+
+    $group_access[$node1->field_goldprice_field_11[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_11[$k]['value']) && $node1->field_goldprice_label_11[$k]['value']) {
+      $group_access[$node1->field_goldprice_field_11[$k]['value']]['label'] =  $node1->field_goldprice_label_11[$k]['value'];
+    }
+  }
+  $giavang_dn = theme('doji_goldprice_view_1', $node, NULL, $footer_message, $group_access);
+  $giavang_dn = '<div class="giavang-vm-dn">' . $giavang_dn . '</div>';
+  $jewel = $giavang_hn .$giavang_dn . $giavang_hcm ;
+
+  //Trang suc
+//  $group_access = array();
+//  foreach ($node1->field_goldprice_field_status_6 as $k => $v) {
+//    $v1 = strtolower($v['value']);
+//    if ($v1 != 'on') {
+//      continue;
+//    }
+//
+//    $group_access[$node1->field_goldprice_field_6[$k]['value']] = NULL;
+//
+//    if (isset($node1->field_goldprice_label_6[$k]['value']) && $node1->field_goldprice_label_6[$k]['value']) {
+//      $group_access[$node1->field_goldprice_field_6[$k]['value']]['label'] =  $node1->field_goldprice_label_6[$k]['value'];
+//    }
+//  }
+//
+//  $footer_message = '<em>' . t('Cập nhật lúc @time1h@time2 ngày @time3', array('@time1' => format_date($node->created, 'custom', 'H'), '@time2' => format_date($node->created, 'custom', 'i'), '@time3' => format_date($node->created, 'custom', 'd/m/Y')), 'vi') . '</em>';
+//  //$footer_message .= '<br />' . l(t('Nguồn: www.giavang.doji.vn', array()), '');
+//  $footer_message = '<div class="footer-message">' . $footer_message . '</div>';
+//  $jewel = theme('doji_goldprice_view_1', $node, NULL, $footer_message, $group_access);
+//  $jewel = '<h3><span id="Cours1_lblLabel_GoldPrice">' . t('Giá vàng trang sức', array(), 'vi') . '</span></h3>' . $jewel;
+//
+  //Gia vang quoc te
+  $gold_external = doji_view_gia_vang_quocte();
+  $gold_external = '<h3><span id="Cours1_lblLabel_GoldPrice">' . t('Giá vàng quốc tế, USD/VND', array(), 'vi') . '</span></h3>' . $gold_external;
+  $gold_external .= '<div class="footer-message">' . t('Nguồn: Easy-forex, lúc @time1h@time2 ngày @time3', array('@time1' => format_date(time(), 'custom', 'H'), '@time2' => format_date(time(), 'custom', 'i'), '@time3' => format_date(time(), 'custom', 'd/m/Y')), 'vi') . '</div>';
+
+  if ($op == 'json') {
+    $object = new stdClass;
+    $object->gold = $gold;
+    $object->goldnl = $giavang_nguyenlieu;
+    $object->jewel->hn = $giavang_hn;
+    $object->jewel->hcm = $giavang_hcm;
+    $object->jewel->dn = $giavang_dn;
+    $object->gold_external = $gold_external;
+    $object->status = 1;
+    $object->gold_id = variable_get('dojigold_prefix_filename', -32676);
+
+    doji_goldprice_view_jsonp($object);
+  }
+
+  $output = $gold . $giavang_nguyenlieu . $jewel . $gold_external;
+
+  return $output;
+}
+
+function doji_view_sjchanoi_gia_vang($op = 'view') {
+  $node = doji_get_node('last', 'goldprice');
+  $node1 = doji_get_node('first', 'doji_goldprice_wget');
+  //Trang suc
+  $group_access = array();
+  foreach ($node1->field_goldprice_field_status_7 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+
+    $group_access[$node1->field_goldprice_field_7[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_7[$k]['value']) && $node1->field_goldprice_label_7[$k]['value']) {
+      $group_access[$node1->field_goldprice_field_7[$k]['value']]['label'] =  $node1->field_goldprice_label_7[$k]['value'];
+    }
+  }
+
+  $footer_message = '<strong>' . t('Đơn vị: 1000đ/chỉ') . '</strong><br /><em>' . t('Cập nhật lúc @time1h@time2 ngày @time3', array('@time1' => format_date($node->created, 'custom', 'H'), '@time2' => format_date($node->created, 'custom', 'i'), '@time3' => format_date($node->created, 'custom', 'd/m/Y')), 'vi') . '</em>';
+  //$footer_message .= '<br />' . l(t('Nguồn: www.giavang.doji.vn', array()), '');
+  $footer_message = '<div class="footer-message">' . $footer_message . '</div>';
+  $jewel = theme('doji_goldprice_view_2', $node, NULL, $footer_message, $group_access);
+  $jewel = '<h3><span id="Cours1_lblLabel_GoldPrice">' . t('Giá vàng trang sức', array(), 'vi') . '</span></h3>' . $jewel;
+
+  //Gia vang quoc te
+  $gold_external = doji_view_gia_vang_quocte();
+  $gold_external = '<h3><span id="Cours1_lblLabel_GoldPrice">' . t('Giá vàng quốc tế, USD/VND', array(), 'vi') . '</span></h3>' . $gold_external;
+  $gold_external .= '<div class="footer-message">' . t('Nguồn: Easy-forex, lúc @time1h@time2 ngày @time3', array('@time1' => format_date(time(), 'custom', 'H'), '@time2' => format_date(time(), 'custom', 'i'), '@time3' => format_date(time(), 'custom', 'd/m/Y')), 'vi') . '</div>';
+
+  //Gia Vang
+  $group_access = array();
+  foreach ($node1->field_goldprice_field_status_2 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+
+    $group_access[$node1->field_goldprice_field_2[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_2[$k]['value']) && $node1->field_goldprice_label_2[$k]['value']) {
+      $group_access[$node1->field_goldprice_field_2[$k]['value']]['label'] =  $node1->field_goldprice_label_2[$k]['value'];
+    }
+  }
+  $golds = doji_view_gia_vang_quocte('return');
+
+  if (isset($golds['group_gold']['data']['bid']['data'])) {
+    $node->field_gold_muavao[0]['value'] = str_replace(',', '', $golds['group_gold']['data']['bid']['data']);
+  }
+  if (isset($golds['group_gold']['data']['ask']['data'])) {
+    $node->field_gold_banra[0]['value'] = str_replace(',', '', $golds['group_gold']['data']['ask']['data']);
+  }
+  if (isset($golds['group_quidoi']['data']['bid']['data'])) {
+    $node->field_quidoi_muavao[0]['value'] = str_replace(',', '', $golds['group_quidoi']['data']['bid']['data']);
+  }
+  if (isset($golds['group_quidoi']['data']['ask']['data'])) {
+    $node->field_quidoi_banra[0]['value'] = str_replace(',', '', $golds['group_quidoi']['data']['ask']['data']);
+  }
+
+  $footer_message = '<em>' . t('Cập nhật lúc @time1h@time2 ngày @time3', array('@time1' => format_date($node->created, 'custom', 'H'), '@time2' => format_date($node->created, 'custom', 'i'), '@time3' => format_date($node->created, 'custom', 'd/m/Y')), 'vi') . '</em>';
+  $footer_message .= '<br />' . l(t('Nguồn: www.giavang.doji.vn', array()), '', array('absolute' => true));
+  $footer_message = '<div class="footer-message">' . $footer_message . '</div>';
+  $gold = theme('doji_goldprice_view_2', $node, NULL, $footer_message, $group_access);
+  $gold = '<h3><span id="Cours1_lblLabel_GoldPrice">' . t('Giá vàng Tập đoàn VBĐQ DOJI', array(), 'vi') . '</span></h3>' . $gold;
+
+  if ($op == 'json') {
+    $object = new stdClass;
+    $object->gold = $gold;
+    $object->jewel = $jewel;
+    $object->gold_external = $gold_external;
+    $object->status = 1;
+    $object->gold_id = variable_get('dojigold_prefix_filename', -32676);
+    doji_goldprice_view_jsonp($object);
+  }
+
+  $output = $gold . $jewel . $gold_external;
+  return $output;
+}
+
+function doji_view_bangdoi_gia_vang($op = 'view') {
+  $node = doji_get_node('last', 'goldprice');
+  $node1 = doji_get_node('first', 'doji_goldprice_wget');
+  $groups = array();
+
+  foreach ($node1->field_goldprice_field_status_3 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+    $groups[0][$node1->field_goldprice_field_3[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_3[$k]['value']) && $node1->field_goldprice_label_3[$k]['value']) {
+      $groups[0][$node1->field_goldprice_field_3[$k]['value']]['label'] =  $node1->field_goldprice_label_3[$k]['value'];
+    }
+  }
+
+  foreach ($node1->field_goldprice_field_status_4 as $k => $v) {
+    $v1 = strtolower($v['value']);
+    if ($v1 != 'on') {
+      continue;
+    }
+    $groups[1][$node1->field_goldprice_field_4[$k]['value']] = NULL;
+
+    if (isset($node1->field_goldprice_label_4[$k]['value']) && $node1->field_goldprice_label_4[$k]['value']) {
+      $groups[1][$node1->field_goldprice_field_4[$k]['value']]['label'] =  $node1->field_goldprice_label_4[$k]['value'];
+    }
+
+  }
+
+  $content = theme('doji_goldprice_view_3', $node, NULL, NULL, $groups);
+  $attributes = doji_goldprice_view_extract_attribute_from_url();
+  $attributes_string = doji_goldprice_view_build_css($attributes);
+
+
+  if ($op == 'leed') {
+    print $content;die;
+  }
+
+  if (!empty($attributes_string)) {
+    $content = "<div $attributes_string>$content</div>";
+  }
+
+  return $content;
+}
+
+function doji_view_gia_vang_quocte($op = 'view') {
+  static $cached;
+
+  if (!isset($cached)) {
+    $rows = doji_get_gia_vang_quoc_te('return');
+
+    foreach ($rows as $key=>$row) {
+      unset($rows[$key]['data']['min']);
+      unset($rows[$key]['data']['max']);
+    }
+
+    if (count($rows)) {
+      $headers = array();
+      $headers[] = array('data' => t('Loại', array(), 'vi'), 'class' => 'first');
+      $headers[] = t('Mua vào', array(), 'vi');
+      $headers[] = t('Bán ra', array(), 'vi');
+      $gold_external = theme('table', $headers, $rows, array('class' => 'goldprice-view', 'width' => '100%'));
+    }
+
+    $cached['return'] = $rows;
+    $cached['text'] = $gold_external;
+  }
+
+  if ($op == 'return') {
+    return $cached['return'];
+  }
+
+  return $cached['text'];
+}
+
+function theme_doji_goldprice_view_1($node, $caption = NULL, $footer_message = NULL, $group_access = array(), $add_empty_rows_number = 0, $table_attributes = array('class' => 'goldprice-view', 'width' => '100%')) {
+  global $user;
+  $suffix = array('_muavao', '_banra');
+  $headers = array();
+  $headers[] = array('data' => '<div>' . t('Loại', array(), 'vi') .'</div>', 'class' => 'first');
+  $headers[] = array('data' => '<div>' . t('Mua vào', array(), 'vi') .'</div>');
+  $headers[] = array('data' => '<div>' . t('Bán ra', array(), 'vi') .'</div>', 'class' => 'last');
+
+  $rows = array();
+  $content_groups = fieldgroup_groups('goldprice');
+
+  foreach ($group_access as $k => $groups) {
+    $fieldname = str_replace('group_', 'field_', $k);
+
+    if (!isset($node->{$fieldname .'_muavao'}[0]['value'])) {
+      continue;
+    }
+
+    $row = array();
+
+    foreach ($suffix as $id => $suffix_value) {
+      if (isset($node->{$fieldname . $suffix_value}[0]['value'])) {
+        if (!isset($row['label'])) {
+          $label = isset($group_access[$k]['label']) ? $group_access[$k]['label'] : $content_groups[$k]['label'];
+          $row['label'] = array('data' => $label, 'class' => 'label first');
+        }
+
+        $td_class = 'goldprice-td goldprice-td-' . $id . ' ' . $k;
+
+        if ($id == count($suffix) -1 ) {
+          $td_class .= ' last';
+        }
+
+        $goldprice = str_replace(',', '', $node->{$fieldname . $suffix_value}[0]['value']);
+
+        /*if ($goldprice < 10000) {
+          if (preg_match('|phi_sjc|i', $fieldname . $suffix_value) || preg_match('|nguyen_lieu|i', $fieldname . $suffix_value)) {
+            $goldprice *= 10;
+          }
+        }
+
+        $goldprice = format_number($goldprice);*/
+
+//         if (in_array($fieldname . $suffix_value, array('field_phi_sjc_9999_banra', 'field_nguyen_lieu_99_banra'))) {
+//           $goldprice = '-';
+//         }
+
+        $row[$fieldname . $suffix_value] = array('data' => '<span class="">' . $goldprice . '</span>', 'class' => $td_class);
+      }
+    }
+
+    $rows[] = $row;
+  }
+
+  if (count($rows)) {
+    if ($add_empty_rows_number) {
+      for ($i = 1; $i<= $add_empty_rows_number; $i++) {
+        $row = array();
+        $row[] = array('data' => '&nbsp;', 'colspan' => 3);
+        $rows[] = $row;
+      }
+    }
+    if ($footer_message) {
+      $row = array();
+      $row[] = array('data' => $footer_message, 'colspan' => 3, 'class' => 'footer-message');
+      $rows['footer-message'] = $row;
+    }
+    $output = theme('table', $headers, $rows, $table_attributes, $caption);
+  }
+  return $output;
+}
+
+function theme_doji_goldprice_view_2($node, $caption = NULL, $footer_message = NULL, $group_access = array(), $add_empty_rows_number = 0, $table_attributes = array('class' => 'goldprice-view', 'width' => '100%')) {
+  global $user;
+  $suffix = array('_muavao', '_banra');
+  $headers = array();
+  $headers[] = array('data' => '<div>' . t('Loại', array(), 'vi') .'</div>', 'class' => 'first');
+  $headers[] = array('data' => '<div>' . t('Mua vào', array(), 'vi') .'</div>');
+  $headers[] = array('data' => '<div>' . t('Bán ra', array(), 'vi') .'</div>', 'class' => 'last');
+
+  $rows = array();
+  $content_groups = fieldgroup_groups('goldprice');
+
+  foreach ($group_access as $k => $groups) {
+    $fieldname = str_replace('group_', 'field_', $k);
+
+    if (!isset($node->{$fieldname .'_muavao'}[0]['value'])) {
+      continue;
+    }
+
+    $row = array();
+
+    foreach ($suffix as $id => $suffix_value) {
+      if (isset($node->{$fieldname . $suffix_value}[0]['value'])) {
+        if (!isset($row['label'])) {
+          $label = isset($group_access[$k]['label']) ? $group_access[$k]['label'] : $content_groups[$k]['label'];
+          $row['label'] = array('data' => $label, 'class' => 'label first');
+        }
+
+        $td_class = 'goldprice-td goldprice-td-' . $id . ' ' . $k;
+
+        if ($id == count($suffix) -1 ) {
+          $td_class .= ' last';
+        }
+
+        $row[$fieldname . $suffix_value] = array('data' => '<span class="price-bg">' . format_number(str_replace(',', '', $node->{$fieldname . $suffix_value}[0]['value'])) . '</span>', 'class' => $td_class);
+
+      }
+    }
+
+    $rows[] = $row;
+
+  }
+
+  if (count($rows)) {
+    if ($add_empty_rows_number) {
+      for ($i = 1; $i<= $add_empty_rows_number; $i++) {
+        $row = array();
+        $row[] = array('data' => '&nbsp;', 'colspan' => 3);
+        $rows[] = $row;
+      }
+    }
+
+    $row = array();
+    $row[] = array('data' => '<div class="hline">&nbsp;</div>', 'colspan' => 3, 'class' => 'hline');
+    array_unshift($rows, $row);
+
+    if ($footer_message) {
+      $row = array();
+      $row[] = array('data' => $footer_message, 'colspan' => 3, 'class' => 'footer-message');
+      $rows['footer-message'] = $row;
+    }
+    $output = theme('table', $headers, $rows, $table_attributes, $caption);
+  }
+
+  return $output;
+}
+
+function theme_doji_goldprice_view_3($node, $caption = NULL, $footer_message = NULL, $groups = array(), $add_empty_rows_number = 0, $table_attributes = array('class' => 'goldprice-view', 'width' => '100%')) {
+  global $user;
+  $suffix = array('_muavao', '_banra');
+  $headers = array();
+  $headers[] = array('data' => '<div>' . t('Loại', array(), 'vi') .'</div>', 'class' => 'first');
+  $headers[] = array('data' => '<div>' . t('Mua vào', array(), 'vi') .'</div>');
+  $headers[] = array('data' => '<div>' . t('Bán ra', array(), 'vi') .'</div>');
+  $headers[] = array('data' => '<div>' . t('Loại', array(), 'vi') .'</div>', 'class' => 'first');
+  $headers[] = array('data' => '<div>' . t('Mua vào', array(), 'vi') .'</div>');
+  $headers[] = array('data' => '<div>' . t('Bán ra', array(), 'vi') .'</div>', 'class' => 'last');
+
+  $rows1 = array();
+  $content_groups = fieldgroup_groups('goldprice');
+  $group_access = $groups[0];
+
+  foreach ($group_access as $k => $group) {
+    $fieldname = str_replace('group_', 'field_', $k);
+
+    if (!isset($node->{$fieldname .'_muavao'}[0]['value'])) {
+      continue;
+    }
+
+    $row = array();
+
+    foreach ($suffix as $id => $suffix_value) {
+      if (isset($node->{$fieldname . $suffix_value}[0]['value'])) {
+        if (!isset($row['label1'])) {
+          $label = isset($group_access[$k]['label']) ? $group_access[$k]['label'] : $content_groups[$k]['label'];
+          $row['label1'] = array('data' => $label, 'class' => 'label first');
+        }
+
+        $td_class = 'goldprice-td goldprice-td-' . $id . ' ' . $k;
+        $row[$fieldname . $suffix_value . '1'] = array('data' => '<span class="price-bg">' . format_number(str_replace(',', '', $node->{$fieldname . $suffix_value}[0]['value'])) . '</span>', 'class' => $td_class);
+
+      }
+    }
+
+    $rows1[] = $row;
+  }
+
+  $rows2 = array();
+  $group_access = $groups[1];
+
+  foreach ($group_access as $k => $group) {
+    $fieldname = str_replace('group_', 'field_', $k);
+
+    if (!isset($node->{$fieldname .'_muavao'}[0]['value'])) {
+      continue;
+    }
+
+    $row = array();
+
+    foreach ($suffix as $id => $suffix_value) {
+      if (isset($node->{$fieldname . $suffix_value}[0]['value'])) {
+        if (!isset($row['label'])) {
+          $label = isset($group_access[$k]['label']) ? $group_access[$k]['label'] : $content_groups[$k]['label'];
+          $row['label'] = array('data' => $label, 'class' => 'label first');
+        }
+
+        $td_class = 'goldprice-td goldprice-td-' . $id . ' ' . $k;
+
+        if ($id == count($suffix) -1 ) {
+          $td_class .= ' last';
+        }
+
+        $row[$fieldname . $suffix_value] = array('data' => '<span class="price-bg">' . format_number(str_replace(',', '', $node->{$fieldname . $suffix_value}[0]['value'])) . '</span>', 'class' => $td_class);
+
+      }
+    }
+
+    $rows2[] = $row;
+  }
+
+  $n = max(count($rows1), count($rows2)) - 1;
+  $rows = array();
+
+  for ($i=0; $i<=$n; $i++) {
+    if (isset($rows1[$i]) && isset($rows2[$i])) {
+      $rows[] = $rows1[$i] + $rows2[$i];
+    }
+    if (isset($rows1[$i]) && !isset($rows2[$i])) {
+      $rows[] = $rows1[$i] + array('', '', '');
+    }
+    if (!isset($rows1[$i]) && isset($rows2[$i])) {
+      $rows[] = array('', '', '') + $rows2[$i];
+    }
+  }
+
+  if (count($rows)) {
+    if ($footer_message) {
+      $row = array();
+      $row[] = array('data' => $footer_message, 'colspan' => 3, 'class' => 'footer-message');
+      $rows['footer-message'] = $row;
+    }
+    $output = theme('table', $headers, $rows, $table_attributes, $caption);
+  }
+
+  return $output;
+}
+
+function theme_goldprice_view_main_price($node, $data_path_details = NULL) {
+  global $user;
+  $output = '';
+  $special_arr = array('group_phi_sjc_9999', 'group_nguyen_lieu_999', 'group_nguyen_lieu_99');
+  $special_dn = array('group_doji6', 'group_doji_7');
+  $special_hcm = array('group_sjc_sg_le', 'group_sjc_sg_buon');
+  $special_hn = array('group_sjc_le', 'group_sjc_buon');
+
+  if ($node) {
+    $headers = array();
+    $headers[] = array('data' => '<div class="table_title" >Giá vàng trong nước</div>', 'class' => 'first');
+    $headers[] = array('data' => '<div>' . t('Mua', array(), 'vi') .'</div>');
+    $headers[] = array('data' => '<div>' . t('Bán', array(), 'vi') .'</div>', 'class' => 'last');
+    //Get Gold Price Node
+    $node1 = doji_get_node('first', 'doji_goldprice_wget');
+    $content_groups = fieldgroup_groups('goldprice');
+    $rows = array();
+    //Gia Vang
+    foreach ($node1->field_goldprice_field_status as $k => $v) {
+      $v1 = strtolower($v['value']);
+      if ($v1 != 'on') {
+        continue;
+      }
+
+      $fieldname = str_replace('group_', 'field_', $node1->field_goldprice_field[$k]['value']);
+
+
+        $muavao = str_replace(',', '', $node->{$fieldname . '_muavao'}[0]['value']);
+        $banra = str_replace(',', '', $node->{$fieldname . '_banra'}[0]['value']);
+
+        if ($muavao < 10000) {
+          $muavao *= 10;
+        }
+        if ($banra < 10000) {
+          $banra *= 10;
+        }
+
+        $muavao = format_number($muavao);
+        $banra = format_number($banra);
+        $muavao = '<div class="item-relative">' . $muavao . '</div>';
+        $banra = '<div class="item-relative">' . $banra . '</div>';
+
+
+      if ($node1->field_goldprice_label_home[$k]['value'] && !empty($node1->field_goldprice_label_home[$k]['value'])) {
+        $label = $node1->field_goldprice_label_home[$k]['value'];
+      }
+      else {
+        $label = $content_groups[$node1->field_goldprice_field[$k]['value']]['label'];
+        $label = preg_replace('|(.*?)\(.*|i', '$1', $label);
+      }
+
+      if (in_array($node1->field_goldprice_field[$k]['value'], $special_hn)) {
+
+        if (isset($data_path_details['transaction_status']) && !$data_path_details['transaction_status']) {
+          $muavao = '<div class="item-relative t-center">-</div>';
+          $banra = '<div class="item-relative t-center">-</div>';
+          $post_updated = '<span class="update-time t-red size-14">' . t('Hệ thống đang ngừng giao dịch', array(), 'vi') . '</span>';
+        }
+      }
+
+      if (in_array($node1->field_goldprice_field[$k]['value'], $special_arr)) {
+
+        if (isset($data_path_details['transaction_status_extra']) && !$data_path_details['transaction_status_extra']) {
+          $muavao = '<div class="item-relative t-center">-</div>';
+          $banra = '<div class="item-relative t-center">-</div>';
+        }
+      }
+      if (in_array($node1->field_goldprice_field[$k]['value'], $special_hcm)) {
+
+        if (isset($data_path_details['transaction_status_hcm']) && !$data_path_details['transaction_status_hcm']) {
+          $muavao = '<div class="item-relative t-center">-</div>';
+          $banra = '<div class="item-relative t-center">-</div>';
+        }
+      }
+
+      if (in_array($node1->field_goldprice_field[$k]['value'], $special_dn)) {
+
+        if (isset($data_path_details['transaction_status_dn']) && !$data_path_details['transaction_status_dn']) {
+          $muavao = '<div class="item-relative t-center">-</div>';
+          $banra = '<div class="item-relative t-center">-</div>';
+        }
+        $sub_label = t('(nghìn/lượng)', array(), 'vi');
+      }
+      else {
+        $sub_label = preg_replace('|.*?(\(.*?\)).*|is', '$1', $content_groups[$node1->field_goldprice_field[$k]['value']]['label']);
+      }
+
+      if (isset($node1->field_goldprice_field_b[$k]['value']) && strtolower($node1->field_goldprice_field_b[$k]['value']) != 'on') {
+        $muavao = '<div class="item-relative t-center">-</div>';
+      }
+      if (isset($node1->field_goldprice_field_s[$k]['value']) && strtolower($node1->field_goldprice_field_s[$k]['value']) != 'on') {
+        $banra = '<div class="item-relative t-center">-</div>';
+      }
+
+      $row = array();
+      $row[] = array('data' => t('<span class="title clear-block clear size-18 normal">' . $label . '</span><span class="sub-title clear size-13 normal">' . $sub_label . '</span>', array(), 'vi'), 'class' => 'first');
+      $row[] = array('data' => $muavao, 'class' => 'goldprice-td goldprice-td-0');
+      $row[] = array('data' => $banra, 'class' => 'goldprice-td goldprice-td-1');
+      $rows[] = $row;
+
+    }
+
+    if (!$post_updated) {
+      $post_updated = '<span class="update-time size-14">' . t('Cập nhập lúc: @time', array('@time' => format_date($node->created, 'custom', 'H:i d/m/Y')), 'vi') . '</span>';
+    }
+
+    $output = theme('table', $headers, $rows, array('class' => 'goldprice-view'));
+    $output .= '<p class="left p-l-15" style="color:#666666">' . $post_updated . '</p>';
+  }
+  return $output;
+}
+
+function doji_goldprice_view_main_price() {
+
+  $data_path_details = doji_get_data_path_details();
+  $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  'main_price.dat';
+
+  if (!$data_path_details['transaction_status']) {
+   // $data_path_details['filepath'] = $data_path_details['path'] . '/transaction_main_price.dat';
+  }
+
+  $output = file_get_contents($data_path_details['filepath']);
+  if (empty($output) || !$output) {
+
+    $output = theme('goldprice_view_main_price', doji_get_node('last'), $data_path_details);
+
+    file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+  }
+
+  return $output;
+}
+/**
+ * Implementation of hook_theme().
+ */
+function doji_goldprice_view_theme() {
+  return array(
+    'doji_goldprice_view_1' => array(
+      'arguments' => array(
+        'node' => NULL,
+        'caption' => NULL,
+        'footer_message' => NULL,
+        'group_access' => NULL,
+        'add_empty_rows_number' => NULL,
+        'table_attributes' => NULL,
+      )
+    ),
+    'doji_goldprice_view_2' => array(
+      'arguments' => array(
+        'node' => NULL,
+        'caption' => NULL,
+        'footer_message' => NULL,
+        'group_access' => NULL,
+        'add_empty_rows_number' => NULL,
+        'table_attributes' => NULL,
+      )
+    ),
+    'doji_goldprice_view_3' => array(
+      'arguments' => array(
+        'node' => NULL,
+        'caption' => NULL,
+        'footer_message' => NULL,
+        'groups' => NULL,
+        'add_empty_rows_number' => NULL,
+        'table_attributes' => NULL,
+      )
+    ),
+    'goldprice_view_main_price' => array(
+      'arguments' => array(
+        'node' => NULL,
+        'data_path_details' => NULL,
+      )
+    ),
+  );
+}

@@ -1,0 +1,931 @@
+<?php
+// $Id: doji_area.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+/**
+ * Implement hook_init
+ */
+function doji_area_init() {
+  drupal_add_js(drupal_get_path('module', 'doji_area') . '/js/doji_area.js');
+  drupal_add_css(drupal_get_path('module', 'doji_area') . '/css/doji_area.css');
+}
+
+
+/**
+ * Implement hook_menu
+ */
+
+function doji_area_menu() {
+  $items = array();
+  $items['canhbao'] = array(
+    'title' => t('Trạng thái giao dịch', array(), 'vi'),
+    'page callback' => 'doji_area_canhbao_ajax',
+    'page arguments' => array(1, 2),
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['canhbao_update'] = array(
+    'title' => t('Trạng thái giao dịch', array(), 'vi'),
+    'page callback' => 'doji_area_canhbao_ajax',
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['duyet/content/%'] = array(
+    'title' => t('Duyệt thay đổi', array(), 'vi'),
+    'page callback' => 'doji_area_custom_update',
+    'page arguments' => array(2),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['dojitest'] = array(
+    'title' => t('Duyệt thay đổi', array(), 'vi'),
+    'page callback' => 'doji_area_history_update',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['tuchoi/content/%'] = array(
+    'title' => t('Từ chối thay đổi', array(), 'vi'),
+    'page callback' => 'doji_area_tuchoi',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['biendo/thietlap'] = array(
+    'title' => t('Thiết lập iên độ', array(), 'vi'),
+    'page callback' => 'doji_area_thietlap_biendo',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['doji/thongke/canhbao'] = array(
+    'title' => t('Cảnh báo', array(), 'vi'),
+    'page callback' => 'doji_area_static_canhbao',
+    'access arguments' => array('access administration pages'),
+    'weight' => 1,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/thongke/lichsu'] = array(
+    'title' => t('Lịch sử sửa đổi', array(), 'vi'),
+    'page callback' => 'doji_erea_static_change_capnhat',
+    'access arguments' => array('access administration pages'),
+    'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['canhbao/vung/dn'] = array(
+    'title' => t('Duyệt thay đổi', array(), 'vi'),
+    'page callback' => 'doji_area_warning',
+    'page arguments' => array(2),
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['test123'] = array(
+    'title' => t('Duyệt thay đổi', array(), 'vi'),
+    'page callback' => 'doji_area_field_group',
+
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+// admin area update gia vang
+
+function doji_area_custom_update($nid) {
+
+  $node = doji_get_node('last','goldprice');
+  $node = drupal_clone($node);
+  $node -> uid = 1;
+  $node -> nid = null;
+  $node -> vid = null;
+  $node_app = node_load($nid);
+  $user_app = $node_app -> uid;
+
+  $data_dn = doji_group_getall_field($user_app);
+  foreach($data_dn as $dlieu_dn) {
+    $node->{$dlieu_dn}[0]['value'] =  $node_app->{$dlieu_dn}[0]['value'];
+  }
+  $node -> sticky = 2;
+  $node -> status =1;
+  db_query("UPDATE {canhbao} set status = 1 WHERE nid = %d",$nid);
+
+
+  node_save($node);
+}
+
+/**
+ * implement hook_block
+ */
+
+function doji_area_block($op = 'list', $delta = 0, $edit = array()) {
+  switch($op) {
+    case 'list':
+      $blocks = array();
+      $blocks['canhbao']['info'] = t('Cảnh báo giá vàng', array(), 'vi');
+      $blocks['show_popup']['info'] = t('Hiện popup cảnh báo', array(), 'vi');
+      $blocks['history_node']['info'] = t('Lịch sử thay đổi',array(),vi);
+      $blocks['setting_value']['info'] = t('Thiết lập điều kiện giá nhanh',array(),vi);
+      $blocks['canhbao_area']['info'] = t('Cảnh báo cho user vùng',array(),vi);
+      $blocks['setting_value_vung']['info'] = t('Thiết lập cảnh báo nhanh cho vùng',array(),vi);
+      $blocks['static_canhbao']['info'] = t('Lịch sử cảnh báo',array(),vi);
+      $blocks['canhbao_ajax']['info'] = t('Cảnh báo ', array(), 'vi');
+      return $blocks;
+    case 'view' :
+      $blocks = array();
+      switch ($delta) {
+        case 'canhbao' :
+          $blocks['subject'] = 'Cảnh báo';
+          $blocks['content'] = doji_area_canhbao();
+          break;
+        case 'show_popup':
+          $blocks['subject'] = 'Popup cảnh báo';
+          $blocks['content'] = doji_area_show_popup();
+          break;
+        case 'history_node':
+          $blocks['subject'] = 'Lich sử thay đổi';
+          $blocks['content'] = doji_area_history_update();
+          break;
+        case 'setting_value':
+          $blocks['subject'] = 'Thiết lập điều kiện giá nhanh';
+          $blocks['content'] = doji_area_seting_price();
+          break;
+        case 'canhbao_area':
+          $blocks['subject'] = 'Cảnh báo vùng';
+          $blocks['content'] = doji_area_canhbao_vung();
+          break;
+        case 'setting_value_vung':
+          $blocks['subject'] = 'Thiết lập biên độ vùng';
+          $blocks['content'] = doji_area_thietlap_biendo_vung();
+          break;
+        case 'static_canhbao':
+          $blocks['subject'] = 'Lịch sử cảnh báo';
+          $blocks['content'] = drupal_get_form('doji_area_form_filter');
+          break;
+        case 'canhbao_ajax':
+          $blocks['subject'] = 'Lịch sử cảnh báo';
+          $blocks['content'] = doji_erea_canhbao_ajax_block();
+          break;
+      }
+      return $blocks;
+  }
+}
+
+function doji_erea_canhbao_ajax_block() {
+  $data = doji_area_canhbao_ajax();
+  if (!is_array($data)) {
+    $data = array();
+  }
+  $content  = ' <div class="canhBaoTop the_firt" ><ul>';
+
+  foreach($data as $k => $rows) {
+    $content .= '
+              <li class="table canhbao canhbao{{data.class}} "  rel= "'.$rows['id'].'" onclick = "popUpCanhBao();" on-finish-render="afterLoad()">
+                            <div class="nd_loi table-left" >';
+    switch($rows['status']) {
+      case 'Chờ duyệt':
+        $content .= '<span class="lable_cho"></span>';
+        break;
+      case 'Đã duyệt':
+        $content .= '<span class="lable_da"></span>';
+        break;
+      case 'Từ chối':
+        $content .= '<span class="lable_tu"></span>';
+        break;
+    }
+
+    $content .= ' <div class="hienthi_row" >';
+    foreach($rows['noidung'] as $n => $dlieu) {
+      $content .=  '<div class="row ng-binding ng-scope"  >'.$dlieu.'</div>';
+    }
+
+    $content .=                         '</div>
+                                <div class="hienthi_rowpoup"  ng-click=Start() style=" display:none;" >
+                                    <div class="row_popup" ng-repeat="rows in data.ndpoup">
+                                            <div class="title">{{rows.title}}</div>
+                                        <div >
+                                            <div ng-repeat="row in rows.error">{{row}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-right">'.$rows['time'].'<div class="status{{data.class}}">'.$rows['status'].'</div></div>
+                        </li>
+       ';
+  }
+
+  $content .= ' </ul>  </div>';
+  $output = '
+                <div class="canhBaoTop" style=" display: none" >
+                    <ul>
+                        <li class="table wt-cb">
+                            <div class="row" >{{datas.noidung}}</div>
+                        </li>
+                        <li class="table canhbao canhbao{{data.class}} "ng-repeat="data in datas "  rel={{data.id}} onclick = "popUpCanhBao();" on-finish-render="afterLoad()">
+                            <div class="nd_loi table-left" >
+                                <span class="lable"></span>
+                                <div class="hienthi_row"  ng-click=Stop()>
+                                    <div class="row" ng-repeat="noidung in data.noidung" >{{noidung}}</div>
+                                </div>
+                                <div class="hienthi_rowpoup"  ng-click=Start() style=" display:none;" >
+                                    <div class="row_popup" ng-repeat="rows in data.ndpoup">
+                                            <div class="title">{{rows.title}}</div>
+                                        <div >
+                                            <div ng-repeat="row in rows.error">{{row}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-right">{{data.time}}<div class="status{{data.class}}">{{data.status}}</div></div>
+                        </li>
+                    </ul>
+                </div>
+                <span class="canhBaoLoading">'.$content.'</span>
+            ';
+
+  return $output;
+}
+
+function doji_area_thietlap_biendo_vung() {
+  global $user;
+  $header = array();
+  $header['tt'] = t('TT');
+  $header['dk'] = t('Điều kiện giá');
+  $header['max'] = t('Cao nhất');
+  $header['min'] = t('Thấp nhất');
+
+  $node = doji_get_node('last','biendo');
+  if($user -> uid == 109) {
+    for($i =0;$i<8 ;$i++) {
+      $row['tt'] = $i+1;
+      $row['name'] = $node->field_chungloai_name[$i]['value'];
+      $row['max'] = $node->field_value_thamchieu [$i]['value'] + $node->field_dieukien[$i]['value'];
+      $row['min'] = $node->field_value_thamchieu [$i]['value'] - $node->field_dieukien[$i]['value'];
+      $rows[] = $row;
+    }
+  }
+  if($user -> uid == 108) {
+    for($i =8;$i<16 ;$i++) {
+      $row['tt'] = $i-7;
+      $row['name'] = $node->field_chungloai_name[$i]['value'];
+      $row['max'] = $node->field_value_thamchieu [$i]['value'] + $node->field_dieukien[$i]['value'];
+      $row['min'] = $node->field_value_thamchieu [$i]['value'] - $node->field_dieukien[$i]['value'];
+      $rows[] = $row;
+    }
+  }
+  if($user -> uid == 1) {
+    $header = array();
+    $header['TT'] = t('TT');
+    $header['chungloai'] = t('Chủng loại');
+    $header['gia_chungloai'] = '';
+    $header['thamchieu'] = t('Tham chiếu');
+    $header['gia_thamchieu'] = '';
+    $header['biendo'] = t('Biên độ giá');
+    $header['dk_chuan'] = t('Điều kiện');
+    $header['dk'] = t('Điều kiện');
+    $header['dc'] = t('Điều chỉnh');
+    for($i = 0; $i<16; $i ++) {
+      $gt_tren = $node->field_value_thamchieu[$i]['value'] + $node->field_dieukien[$i]['value'];
+      $row['TT'] = $i;
+      $row['chungloai'] = array('data' =>$node->field_chungloai_name[$i]['value'] ,'class' => 'chung_loai') ;
+      $row['gia_chungloai'] = array('data'=>$node->field_value_chungloai[$i]['value'], 'class'=>'gia');
+      $row['thamchieu'] = array('data' =>$node->field_name_thamchieu[$i]['value'] ,'class' => 'tham_chieu') ;
+      $row['gia_thamchieu'] = array('data' =>$node->field_value_thamchieu[$i]['value'],'class' =>'gia_thamchieu');
+      $row['biendo'] = array('data' =>$node->field_value_thamchieu [$i]['value'] - $node->field_dieukien[$i]['value'] . ' - '.$gt_tren,'class' =>'bdo') ;
+      $row['dk_chuan'] = array('data' =>$node->field_dieukien [$i]['value'],'class' =>'input_dk');
+      $row['dk'] = array('data' =>'<input type="text" value="'.$node->field_dieukien [$i]['value'].'">','class' => 'dk_edit');
+      $row['dc'] = array('data' =>'<span class="sua">Sửa</span><span class="save">Lưu lại</span><span class="huy">Hủy</span> ','class' => 'ctr') ;
+      $rows[] = $row;
+    }
+  }
+  $attributes['class'] = 'whatever';
+  $output = theme('table',$header,$rows,$attributes);
+
+  return $output;
+}
+
+function doji_area_canhbao_vung() {
+  global $user;
+  $uid = $user ->uid;
+  $content = '';
+  $query = db_query("SELECT * FROM {canhbao} WHERE uid = %d",$uid);
+  $kq = db_result($query);
+  $query = db_query("SELECT * FROM {canhbao} WHERE uid = %d ORDER BY status ASC",$uid);
+  if($kq >0 ) {
+    $content .= '<ul class="nd_main">';
+    while($row = db_fetch_array($query)) {
+      switch($row['status']) {
+        case 0:
+          $status = 'Chờ duyệt';
+          $tt = 'choduyet';
+          break;
+        case 1:
+          $status = 'Đã duyệt';
+          $tt ='daduyet';
+          break;
+        case 2 :
+          $status = 'Từ chối';
+          $tt ='tuchoi';
+          break;
+      }
+      $content .= '<li class="table canhbao" rel ="'.$row["nid"].'">';
+      $content .= '<span class="'.$tt.'"></span>';
+      $content .= '<div class="nd_loi table-left">'.$row["nd"].'<div style ="display:none">'.$row['ndpoup'].'</div> </div>';
+      $content .='<div class="table-right">'.date("h:i d/m/Y",$row["time"]).'<div class="'.$tt.'">('.$status.')</div></div>';
+      $content .= '</li>';
+    }
+
+    $content .= '</ul>';
+  }
+  else
+    $content .= '<ul class="nd_main"><li class="table canhbao">Không có vi phạm trong cập nhật giá</li></ul>';
+  return $content;
+}
+
+function doji_area_seting_price() {
+  module_load_include('inc', 'node', 'node.pages');
+  $node = doji_get_node('last','biendo');
+  if (!isset($node->nid)) {
+    $node = doji_get_node_base(array('type' => 'biendo'));
+  }
+  $form = node_page_edit($node);
+  $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+  return $form;
+}
+
+
+function doji_area_canhbao () {
+  global $user;
+  $content = '';
+  $query = db_query("SELECT * FROM {canhbao} WHERE status = 0");
+  $kq = db_result($query);
+  $query = db_query("SELECT * FROM {canhbao} WHERE status = 0 ORDER BY id DESC");
+  if($kq >0 ) {
+    $content .= '<ul class="nd_main">';
+    while($row = db_fetch_array($query)) {
+      $content .= '<li class="table canhbao" rel ="'.$row["nid"].'">';
+      $content .= '<div class="nd_loi table-left">'.$row["nd"].'<div style ="display:none">'.$row['ndpoup'].'</div> </div>';
+      $content .='<div class="table-right">'.date("h:i d/m/Y",$row["time"]).'</div>';
+
+      $content .= '</li>';
+    }
+    $content .= '</ul>';
+  }
+  else
+    $content .= '<ul class="nd_main"><li class="table canhbao">Không có vi phạm trong cập nhật giá</li></ul>';
+  return $content;
+}
+//show popup khi co loi xay ra
+function doji_area_show_popup() {
+  $content = '<h2> Cảnh báo</h2>';
+  $content .= '<div> Giá mua cao hơn giá bán buôn[<a href =""> cập nhật</a>] một lần nữa để tiếp tục ';
+  return $content;
+}
+
+function doji_area_tuchoi() {
+  $nid = arg(2);
+  db_query("UPDATE {node} set status = 2,changed = %d,sticky = 3 WHERE nid = %d",time(),$nid);
+  db_query("UPDATE {canhbao} set status = 2 WHERE nid = %d",$nid);
+}
+
+function doji_area_form_biendo() {
+  $form = array();
+  $form['biendo']['banra'] = array(
+    '#type' => 'textfield',
+    '#value' => 5,
+  );
+  $form['biendo']['banra'] = array(
+    '#type' => 'textfield',
+    '#value' => 5,
+  );
+}
+
+
+function doji_area_insert() {
+  $row= array();
+  $row['field_value'] = 'field_sjc_le';
+  $row['biendo_mua'] = 3;
+  $row['biendo_ban'] = 3;
+  drupal_write_record("biendo",$row);
+}
+
+function doji_area_price_data($field,$type = 'biendo_ban') {
+  $query = db_query_range("SELECT * FROM {biendo} WHERE field_value = '".$field."'");
+  $num = db_result($query);
+  if($num == 1){
+    $query = db_query("SELECT * FROM {biendo} WHERE field_value = '".$field."'");
+    while($row = db_fetch_array($query)) {
+      return $row[$type];
+    }
+  }
+  else
+    return 0;
+}
+
+function doji_area_history_update() {
+  $result = array();
+  $output = '';
+  $output .= '<ul>';
+  $query = db_query_range("SELECT nid,changed,sticky,uid FROM {node} WHERE type = 'goldprice' ORDER BY nid DESC",0,8);
+  while($row = db_fetch_array($query)) {
+
+    if($row['uid'] == 108) {
+      $output .= '<li class="table"><span class="table-left">ĐN cập nhật giá </span>';
+      $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
+    }
+    if($row['uid'] == 109) {
+      $output .= '<li class="table"><span class="table-left">HCM Cập nhật giá </span>';
+      $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
+    }
+    if($row['uid'] == 1) {
+      if(isset($row['sticky']) && $row['sticky'] == 1) {
+        $output .= '<li class="table"><span class="table-left">HN đồng ý cập nhật HCM </span>';
+        $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
+      }
+      if(isset($row['sticky']) && $row['sticky'] == 2) {
+        $output .= '<li class="table"><span class="table-left">HN đồng ý cập nhật giá ĐN </span>';
+        $output .= '<span class="table-right">'. date('d:s d/m/Y',$row['changed']).'</span></li>';
+      }
+      else {
+        $output .= '<li class="table"><span class="table-left">HN cập nhật giá </span>';
+        $output .= '<span class="table-right">'. date('h:i',$row['changed']).' '. date('d/m/Y',$row['changed']).'</span></li>';
+      }
+    }
+  }
+  $output .= '</ul>';
+  return $output;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function doji_area_theme() {
+  return array(
+    'biendo_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+    'canhbao' => array(
+      'arguments' => array('content' => NULL),
+      'template' => 'canhbao',
+      'path' => drupal_get_path('module', 'doji_area') . '/templates',
+    )
+  );
+}
+
+function theme_biendo_node_form($form) {
+  drupal_set_title('');
+  $button = '<div id="submit_duoi">'.drupal_render($form['buttons']['submit']);
+  $button .= '</div>';
+  $output = '
+
+    <div class="cloneFormHeader table">
+     <div class="table-cell first"></div>
+     <div class="table-cell chungloai">Chủng loại</div>
+     <div class="table-cell gia">Giá</div>
+     <div class="table-cell thamchieu">Giá tham chiếu</div>
+     <div class="table-cell gia">Giá </div>
+     <div class="table-cell biendo">Biên độ giá</div>
+     <div class="table-cell dieukien">Điều kiện</div>
+     <div class="table-cell chinhsua">Điều chỉnh</div>
+
+     </div>
+  ';
+  $output .= '<div class="title">'.drupal_render($form['title']).'</div>';
+  $output .=    '<div class="store_item">'.drupal_render($form['group_setting_biendo']).'</div>';
+  $output .= $button;
+  $output .=    '<div style="display:none">' . drupal_render($form) .'</div>';
+
+  return $output;
+}
+
+
+function doji_area_value_chungloai() {
+  $node = doji_get_node('last','biendo');
+}
+
+function doji_area_form_alter(&$form, &$form_state, $form_id) {
+  if($form_id == 'goldprice_node_form') {
+    global $user;
+    $uid = $user -> uid;
+    $field_u = doji_group_getall_field($uid);
+    $field_all = doji_group_getall_field();
+    foreach($field_all as $k1 => $value1) {
+      $form[$value1]['#access'] = FALSE;
+    }
+    foreach($field_u as $k => $value) {
+      $form[$value]['#access'] = TRUE;
+    }
+  }
+}
+
+function doji_area_thietlap_biendo() {
+  $biendo = $_GET['biendo'];
+  $delta = $_GET['delta'];
+  $giaban = $_GET['giaban'];
+  $node = doji_get_node('last', 'biendo');
+  $node ->field_dieukien[$delta]['value'] = $biendo;
+  $node ->field_value_thamchieu[$delta]['value'] = $giaban;
+  node_save($node);
+};
+
+function doji_area_get_biendo() {
+  $node = doji_get_node('last','biendo');
+  $values = array();
+  $values['goc_vung'] = $node ->field_value_chungloai;
+  $values['biendo'] = $node ->field_dieukien;
+  $values['origin'] = $node ->field_value_thamchieu;
+  return $values;
+}
+
+function doji_area_static_canhbao () {
+  $id = $_GET['id'];
+  $time_from = $_GET['from'];
+  $time_to =   $_GET['to'];
+  $erea    =   $_GET['khuvuc'];
+  $dk = '';
+  if(isset($id) && $id == 1)
+    $dk .= 'WHERE id > 0';
+  if(isset($time_from)&& !empty($time_from))
+    $dk .= ' AND time > '.strtotime($time_from);
+  if(isset($time_to)&& !empty($time_to))
+    $dk .= ' AND time < '.strtotime($time_to);
+  if(isset($erea) && $erea != 0)
+    $dk .= ' AND uid = '.$erea;
+  $header = array();
+  $header['STT'] = 'STT';
+  $header["time"] = 'Thời gian';
+  $header['nd'] = 'Nội dung lỗi';
+  $header['chitiet'] = 'Chi tiết';
+  $header['khuvuc'] = 'Khu vực';
+  $header['action'] = 'Hành động';
+
+  $SQL = 'SELECT * FROM {canhbao} WHERE id > 1 '.$dk.' ORDER BY id DESC';
+
+
+  $query = pager_query($SQL,20);
+  while($result = db_fetch_array($query)) {
+    $row['STT'] = $result['id'];
+    $row['time'] =date('H:i d/m/Y',$result['time']);
+    $string_nd = $result['nd'];
+    $string_nd = explode(',',$string_nd);
+    $nd ='';
+    foreach($string_nd as $k => $string_nds) {
+      $nd .= '<div>'.$string_nd[$k].'</div>';
+    }
+    $row['nd'] = $nd;
+    switch($result['uid']) {
+      case 1:
+        $khuvuc = 'Hà Nội';
+        break;
+      case 108:
+        $khuvuc = 'Đà Nẵng';
+        break;
+      case 109:
+        $khuvuc = 'Hồ Chí Minh';
+        break;
+    }
+    $string_ndp = $result['ndpoup'];
+    $string_ndp = explode(';',$string_ndp);
+
+    $ndp ='';
+
+    foreach($string_ndp as $h => $string_ndps) {
+      $ndp .= '<div>'.$string_ndps.'</div>';
+
+    }
+
+    $row['chitiet'] = $ndp;
+    $row['khuvuc'] = $khuvuc;
+    switch($result['status']) {
+      case 0:
+        $trangthai = 'Chờ duyệt';
+        break;
+      case 1:
+        $trangthai = 'Đồng ý';
+        break;
+      case 2:
+        $trangthai = 'Từ chối';
+        break;
+    }
+
+    $row['action'] = $trangthai;
+    $rows[] = $row;
+  }
+  $output = '<div class="page_static"><div class="static_left">'.theme('table',$header,$rows,array('class' => 'report', 'border' => '1'));
+  if($_GET['export'] == true) {
+    doji_excel_export_page($output);
+  }
+  $output .= '<div id="statistics-print"><a href="' . url($_GET['q'], array('query' => 'from=' . $_GET['from']. '&to=' . $_GET['to']. '&khuvuc='.$_GET["khuvuc"].'&export=1')) . '" title="' . t('Lưu lại', array(), 'vi') . '" class="export"></span><a href="#" title="' . t('In', array(), 'vi') . '" class="print"></a></div>';
+  $output .= theme('pager');
+  $output .= '</div>';
+  $output .='<div class="static_right"><h3> Chọn thời gian </h3>'. drupal_get_form('doji_area_form_filter').'</div>';
+  $output .= '</div>';
+
+  return $output;
+}
+function doji_area_form_filter() {
+  $form  = array();
+  $form['satatics']['id'] = array(
+    '#type' => 'textfield',
+    '#title' => 'id',
+    '#default_value' => 1,
+  );
+  $form['satatics']['time_from'] =  array(
+    '#type' => 'date_popup',
+    '#title' => t('Từ', array(), 'vi'),
+    '#size' => 20,
+    '#prefix' => '<div class="combine">',
+    '#date_format' => 'd/m/Y',
+    '#default_value' => date('c', time()),
+    '#date_year_range' => '-5:+5'
+  );
+  $form['satatics']['time_to'] =  array(
+    '#type' => 'date_popup',
+    '#title' => t('Đến', array(), 'vi'),
+    '#size' => 20,
+    '#suffix' => '</div>',
+    '#date_format' => 'd/m/Y',
+    '#default_value' => date('c', time()),
+    '#date_year_range' => '-5:+5'
+  );
+  $form['satatics']['khuvuc'] =  array(
+    '#type' => 'select',
+    '#title' => t('Khu vực'),
+    '#attributes' => array('class' => 'myclass'),
+    '#options' => array(
+      0 => '--Chọn khu vực--',
+      60 => t('Hồ Chí Minh'),
+      59 => t('Đà Nẵng'),
+      1 => t('Hà Nội'),
+    ),
+
+    '#default_value' => '',
+  );
+
+  $form['satatics']['submit'] =  array(
+    '#type' => 'submit',
+    '#value' => t('Xem thống kê'),
+  );
+  return $form;
+}
+
+function  doji_area_form_filter_validate($form, &$form_state){
+  $from = strtotime($form_state['values']['time_from']);
+  $to = strtotime($form_state['values']['time_to']);
+  $area = $form_state['values']['khuvuc'];
+  $query = 'from=' . format_date($from, 'custom', 'm/d/Y') . '&to='.format_date($to, 'custom', 'm/d/Y').'&khuvuc='.$area;
+  $query = str_replace('/', '%2F', $query);
+  drupal_goto($_GET['q'] , $query);
+}
+
+
+function doji_area_path_ajax() {
+  module_load_include('inc', 'node', 'node.pages');
+  $node = doji_get_node('first', 'store');
+
+  if (!isset($node->nid)) {
+    $node = doji_get_node_base(array('type' => 'store'));
+  }
+
+  $form = node_page_edit($node);
+  $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+  return $form;
+}
+
+function doji_area_canhbao_ajax() {
+  global $user;
+  $rows = array();
+
+  if ($user->uid == 1) {
+    $status = ' WHERE status = 0';
+  }
+  else {
+    $status =' WHERE uid = '.$user ->uid;
+  }
+
+  $num = db_result(db_query('SELECT COUNT(id) FROM {canhbao}' . $status));
+
+  if($num == 0) {
+    $arr = array('noidung' => 'Không có cập nhật vi phạm');
+    if(arg(0) == 'canhbao') {
+      drupal_json($arr);
+      die;
+    }
+  }
+  else {
+    $query = db_query_range('SELECT * FROM {canhbao} ' . $status . ' ORDER BY ID DESC', 0, 6);
+
+    while($row = db_fetch_array($query)) {
+      $content['id'] = $row['nid'];
+      $content['uid'] = $row['uid'];
+      $nd_exp = explode(",",$row['nd']);
+      array_pop($nd_exp);
+      $content['noidung'] = $nd_exp;
+      $nd_popup =  $row['ndpoup'];
+      $m = explode(';',$nd_popup);
+      array_pop($m);
+      $tt = '';
+
+      foreach($m as $n) {
+        $tt[] = explode(',',$n);
+      }
+
+      $vn ='';
+
+      foreach($tt as $b => $kk) {
+        $dn['title'] = $content['noidung'][$b];
+        $dn['error'] = $kk;
+        $vn[] = $dn;
+      }
+
+      $content['ndpoup'] = $vn;
+      $content['time'] = date('H:i d/m/Y', $row['time']);
+
+      switch($row['status']) {
+        case 0 :
+          $trangthai = 'Chờ duyệt';
+          break;
+        case 1:
+          $trangthai = 'Đã duyệt';
+          break;
+        case 2:
+          $trangthai = 'Từ chối';
+          break;
+      }
+
+      $content['status'] = $trangthai;
+      $content['class'] = $row['status'];
+      $rows[] = $content;
+    }
+
+    if(arg(0) == 'canhbao') {
+      $m = json_encode($rows);
+      echo $m;
+      exit;
+    }
+
+    return $rows;
+  }
+}
+
+function doji_erea_static_change_capnhat() {
+  $header = array();
+  $header['STT'] = t('STT');
+  $header['tine'] = t('Thời gian');
+  $header['noidung'] = t('Nội dung');
+  $header['user'] = t('User');
+
+  $id = $_GET['id'];
+  $time_from = $_GET['from'];
+  $time_to =   $_GET['to'];
+  $erea    =   $_GET['khuvuc'];
+  $dk = '';
+  if(isset($time_from)&& !empty($time_from))
+    $dk .= ' AND created > '.strtotime($time_from);
+  if(isset($time_to)&& !empty($time_to))
+    $dk .= ' AND created < '.strtotime($time_to);
+  if(isset($erea) && $erea != 0)
+    $dk .= ' AND uid = '.$erea;
+  $sql = "SELECT nid,changed,sticky,uid FROM {node} WHERE type = 'goldprice'".$dk." ORDER BY nid DESC";
+  if(isset($_GET['export']))
+    $query = db_query($sql);
+  else
+    $query = pager_query("SELECT nid,changed,sticky,uid FROM {node} WHERE type = 'goldprice'".$dk." ORDER BY nid DESC",20);
+  $i =0;
+  while($row = db_fetch_array($query)) {
+    $content['stt'] = $i+1;
+    $content['time'] = date('H:i m/d/Y',$row['changed']);
+    if($row['uid'] == 108) {
+      $content['noidung'] = 'DN cập nhật giá';
+      $content['user'] = 'ĐN';
+    }
+    if($row['uid'] == 109) {
+      $content['noidung'] = 'HCM cập nhật giá ';
+      $content['user'] = 'HCM';
+    }
+    if($row['uid'] == 1) {
+      if(isset($row['sticky']) && $row['sticky'] == 1)
+        $content['noidung'] = 'HN đồng ý cập nhật giá HCM ';
+      if(isset($row['sticky']) && $row['sticky'] == 2)
+        $content['noidung'] = 'HN đồng ý cập nhật giá DN ';
+      else
+        $content['noidung'] = 'HN cập nhật giá ';
+      $content['user'] = 'HN';
+    }
+    $rows[] = $content;
+    $i ++;
+  }
+  $path = isset($_GET['q']) ? $_GET['q'] : '<front>';
+  $ex = $_GET['export'];
+
+  $output = '<div class="page_static"><div class="static_left">'.theme('table',$header,$rows,array('class' => 'report', 'border' => '1'));
+  $output .= theme('pager');
+  if(isset($ex))
+    doji_excel_export_page($output);
+
+  $output .= '<div id="statistics-print"><a href="' . url($_GET['q'], array('query' => 'from=' . $_GET['from']. '&to=' . $_GET['to']. '&khuvuc='.$_GET["khuvuc"].'&export=1')) . '" title="' . t('Lưu lại', array(), 'vi') . '" class="export"></span><a href="#" title="' . t('In', array(), 'vi') . '" class="print"></a></div>';
+  $output .= '</div>';
+
+  $output .='<div class="static_right"><h3> Chọn thời gian </h3>'. drupal_get_form('doji_area_form_filter').'</div>';
+  $output .= '</div>';
+  return $output;
+}
+
+function doji_area_get_info($field = 'field_chungloai_name') {
+  $node = doji_get_node('last','biendo');
+  for($i = 0; $i< 16; $i++) {
+    $arr = $node -> {$field}[$i]['value'];
+    $values[] = $arr;
+  }
+  return $values;
+}
+
+
+function doji_get_data_path_details_area() {
+  static $ret;
+  if (!isset($ret)) {
+    $ret = array();
+    $ret['path'] = file_directory_path() .'/area';
+    file_check_directory($path, FILE_CREATE_DIRECTORY);
+    $ret['prefix'] = 'ant' . variable_get('dojigold_prefix_filename', -32767);
+    $ret['transaction_status'] = variable_get('trangthaigiaodich', 1);
+    $ret['transaction_status_extra'] = variable_get('trangthaigiaodich_extra', 1);
+    $ret['transaction_status_extra'] = variable_get('trangthaigiaodich_hcm', 1);
+  }
+  return $ret;
+}
+
+function doji_area_check_status() {
+  global $user;
+  $query = db_query('SELECT nid  FROM {node} WHERE uid = %d ORDER BY nid DESC LIMIT 1', $user -> uid);
+  while($data = db_fetch_array($query)) {
+    db_query("UPDATE {canhbao} SET status = 3 WHERE nid != %d AND status = 0 AND uid = %d",$data['nid'],$user ->uid);
+  }
+}
+
+function doji_area_term_report() {
+  $mang  = array(
+    '1' => 'Hà Nội',
+    '2' => 'Đà Nẵng',
+    '3' => 'HCM',
+  );
+  return $mang;
+}
+function doji_area_type_report() {
+  $mang  = array(
+    '1' => 'DOJI',
+    '2' => 'Nguyên Liệu',
+    '3' => 'Nữ Trang',
+    '4' => 'HTV',
+    '5' => 'KTT',
+  );
+  return $mang;
+}
+
+function doji_area_field_group($vung = 'hn') {
+  $field = 'field_setting_area_'.$vung.'_value';
+  $query = db_query('SELECT '.$field. ' FROM {content_field_setting_area_' . $vung.'}');
+  while($row = db_fetch_array($query)) {
+    $query1 = db_query("SELECT field_name FROM {content_group_fields} WHERE group_name = '%s'", $row[$field]);
+    while($row1 = db_fetch_array($query1)) {
+      $kq[] = $row1['field_name'];
+      $rows = $kq;
+    }
+  }
+
+  return $rows;
+}
+
+function doji_area_field_group_diff($vung='hn') {
+  $field = 'field_goldprice_field_'.$vung.'_value';
+  $query = db_query('SELECT '.$field. ' FROM {content_field_goldprice_field_'.$vung.'}');
+  while($row = db_fetch_array($query)) {
+    $kq[] = $row[$field];
+    $rows = $kq;
+  }
+  return $rows;
+}
+
+function doji_area_biendo_capnhat($node_giavang) {
+  global $user;
+  $node = doji_get_node('last', 'biendo');
+  if (isset($node->field_chungloai)) {
+    $group = $node->field_chungloai;
+    if (is_array($group)) {
+      foreach($group as $k => $field) {
+        $change =  $group[$k]['value'];
+        $m =  $node_giavang-> $change;
+        $node -> field_value_chungloai[$k]['value'] = $m[0]['value'];
+        $gia = $node->field_chungloai[$k]['value'];
+        $gia =  $node_giavang -> {$gia}[0]['value'];
+        $gia3 = $node -> field_thamchieu[$k]['value'];
+        $gia3 =  $node_giavang -> {$gia3}[0]['value'];
+        $node -> field_value_thamchieu[$k]['value'] = $gia3;
+        $gia1 = $gia3 + $node -> field_dieukien[$k]['value'];
+        $gia2 = $gia3 - $node -> field_dieukien[$k]['value'];
+        $node -> field_biendo[$k]['value'] = $gia2.' - '.$gia1;
+      }
+      node_save($node);
+    }
+ }
+}

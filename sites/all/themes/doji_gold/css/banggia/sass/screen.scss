@@ -1,0 +1,104 @@
+/* Welcome to Compass.
+ * In this file you should write your main styles. (or centralize your imports)
+ * Import this file using the following HTML or equivalent:
+ * <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css" /> */
+
+@import "compass/reset";
+
+@import url(http://fonts.googleapis.com/css?family=Noto+Serif:400,700);
+@font-face {
+  font-family: 'Digital-7';
+  src: url('./../font/digital-7.eot');
+  src: local('Digital-7'), url('./../font/digital-7.ttf') format('TrueType');
+}
+/* Variable
+==================================================*/
+$background           : #111;
+$table-cell-color     : #000;
+$red1                 : #e51937;
+$red2                 : #f00;
+$green                : #0f0;
+
+$base-font  : 'Noto Serif', serif;
+$sub-font   : 'Digital-7', serif;
+
+$digital-size1: 60px;
+$digital-size2: 100px;
+$noto-size1: 28px;
+$noto-size2: 36px;
+$noto-size4: 48px;
+$noto-size5: 54px;
+
+$table-cell-border: 5px solid #111;
+$table-cell-border-bottom: 10px solid #111;
+
+
+$width-class:364px;
+$width-buy:280px;
+$width-send:270px;
+
+/*mixin
+====================================================*/
+
+@mixin fonts($font:default,$style:default) {
+  @if $font == noto{
+    font-family: $base-font;
+
+    @if $style == bold {
+      font-weight: 700;
+    } @else {
+      font-weight: 400;
+    }
+  } @else {
+      font-family: $sub-font;
+      font-weight: 400;
+      }
+  }
+
+/* style
+=====================================================*/
+body{
+  @include fonts(noto); font-size: 16px; line-height: 1;letter-spacing: 1.5px;
+  .banggia{ width: 1024px; margin: 0 auto; background: $background; min-height: 200px;padding-top: 40px;
+    .table{display: table;width: 100%;
+        .table-cell {display: table-cell;@include fonts(noto); background: $table-cell-color;width: 432px;color: white;border-bottom: $table-cell-border-bottom; border-left: $table-cell-border; border-right: $table-cell-border;
+          padding: 15px 20px; vertical-align: middle;letter-spacing: 1.5px;
+          span{@include fonts();
+            &.color-red{color: $red2}
+            &.color-green{color: $green;}
+          }
+        }
+      }
+    header {padding: 0 25px 38px;
+      .logo{ display:table;
+        img{display: block;  margin-right: 25px; margin-left: 12px;}
+      }
+      .doji{@include fonts(noto);font-size:$noto-size2;text-transform: uppercase; color: white;display: table-cell;
+        vertical-align: middle; padding-top: 20px; }
+      h1{@include fonts(noto,bold);font-size:$noto-size5; display: block; margin: 87px auto 80px;text-align: center;text-transform: uppercase;color: white;}
+      .table .table-cell{ font-size:$noto-size2;
+        em{width: 138px;display: inline-block;text-transform: uppercase;}
+        span{font-size:$digital-size1;text-transform: uppercase;}
+        .second{color: #ddd;}
+      }
+    }
+    aside .table {
+      &.lable .table-cell{background:$red1; }
+        .table-cell{text-transform: uppercase;
+          &.class{ width: $width-class;max-width:$width-class;border-left: 0;padding: 0 0 0 30px;text-align: left; font-size:$noto-size2;@include fonts(noto);vertical-align: middle;
+          &.g em{font-size:$noto-size1}
+          }
+          &.buy{width:$width-buy;max-width:$width-buy;padding: 0 30px 0 0; text-align: right;@include fonts(); font-size:$digital-size2;vertical-align: middle;
+          &.g{color: $red2;}
+          }
+          &.send{width:$width-send;max-width:$width-send;border-right: 0;padding: 0 30px 0 0;text-align: right;@include fonts(); font-size:$digital-size2;vertical-align: middle;
+            &.g{color: $green;}
+          }
+          span{@include fonts(noto);font-size:$noto-size4;vertical-align: middle }
+        }
+    }
+    footer{padding: 40px 0 30px 30px; font-size: $noto-size1; color: white; background: $red1;margin-top: 30px;letter-spacing: 1.2px;
+    .hotline{margin-right: 50px;}
+    }
+  }
+}

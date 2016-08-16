@@ -1,0 +1,397 @@
+<?php
+// $Id: doji_cuahang.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+/**
+ * Implement hook_init
+ */
+function doji_cuahang_init() {
+  drupal_add_js(drupal_get_path('module', 'doji_cuahang') . '/js/doji_cuahang.js');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function doji_cuahang_menu() {
+
+  $items = array();
+  $items['doji/admin/cuahang'] = array(
+    'title' => t('Quan lý cua hang', array(), 'vi'),
+    'page callback' => 'doji_cuahang_admin',
+    'access arguments' => array('create goldprice content'),
+    'weight' => 10,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['system/%/%'] = array(
+    'title' => t('Quan lý cua hang', array(), 'vi'),
+    'page callback' => 'doji_api_cuahang_none',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['doji/banggia'] = array(
+    'title' => t('Hiển thị', array(), 'vi'),
+    'page callback' => 'doji_cuahang_system_ban',
+    'access arguments' => array('create goldprice content'),
+    'weight' => 3,
+    'type' => MENU_LOCAL_TASK ,
+  );
+  $items['doji/banggia/he-thong-ban-le'] = array(
+    'title' => t('Hệ thống bán lẻ', array(), 'vi'),
+    'page callback' => 'doji_cuahang_system_ban',
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_DEFAULT_LOCAL_TASK ,
+    'weight' => 0,
+  );
+  $items['doji/banggia/create'] = array(
+    'title' => t('Tạo bảng bán lẻ', array(), 'vi'),
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('node/add/store'),
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_LOCAL_TASK ,
+    'weight' => 1,
+  );
+  $items['doji/banggia/led'] = array(
+    'title' => t('Bảng LED', array(), 'vi'),
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_LOCAL_TASK ,
+    'weight' => 2,
+  );
+  $items['banggia/%/%'] = array(
+    'title' => t('Quan lý cua hang', array(), 'vi'),
+    'page callback' => 'doji_api_cuahang_page',
+    'page arguments' => array(3,1,2),
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  //sub menu for system ban le
+  $items['doji/banggia/he-thong-ban-le/1'] = array(
+    'title' => t('Miền Trung', array(), 'vi'),
+    'page callback' => 'doji_cuahang_system_ban',
+    'page arguments' => array(3),
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_DEFAULT_LOCAL_TASK ,
+    'weight' => 0,
+  );
+  $items['doji/banggia/he-thong-ban-le/2'] = array(
+    'title' => t('Miền Nam', array(), 'vi'),
+    'page callback' => 'doji_cuahang_system_ban',
+    'page arguments' => array(3),
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_LOCAL_TASK ,
+    'weight' => 1,
+  );
+
+
+  return $items;
+}
+
+function doji_api_cuahang_none() {
+  return "";
+}
+
+function doji_cuahang_admin() {
+  module_load_include('inc', 'node', 'node.pages');
+  $node = doji_get_node('first', 'store');
+
+  if (!isset($node->nid)) {
+    $node = doji_get_node_base(array('type' => 'store'));
+  }
+
+  $form = node_page_edit($node);
+  $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+  return $form;
+}
+function doji_api_cuahang_page($op,$Filename,$numb_group) {
+  global $user;
+  if (!in_array($op, array('new'))) {
+    unset($op);
+  }
+  drupal_set_header('Content-Type: text/xml');
+  $output = doji_api_cuahang($op,$Filename,$numb_group);
+
+  $output .= "<Source>DOJI GOLD : http://giavang.doji.vn</Source>\n";
+  $output = "<?xml version='1.0' encoding='utf-8'?>\n<GoldList>$output</GoldList>";
+  echo $output;
+}
+
+function doji_api_cuahang($op,$Filename,$numb_group) {
+  global $user;
+  $rows = array();
+
+  $data_path_details = doji_get_data_path_details();
+  $data_path_details['filepath'] = $data_path_details['path'] . '/cuahang/'  . $data_path_details['prefix'] .  'api_'.$Filename.'.dat';
+  $output = file_get_contents($data_path_details['filepath']);
+  if (empty($output) || !$output || $op == 'new') {
+
+    $node = doji_get_node('last');
+    $node1 = node_load($numb_group);
+
+    $content_groups = fieldgroup_groups('goldprice');
+    $datime = '    <DateTime>' . format_date($node->created, 'custom', 'd-m-Y') . '</DateTime>';
+    $name_store = $node1 -> title;
+    $vung = $node1 -> field_area_1[0]['value'];
+    switch($vung) {
+      case 0:
+        $area = 'Hà Nội';
+        break;
+      case 1:
+        $area = 'Đà Nẵng';
+        break;
+      case 2:
+        $area = 'Hồ Chí Minh';
+        break;
+    }
+
+    $hotline = $node1 -> field_hotline_1[0]['value'];
+    $info = "    <info Name='$name_store' area='$area' hotline='$hotline' />\n";
+    $group = 'field_dlieu_ch_1';
+    foreach ($node1->$group as $k => $v) {
+      $dlieu = $node1 -> $group;
+      $fieldname = str_replace('group_', 'field_', $dlieu[$k]['value']);
+      $origin_mua = $node->{$fieldname . '_muavao'}[0]['value'];
+      $chenh_mua = isset($node1->field_chenh_mua[$k]['value'])?$node1->field_chenh_mua[$k]['value']:0;
+      $origin_ban = $node->{$fieldname . '_banra'}[0]['value'];
+      $chenh_ban = isset($node1->field_chenh_ban[$k]['value'])?$node1->field_chenh_ban[$k]['value']:0;
+      $muavao = $origin_mua + (int)$chenh_mua;
+      $banra = $origin_ban + (int) $chenh_ban;
+      $muavao = format_number(str_replace(',', '', $muavao));
+      $banra = format_number(str_replace(',', '', $banra));
+      if ($muavao <= 0) {
+        $muavao = '-';
+      }
+      if ($banra <= 0) {
+        $banra = '-';
+      }
+
+      $label_show = 'field_label_ch_1';
+      $label_show = $node1->$label_show;
+      if ($label_show[$k]['value'] && !empty($label_show[$k]['value'])) {
+        $label = $label_show[$k]['value'];
+      }
+
+      else {
+        $label = $content_groups[$label_show[$k]['value']]['label'];
+        $label = preg_replace('|(.*?)\(.*|i', '$1', $label);
+      }
+
+      $rows[] = "    <Row Name='$label' Sell='$banra' Buy='$muavao' />\n";
+    }
+    if (count($rows)) {
+      $output = "<LED>\n$datime\n" ."$info\n". implode("", $rows) . "</LED>\n";
+      file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+    }
+  }
+  return $output;
+}
+
+/**
+ * @param $node
+ * @param $op
+ * @param null $a3
+ * @param null $a4
+ * implement hook_nodeapi
+ */
+function doji_cuahang_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+
+  if ($node->type == 'store' && arg(1) != 'admin' && in_array($op, array('view', 'insert', 'update'))) {
+    $path = "sites/default/files/data/cuahang/";
+    foreach(glob($path ."*.*") as $file) {
+      unlink($file);
+    }
+    drupal_get_messages();
+    drupal_set_message(t('Thêm hiển thị thành công', array(), 'vi'));
+    drupal_goto('doji/banggia/he-thong-ban-le');
+  }
+  if($node->type == 'store' && in_array($op,array('view','prepare'))) {
+    $node1 = doji_get_node('last');
+    $ch = 'store';
+    $count_group = db_result(db_query("SELECT COUNT(DISTINCT group_name)  FROM {content_group_fields} WHERE type_name ='%s'",$ch));
+    for($i = 1 ;$i<= $count_group; $i++){
+      $group = 'field_dlieu_ch_'.$i;
+      foreach($node->$group as $k => $v) {
+        foreach($v as $m => $n) {
+          $change = str_replace('group_', 'field_', $n);
+
+          $fileMua = $change.'_muavao';
+          $muavao = $node1->$fileMua;
+          $muavao = $muavao[0]['value'];
+
+          $fileBan = $change.'_banra';
+          $banra = $node1 -> $fileBan;
+          $banra = $banra[0]['value'];
+          $fiedlmua = 'field_mua_ch_'.$i;
+          $fiedlban = 'field_ban_ch_'.$i;
+
+          $node-> {$fiedlmua}[$k]['value'] = $muavao;
+          $node-> {$fiedlban}[$k]['value'] = $banra;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function doji_cuahang_theme() {
+  return array(
+    'store_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+    'cuahang' => array(
+      'arguments' => array('content' => NULL),
+      'template' => 'cuahang',
+      'path' => drupal_get_path('module', 'doji_cuahang') . '/templates',
+    )
+  );
+}
+
+function theme_store_node_form($form) {
+  drupal_set_title('');
+  $output ='<div id ="page_cuahang">';
+  $button = '<div id="submit_duoi">'.drupal_render($form['buttons']['submit']);
+  $button .= '</div>';
+  $button = '<div class="store_save">' . $button . '</div>';
+
+  $output  = '<header class="table-header">';
+  $output .=    '<h2 class="title">Thiết lập bảng hiển thị bán lẻ</h2>';
+  $output .=    '<div class="store-name">'.drupal_render($form['title']).'</div>';
+  $output .=    '<div class="groupAndHotLine">';
+  $output .=        '<div class="store_group">'.drupal_render($form['field_area_1']).'</div>';
+  $output .=        '<div class="store_hotline">'.drupal_render($form['field_hotline_1']).'</div>';
+  $output .=    '</div>';
+  $output .= '</header>';
+
+
+  $output .= '<div class="content">';
+  $output .=    '<div class="store_item">'.drupal_render($form['group_value_1']).'</div>';
+  $output .=    '<div class="store_control">';
+  $output .=        '<div class="store_add"> <input type="button" value="Thêm giá trị"/></div>';
+  $output .=        '<div class="store_view"> <a href="../system/doji_'.arg(1).'/'.arg(1).'">Xem bảng hiện thị</a></div>'.$button;
+  $output .=    '</div>';
+  //$output .=    '<div id="store_path">'.drupal_render($form['field_path']).'<input class="copy-path" type="button" value ="Copy"></div>';
+  $output .=    '<div style="display:none">' . drupal_render($form) . '</div>';
+  $output .= '</div></div>';
+
+  return $output;
+}
+
+function doji_cuahang_get_price($id) {
+  $node = doji_get_node('last');
+  $group = 'field_dlieu_ch_1';
+  $node1 = doji_get_node('first', 'store');
+  foreach ($node1->$group as $k => $v) {
+    $dlieu = $node1 -> $group;
+    $change = str_replace('group_', 'field_', $dlieu[$k]['value']);
+
+    $fileMua = $change.'_muavao';
+    $muavao = $node->$fileMua;
+    $muavao = $muavao[0]['value'];
+
+    $fileBan = $change.'_banra';
+    $banra = $node -> $fileBan;
+    $banra = $banra[0]['value'];
+
+  }
+
+  $id = $_GET['fid'];
+  $change = str_replace('group_', 'field_', $id);
+  $fieldname = $change.'_muavao';
+  $muavao = $node->$fieldname;
+  $muavao = $muavao[0]['value'];
+
+  $ban = $change.'_banra';
+  $banra = $node -> $ban;
+  $banra = $banra[0]['value'];
+
+  return drupal_json($banra);
+}
+
+function doji_khachhang_price_mua() {
+  $node = doji_get_node('last');
+  $node1 = doji_get_node('firt','store');
+  $group = 'field_dlieu_ch_1';
+  foreach ($node1->$group as $k => $v) {
+    $dlieu = $node1 -> $group;
+    $fieldname = str_replace('group_', 'field_', $dlieu[$k]['value']);
+    $muavao = format_number(str_replace(',', '', $node->{$fieldname . '_muavao'}[0]['value']));
+    $banra = format_number(str_replace(',', '', $node->{$fieldname . '_banra'}[0]['value']));
+
+    if ($muavao <= 0) {
+      $muavao = '-';
+    }
+    if ($banra <= 0) {
+      $banra = '-';
+    }
+  }
+}
+
+function doji_cuahang_system_ban($id = 0) {
+
+  $node = doji_get_node('last');
+  $query = db_query("SELECT * FROM {content_type_store} WHERE field_area_1_value = %d",$id);
+  while($result = db_fetch_array($query)) {
+    $id = $result['nid'];
+    $node1 = node_load($id);
+    $rows = array();
+    $rows['vid'] = $id;
+    $rows['title'] = $node1-> title;
+    $rows['area'] = $result['field_area_1_value'];
+
+    $rows['hotline'] = $result['field_hotline_1_value'];
+
+    $group = 'field_dlieu_ch_1';
+    $content_groups = fieldgroup_groups('goldprice');
+
+    foreach ($node1->$group as $k => $v) {
+      $label_show = 'field_label_ch_1';
+      $label_show = $node1->$label_show;
+
+      if ($label_show[$k]['value'] && !empty($label_show[$k]['value'])) {
+        $row['lable'] = $label_show[$k]['value'];
+      }
+      else {
+        $label = $content_groups[$label_show[$k]['value']]['label'];
+        $row['lable'] = preg_replace('|(.*?)\(.*|i', '$1', $label);
+      }
+      $dlieu = $node1 -> $group;
+      $fieldname = str_replace('group_', 'field_', $dlieu[$k]['value']);
+
+      $origin_mua = $node->{$fieldname . '_muavao'}[0]['value'];
+      $chenh_mua = isset($node1->field_chenh_mua[$k]['value'])?$node1->field_chenh_mua[$k]['value']:0;
+      $origin_ban = $node->{$fieldname . '_banra'}[0]['value'];
+      $chenh_ban = isset($node1->field_chenh_ban[$k]['value'])?$node1->field_chenh_ban[$k]['value']:0;
+      $muavao = $origin_mua + (int)$chenh_mua;
+      $banra = $origin_ban + (int) $chenh_ban;
+
+      $row['muavao'] = format_number(str_replace(',', '',$muavao));
+      $row['banra'] = format_number(str_replace(',', '', $banra));
+
+      if ($row['muavao'] <= 0) {
+        $row['muavao'] = '-';
+      }
+      if ($row['banra'] <= 0) {
+        $row['banra'] = '-';
+      }
+      $rows[] = $row;
+    }
+    $list[] = $rows;
+  }
+
+  drupal_add_js("module","cuahang").'/js/doji_cuahang.js';
+  $output = theme('cuahang', $list);
+  return $output;
+}
+
+function doji_cuahang_get_header() {
+  $row[] = t('Loại vàng');
+  $row[] = t('Mua vào');
+  $row[] = t('Bán ra');
+  $rows = $row;
+  return $rows;
+}

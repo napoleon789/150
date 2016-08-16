@@ -1,0 +1,57 @@
+#giavang_hien_thi_1 table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#giavang_hien_thi_1 table tr th {
+  border-bottom: 1px solid #c3c3c3;
+  border-right: 1px solid #c3c3c3;
+  text-align: center;
+  padding: 5px;
+}
+
+#giavang_hien_thi_1 table tr td {
+  text-align: right;
+  padding: 5px;
+}
+
+#giavang_hien_thi_1 table tr th.first, #giavang_hien_thi_1 table tr td.first {
+  text-align: left;
+}
+
+#giavang_hien_thi_1  .footer-message {
+  text-align:center;
+}
+
+#giavang_hien_thi_2 table thead {
+  display: none;
+}
+
+#giavang_hien_thi_2 table {
+  width: 100% !important;
+  padding-top: 7px;  
+}
+
+#giavang_hien_thi_2 table tr td {
+  color: #646566;
+  font-weight: bold;
+  padding-bottom: 7px;
+  text-align: right;
+}
+
+#giavang_hien_thi_2 table tr td.first {
+  text-align: left;
+}
+
+div#GoldPrice .body {
+  border-bottom: medium none !important;
+}
+
+#giavang_hien_thi_2 table  td.footer-message em {
+  border-top: 1px dotted #646566;
+  color: #666666;
+  display: block;
+  font-size: 12px;
+  padding-top: 5px;
+  text-align: center;  
+}

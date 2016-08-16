@@ -1,0 +1,129 @@
+<?php
+// $Id: doji_diadiem.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+
+
+/**
+ * Implements hook_menu().
+ */
+function doji_diadiem_menu() {
+  
+  $items = array();
+ 
+  $items['doji/admin/diadiem'] = array(
+    'title' => t('Quản lý địa điểm', array(), 'vi'),
+    'page callback' => 'doji_diadiem_admin',
+    'access arguments' => array('access administration pages'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['doji/diadiem'] = array(
+    'title' => t('Địa Điểm', array(), 'vi'),
+    'page callback' => 'doji_diadiem_content_page_callback',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['doji/diadiem/callback'] = array(
+    'title' => t('Địa Điểm', array(), 'vi'),
+    'page callback' => 'doji_diadiem_content_page_callback',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+function doji_diadiem_admin() {
+	module_load_include('inc', 'node', 'node.pages');
+	$node = doji_get_node('first', 'diadiem');
+
+	if (!isset($node->nid)) {
+    	$node = doji_get_node_base(array('type' => 'diadiem'));
+  	}
+  	
+  	$form = node_page_edit($node);
+  	$form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+  	return $form;
+	
+}
+
+function  doji_diadiem_content_page_callback($term =1){
+  if(arg(2) == 'callback'){
+    $term = $_GET['tid'];
+  }
+  $query = db_query("
+    SELECT a.field_diadiem_phone_value, b.field_diadiem_diachi_value, c.field_diadiem_ten_value,
+    d.field_diadiem_lat_value, e.field_diadiem_long_value
+    FROM content_field_diadiem_phone a,content_field_diadiem_diachi b,content_field_diadiem_ten c,
+    content_field_diadiem_lat d, content_field_diadiem_long e
+    WHERE a.delta = b.delta and b.delta = c.delta and c.delta and c.delta = d.delta and d.delta = e.delta
+    and e.delta in
+    (SELECT delta from content_field_diadiem_city where field_diadiem_city_value ='%d' )",$term
+  );
+  $address = array();
+  while($result = db_fetch_array($query)) {
+    array_push($address,$result);
+  }
+  drupal_set_title('');
+  drupal_add_js(drupal_get_path('module', 'doji_diadiem') . '/js/doji_diadiem.js');
+  $output = theme('diadiem', $address);
+  if(arg(2) == 'callback') {
+  drupal_json(array('status' => TRUE, 'data' => $output));
+  exit();
+  }
+  else
+    return $output;
+}
+
+function doji_diadiem_content_page() {
+	drupal_set_title('');	
+	drupal_add_js(drupal_get_path('module', 'doji_diadiem') . '/js/doji_diadiem.js');
+  	$content = doji_get_node('first', 'diadiem');
+	$output = theme('diadiem', $content);
+	return $output;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ *
+ */
+function doji_diadiem_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($node->type == 'diadiem' && arg(1) != 'admin' && in_array($op, array('view', 'insert', 'update'))) {
+    drupal_get_messages();
+    drupal_set_message(t('Thêm địa điểm thành công', array(), 'vi'));
+    drupal_goto('doji/admin/diadiem');
+  }
+}
+
+
+/**
+ * Implementation of hook_theme().
+ */
+function doji_diadiem_theme() {
+  return array(    
+    'diadiem_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+    'diadiem' => array(
+    	'arguments' => array('content' => NULL),
+    	'template' => 'diadiem',
+    	'path' => drupal_get_path('module', 'doji_diadiem') . '/templates',
+    	)
+  );
+}
+
+function theme_diadiem_node_form($form) {
+ 
+  drupal_set_title('');
+  
+  $output .= drupal_render($form['group_list_diadiem']);  
+  $output .= drupal_render($form['buttons']['submit']);
+  $output .= '<div style="display:none">' . drupal_render($form) . '</div>';
+  return $output;
+}

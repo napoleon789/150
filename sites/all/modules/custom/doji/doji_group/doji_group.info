@@ -1,0 +1,7 @@
+name = "Phan quyen toi user"
+description = "Module quan ly viec phan quyen toi user mr.vantri"
+core = "6.x"
+package = "Doji"
+version = "6.x-1.0"
+project = "giavang"
+

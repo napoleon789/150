@@ -1,0 +1,52 @@
+<?php
+
+//Lay tat ca group cua user
+function doji_group_getall_group($uid){
+  $sql = "SELECT chon.field_dlieu_gia_value as field FROM {content_field_dlieu_gia} chon
+          INNER JOIN {content_field_dlieu_user} user_d ON chon.nid = user_d.nid
+          AND chon.delta = user_d.delta
+          AND user_d.field_dlieu_user_value = ".$uid;
+  $query = db_query($sql);
+  $data = array();
+  while($row = db_fetch_array($query)) {
+    $data[] = $row['field'];
+  }
+  $query1 = db_query("SELECT group_name FROM {doji_group_field} WHERE uid = %d",$uid);
+  $data1 = array();
+  while($row1 = db_fetch_array($query1)) {
+    $data1[] = $row1['group_name'] ;
+  }
+
+  $datas = array_merge($data1 , $data);
+  return $datas;
+}
+
+//Get all field cua user neu isset uid, toan bo field neu !isset uid
+
+function doji_group_getall_field($uid = null) {
+  if(isset($uid)) {
+    $group = doji_group_getall_group($uid);
+  }
+  else {
+    $group = doji_group_getall_group_all();
+
+  }
+  foreach($group as $k => $value) {
+   $field = str_replace('group','field',$value);
+   $row[] = $field.'_muavao';
+   $row[] = $field.'_banra';
+   $row[] = $field.'_chenhlech';
+  }
+  return $row;
+}
+
+//all group trong content type goldprice
+
+function doji_group_getall_group_all() {
+  $query = db_query('SELECT group_name FROM {content_group} WHERE type_name = "goldprice"');
+  while($row = db_fetch_array($query)) {
+    $data[] = $row['group_name'];
+  }
+  return $data;
+}
+

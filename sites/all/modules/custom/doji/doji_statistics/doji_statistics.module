@@ -1,0 +1,576 @@
+<?php // $Id: doji_statistics.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+function doji_statistics_check_time($from, $to, $convert = FALSE) {
+  static $cached;  
+  if (!$cached[$from][$to]) {
+    $cached[$from][$to]['status'] = TRUE;
+    $cached[$from][$to]['time1'] = mktime(0, 0, 0, date('m', strtotime($from)), date('d', strtotime($from)), date('Y', strtotime($from)));
+    $cached[$from][$to]['time2'] = mktime(0, 0, 0, date('m', strtotime($to)), date('d', strtotime($to)), date('Y', strtotime($to)));    
+    if ($cached[$from][$to]['time2'] < $cached[$from][$to]['time1'] || $cached[$from][$to]['time1'] > time()) {
+      $cached[$from][$to]['status'] = FALSE;
+    } 
+    else {
+      $cached[$from][$to]['time2'] = $cached[$from][$to]['time2'] + 86400;
+    }     
+  } 
+  
+  return $cached[$from][$to];
+}
+
+/**
+ * Implements hook_init().
+ */
+function doji_statistics_init() {  
+  drupal_add_css(drupal_get_path('module', 'doji_statistics') .'/misc/doji_statistics.css');
+  drupal_add_js(drupal_get_path('module', 'doji_statistics') .'/misc/jquery.printElement.min.js');
+  drupal_add_js(drupal_get_path('module', 'doji_statistics') .'/misc/doji_statistics.js');            
+}
+
+/**
+ * Implements hook_menu().
+ */
+function doji_statistics_menu() {
+  $weight = 20;
+  $items = array();   
+  $items['doji/thongke'] = array(
+    'title' => t('Thống kê', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_statistics_report_form'),
+    'access arguments' => array('create goldprice content'),
+    'weight' => $weight++,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/thongke/nhatky'] = array(
+    'title' => t('Nhật ký giá vàng', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_statistics_report_form'),
+    'access arguments' => array('create goldprice content'),
+    'weight' => 0,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['doji/excel-export'] = array(
+    'title' => t('Export ra file Excel', array(), 'vi'),
+    'page callback' => 'doji_statistics_report_form',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK
+  );    
+  return $items;
+}
+
+function doji_statistics_report_form() {
+  $timenow = time();
+  $vung = $_GET['vung'] ? $_GET['vung'] : 1;
+  $loai = $_GET['loai'] ? $_GET['loai'] : 1;
+  if (strtotime($_GET['from']['date']) || strtotime($_GET['to']['date'])) {
+    $from = strtotime($_GET['from']['date']) ? strtotime($_GET['from']['date']) : strtotime($_GET['to']['date']);
+    $to = strtotime($_GET['to']['date']) ? strtotime($_GET['to']['date']) : strtotime($_GET['from']['date']);
+  }
+  else {
+    $from = $timenow;
+    $to = $timenow;
+  }
+     
+  $form = array();
+  $form['from'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Từ ngày', array(), 'vi'),
+    '#size' => 20,    
+    '#date_format' => 'd/m/Y',
+    '#default_value' => date('c', $from),
+    '#date_year_range' => '-3:+3'
+  );   
+  $form['to'] = array(
+    '#type' => 'date_popup',
+    '#title' => t('Tới', array(), 'vi'),
+    '#size' => 20,    
+    '#date_format' => 'd/m/Y',
+    '#default_value' => date('c', $to),
+    '#date_year_range' => '-3:+3'
+  );
+  $form['term'] = array(
+    '#type' => 'select',
+    '#title' => t('Vùng', array(), 'vi'),
+   //'#default_value' => variable_get('term',true),
+    '#default_value' => $vung,
+    '#options' => doji_area_term_report(),
+  );
+  $form['type'] = array(
+    '#type' => 'select',
+    '#title' => t('Loại', array(), 'vi'),
+    //'#default_value' => variable_get('type',true),
+    '#default_value' => $loai,
+    '#options' => doji_area_type_report(),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Xem', array(), 'vi'),
+  ); 
+  return $form;  
+}
+
+function doji_statistics_report_form_validate($form, &$form_state) {
+  $vung =$form_state['values']['term'];
+  $type =$form_state['values']['type'];
+  $from = strtotime($form_state['values']['from']);
+  $to = strtotime($form_state['values']['to']); 
+  $timenow = time();
+  
+  if (!$from && $to) {
+    $from = $to;
+  }
+  
+  if (!$to && $from) {
+    $to = $from;
+  }
+      
+  if ($from > $timenow || $from > $to) {
+    form_set_error('abc', t('Thời gian nhập vào không hợp lệ', array(), 'vi')); 
+    return;  
+  }     
+  
+  $query = 'from[date]=' . format_date($from, 'custom', 'm/d/Y') . '&to[date]='.format_date($to, 'custom', 'm/d/Y').'&vung='.$vung .'&loai='.$type;
+  $query = str_replace('/', '%2F', $query);
+  drupal_goto('doji/thongke', $query);
+}
+
+function doji_statistics_report($from, $to, $term, $type, $limit = 100, $a1 = FALSE) {
+  $term = $_GET['vung'];
+  $type = $_GET['loai'];
+
+  switch($term) {
+    case '1':
+      $user = 'n.uid = 1 ';
+      break;
+    case '2' :
+      $user = 'n.uid = 108 ';
+      break;
+    case '3':
+        if($type == 3 || $type == 4) {
+            $user = 'n.uid = 1 ';
+        }
+        else
+            $user = 'n.uid = 109';
+      break;
+  }
+
+  $check_time = doji_statistics_check_time($from, $to);
+  $sqlselect = 'SELECT DISTINCT n.nid nid, n.created created,
+  ctg. *
+
+   FROM {node} n INNER JOIN {content_type_goldprice} ctg ON n.vid = ctg.vid WHERE n.status = 1 AND n.type = "goldprice"' .' AND '.$user.' AND n.created >= "' . $check_time['time1'] . '" AND n.created <= "' . $check_time['time2']. '" ORDER BY n.created DESC';
+  $sqlcount = 'SELECT COUNT(DISTINCT n.nid) total FROM {node} n INNER JOIN {content_type_goldprice} ctg ON n.vid = ctg.vid WHERE n.status = 1 AND n.type = "goldprice" AND n.created >= "' . $check_time['time1'] . '" AND n.created <= "' . $check_time['time2'] . ' AND '.$user.'" ORDER BY n.created DESC';
+
+
+  $obj = db_fetch_object(db_query($sqlcount));
+  
+  if (isset($obj->total) && !intval($_GET['page'])) {
+    $_SESSION['statistics_report_stt'] = $obj->total; 
+  }
+      
+  if (isset($_GET['export'])) {
+    $result = db_query($sqlselect, $limit);  
+  }
+  else {
+    $result = pager_query($sqlselect, $limit);
+  }
+  
+  $items = array();
+  while ($node = db_fetch_object($result)) {
+    $items[] = $node;
+
+  }
+
+  if (strtotime($from) == strtotime($to)) {
+    $string_date = '<h3 class="date">' . t('Ngày ') . format_date(strtotime($from), 'custom', 'd/m/Y') . '</h3>';
+    $a1 = 1;
+  }
+  else {
+    $string_date = '<h3 class="date">' . t('Từ ' ) . format_date(strtotime($from), 'custom', 'd/m/Y') . ' - ' . format_date(strtotime($to), 'custom', 'd/m/Y') . '</h3>';
+    $a1 = 0;
+  }
+  if (count($items)) {
+    $output = theme('goldprice_statistics_nguyenlieu', $items, $a1);
+  }
+
+  $output = '<h2 class="report-title">' . t('NHẬT KÝ GIÁ VÀNG', array(), 'vi') . '</h2>' . $string_date . $output;
+
+  if (isset($_GET['export'])) {
+    doji_excel_export_page($output);  
+  } 
+    
+  $output = '<div id="goldprice-report">' . $output . '</div>';
+  
+  if (count($items)) {
+    $output .= '<div id="statistics-print"><a href="' . url($_GET['q'], array('query' => 'from[date]=' . $from. '&to[date]=' . $to. '&vung='.$term.'&loai='.$type.'&export=1')) . '" title="' . t('Xuất ra file Excel', array(), 'vi') . '" class="export"></span><a href="#" title="' . t('In', array(), 'vi') . '" class="print"></a></div>';
+    $output .= theme('pager', array(), $limit); 
+  }
+  
+  return $output;
+}
+
+/**
+ * Menu callback; Get charts.
+ */
+function doji_excel_export_page($data) {
+  $filename = 'ThongKeGiaVangNgay-' . date('d-m-Y') . '.xls';
+  header('Content-Description: File Transfer');
+  header('Content-Type: application/octet-stream');
+  header('Content-Disposition: attachment; filename=' . $filename);
+  header('Content-Transfer-Encoding: binary');
+  header('Expires: 0');
+  header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+  header('Pragma: public');
+  echo "\xEF\xBB\xBF"; // UTF-8 BOM  
+  print $data;exit;
+}
+
+
+function theme_goldprice_statistics($nodes = array(), $a1 = FALSE) {
+  $headers = array();  
+  $headers[] = array('data' => '', 'colspan' => 2, 'class' => 'info');
+  $headers[] = array('data' => t('Giá QT (USD/OZ)', array(), 'vi'), 'colspan' => 1, 'class' => 'sjc-le', 'align' => 'center');
+  $headers[] = array('data' => t('DOJI HN lẻ (nghìn/chỉ)', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+  $headers[] = array('data' => t('DOJI HN buôn (nghìn/chỉ)', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+  $headers[] = array('data' => t('DOJI HCM lẻ (nghìn/chỉ)', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+  $headers[] = array('data' => t('DOJI HCM buôn (nghìn/chỉ)', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');    
+  $limit = 100;
+  $page = intval($_GET['page']);
+  $i = 0;
+  
+  $rows = array();
+  $row[] = array('data' => t('STT', array(), 'vi'), 'class' => 'first', 'align' => 'center');
+  $row[] = array('data' => t('Thời gian', array(), 'vi'), 'class' => 'time', 'align' => 'center');
+  $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+  //$row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');
+  $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+  $row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');
+  $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+  $row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');
+  $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+  $row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');
+  $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+  $row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');  
+  $rows[] = array('data' => $row, 'class' => 'subheader');
+      
+  foreach ($nodes as $obj) {
+    $row = array();
+    $i++;
+    //$row['stt'] = $limit*$page + $i;
+    $row['stt'] = $_SESSION['statistics_report_stt']--;    
+      
+    if ($a1) {
+      $row['created'] = array('data' => format_date($obj->created, 'custom', 'H:i'), 'class' => 'time', 'align' => 'center');  
+    }
+    else {
+      $row['created'] = array('data' => format_date($obj->created, 'custom', 'H:i d/m/Y'), 'class' => 'time', 'align' => 'center');       
+    }
+    
+    $obj->gold_muavao = str_replace(",", "", $obj->gold_muavao);
+    //$obj->gold_banra = str_replace(",", "", $obj->gold_banra);
+    $obj->sjc_le_muavao = str_replace(",", "", $obj->sjc_le_muavao);
+    $obj->sjc_le_banra = str_replace(",", "", $obj->sjc_le_banra);
+    $obj->sjc_buon_muavao = str_replace(",", "", $obj->sjc_buon_muavao);
+    $obj->sjc_buon_banra = str_replace(",", "", $obj->sjc_buon_banra);
+    $obj->sjc_sg_le_muavao = str_replace(",", "", $obj->sjc_sg_le_muavao);
+    $obj->sjc_sg_le_banra = str_replace(",", "", $obj->sjc_sg_le_banra);
+    $obj->sjc_sg_buon_muavao = str_replace(",", "", $obj->sjc_sg_buon_muavao);
+    $obj->sjc_sg_buon_banra = str_replace(",", "", $obj->sjc_sg_buon_banra);    
+        
+    $row[] = array('data' => format_number($obj->gold_muavao, 2), 'class' => 'buy', 'align' => 'center');
+    //$row[] = array('data' => format_number($obj->gold_banra), 'class' => 'sell', 'align' => 'center');
+    $row[] = array('data' => format_number($obj->sjc_le_muavao), 'class' => 'buy', 'align' => 'center');
+    $row[] = array('data' => format_number($obj->sjc_le_banra), 'class' => 'sell', 'align' => 'center');        
+    $row[] = array('data' => format_number($obj->sjc_buon_muavao), 'class' => 'buy', 'align' => 'center');
+    $row[] = array('data' => format_number($obj->sjc_buon_banra), 'class' => 'sell', 'align' => 'center');  
+    $row[] = array('data' => format_number($obj->sjc_sg_le_muavao), 'class' => 'buy', 'align' => 'center');
+    $row[] = array('data' => format_number($obj->sjc_sg_le_banra), 'class' => 'sell', 'align' => 'center');        
+    $row[] = array('data' => format_number($obj->sjc_sg_buon_muavao), 'class' => 'buy', 'align' => 'center');
+    $row[] = array('data' => format_number($obj->sjc_sg_buon_banra), 'class' => 'sell', 'align' => 'center');        
+    $rows[] = $row;
+  }
+  
+  $output = '';
+  
+  if (count($rows) > 1) {
+    $output = theme('table', $headers, $rows, array('class' => 'report', 'border' => '1'));  
+  }
+  
+  return $output;
+}
+
+function theme_goldprice_statistics_nguyenlieu($nodes = array(), $a1 = FALSE) {
+  $headers = array();
+  $headers[] = array('data' => '', 'colspan' => 2, 'class' => 'info');
+  if($_GET['vung'] == 1) {
+    if($_GET['loai'] == 1)
+    {
+      $headers[] = array('data' => t('Giá QT (USD/OZ', array(), 'vi'), 'colspan' => 1, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Doji lẻ Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Doji buôn Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == '2') {
+      $headers[] = array('data' => t('Nguyên liệu 9999 Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nguyên liệu 999 Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == 3) {
+      $headers[] = array('data' => t('Nữ trang 9999 Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nữ trang 999 Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nữ trang 99 Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == '4') {
+      $headers[] = array('data' => t('Hưng Thịnh Vượng Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+      if($_GET['loai'] == '5') {
+          $headers[] = array('data' => t('Kim Thần Tài Hà Nội', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      }
+  }
+  if($_GET['vung'] == 2) {
+    if($_GET['loai'] == 1)
+    {
+      $headers[] = array('data' => t('Doji lẻ ĐN', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Doji buôn ĐN', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == '2') {
+      $headers[] = array('data' => t('Nguyên liệu 9999 Đà Nẵng', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nguyên liệu 999 Đà Nẵng', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == 3) {
+      $headers[] = array('data' => t('Nữ trang 9999 ĐN', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nữ trang 999 ĐN', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nữ trang 99 ĐN', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == '4') {
+      $headers[] = array('data' => t('Hưng Thịnh Vượng Đà Nẵng', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      //$headers[] = array('data' => t('Kim Thần Tài Đà Nẵng', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+      if($_GET['loai'] == '5') {
+         // $headers[] = array('data' => t('Hưng Thịnh Vượng Đà Nẵng', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+          $headers[] = array('data' => t('Kim Thần Tài Đà Nẵng', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      }
+  }
+  if($_GET['vung'] == 3) {
+    if($_GET['loai'] == 1)
+    {
+      $headers[] = array('data' => t('Doji lẻ HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Doji buôn HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == '2') {
+      $headers[] = array('data' => t('Nguyên liệu 9999 HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nguyên liệu 999 HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == 3) {
+      $headers[] = array('data' => t('Nữ trang 9999 HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nữ trang 999 HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      $headers[] = array('data' => t('Nữ trang 99 HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+    if($_GET['loai'] == '4') {
+      $headers[] = array('data' => t('Hưng Thịnh Vượng HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+     // $headers[] = array('data' => t('Kim Thần Tài HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+    }
+      if($_GET['loai'] == '5') {
+         // $headers[] = array('data' => t('Hưng Thịnh Vượng HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+          $headers[] = array('data' => t('Kim Thần Tài HCM', array(), 'vi'), 'colspan' => 2, 'class' => 'sjc-le', 'align' => 'center');
+      }
+  }
+  $limit = 100;
+  $page = intval($_GET['page']);
+  $i = 0;
+
+  $rows = array();
+  $row[] = array('data' => t('STT', array(), 'vi'), 'class' => 'first', 'align' => 'center');
+  $row[] = array('data' => t('Thời gian', array(), 'vi'), 'class' => 'time', 'align' => 'center');
+  if($_GET['vung'] ==1 && $_GET['loai'] ==1)
+    $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'time', 'align' => 'center','style' =>'width:100px');
+  $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+  $row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');
+    if($_GET['loai'] ==1 || $_GET['loai'] == 2) {
+        $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+        $row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');
+    }
+
+  if($_GET['loai'] == 3) {
+    $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+    $row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');
+    $row[] = array('data' => t('Mua', array(), 'vi'), 'class' => 'buy', 'align' => 'center');
+    $row[] = array('data' => t('Bán', array(), 'vi'), 'class' => 'sell', 'align' => 'center');
+  }
+  $rows[] = array('data' => $row, 'class' => 'subheader');
+
+  foreach ($nodes as $obj) {
+    $row = array();
+    $i++;
+    //$row['stt'] = $limit*$page + $i;
+    $row['stt'] = $_SESSION['statistics_report_stt']--;
+
+    if ($a1) {
+      $row['created'] = array('data' => format_date($obj->created, 'custom', 'H:i'), 'class' => 'time', 'align' => 'center');
+    }
+    else {
+      $row['created'] = array('data' => format_date($obj->created, 'custom', 'H:i d/m/Y'), 'class' => 'time', 'align' => 'center');
+    }
+    if(!($_GET['vung'])) {
+      $row[] = array('data' => format_number($obj->field_sjc_le_muavao_value ), 'class' => 'buy', 'align' => 'center');
+      $row[] = array('data' => format_number($obj->field_sjc_le_banra_value ), 'class' => 'sell', 'align' => 'center');
+      $row[] = array('data' => format_number($obj->field_sjc_buon_muavao_value ), 'class' => 'buy', 'align' => 'center');
+      $row[] = array('data' => format_number($obj->field_sjc_buon_banra_value ), 'class' => 'sell', 'align' => 'center');
+    }
+    if($_GET['vung'] == 1) {
+      switch($_GET['loai']) {
+        case 1:
+          $row[] = array('data' => format_number($obj->field_gold_muavao_value ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_le_muavao_value ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_le_banra_value ), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_buon_muavao_value ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_buon_banra_value ), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 2:
+          $row[] = array('data' => format_number($obj->field_nguyen_lieu_999_muavao_value  ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nguyen_lieu_999_banra_value  ), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nguyen_lieu_99_muavao_value  ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nguyen_lieu_99_banra_value  ), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 3:
+          $row[] = array('data' => format_number($obj->field_vang_24k_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_vang_24k_banra_value), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu_3_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu_3_banra_value), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu_tr5_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu_tr5_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 4:
+          $row[] = array('data' => format_number($obj->field_nhan4_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nhan4_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 5:
+          $row[] = array('data' => format_number($obj->field_ki1_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_ki1_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+      }
+    }
+    if($_GET['vung'] == 2) {
+      switch($_GET['loai']) {
+        case 1:
+          $row[] = array('data' => format_number($obj->field_sj1_muavao_value ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sj1_banra_value ), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_d2_muavao_value ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_d2_banra_value ), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 2:
+          $row[] = array('data' => format_number($obj->field_nguye8_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nguye8_banra_value), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nguy0_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nguy0_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 3:
+          $row[] = array('data' => format_number($obj->field_nu_t0_muavao_value  ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu_t0_banra_value  ), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu_2_muavao_value  ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu_2_banra_value ), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu1_muavao ), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nu1_banra ), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 4:
+          $row[] = array('data' => format_number($obj->field_nh5_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nh5_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 5:
+          $row[] = array('data' => format_number($obj->field_kim7_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_kim7_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+      }
+    }
+    if($_GET['vung'] == 3) {
+      switch($_GET['loai']) {
+        case 1:
+          $row[] = array('data' => format_number($obj->field_sjc_sg_le_muavao_value ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_sg_le_banra_value ), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_sg_buon_muavao_value ), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_sjc_sg_buon_banra_value ), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 2:
+          $row[] = array('data' => format_number($obj->field_nguye2_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nguye2_banra_value), 'class' => 'sell', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_ng5_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_ng5_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 3:
+            $row[] = array('data' => format_number($obj->field_vang_24k_muavao_value), 'class' => 'buy', 'align' => 'center');
+            $row[] = array('data' => format_number($obj->field_vang_24k_banra_value), 'class' => 'sell', 'align' => 'center');
+            $row[] = array('data' => format_number($obj->field_nu_3_muavao_value), 'class' => 'buy', 'align' => 'center');
+            $row[] = array('data' => format_number($obj->field_nu_3_banra_value), 'class' => 'sell', 'align' => 'center');
+            $row[] = array('data' => format_number($obj->field_nu_tr5_muavao_value), 'class' => 'buy', 'align' => 'center');
+            $row[] = array('data' => format_number($obj->field_nu_tr5_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+        case 4:
+          $row[] = array('data' => format_number($obj->field_nhan4_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_nhan4_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+      case 5:
+          $row[] = array('data' => format_number($obj->field_kim_t4_muavao_value), 'class' => 'buy', 'align' => 'center');
+          $row[] = array('data' => format_number($obj->field_kim_t4_banra_value), 'class' => 'sell', 'align' => 'center');
+          break;
+
+      }
+    }
+
+    $rows[] = $row;
+  }
+
+  $output = '';
+  if (count($rows) > 1) {
+    $output = theme('table', $headers, $rows, array('class' => 'report', 'border' => '1'));
+  }
+
+  return $output;
+}
+
+
+function theme_doji_statistics_report_form($form = array()) {
+  $output = drupal_render($form);
+  $timenow = time();
+  drupal_set_title('');
+  
+  if (strtotime($_GET['from']['date']) || strtotime($_GET['to']['date'])) {
+    $from = strtotime($_GET['from']['date']) ? $_GET['from']['date'] : $_GET['to']['date'];
+    $to = strtotime($_GET['to']['date']) ? $_GET['to']['date'] : $_GET['from']['date'];     
+  }
+  else {
+    $from = format_date($timenow, 'custom', 'm/d/Y');
+    $to = $from;  
+  }
+
+  $check_time = doji_statistics_check_time($from, $to);
+  $term = $_GET['term'];
+  $type = $_GET['type'];
+
+  if ($check_time['status']) {
+    $output .= doji_statistics_report($from, $to, $term, $type);
+  }     
+  
+  return $output;
+}
+/**
+ * Implementation of hook_theme().
+ */
+function doji_statistics_theme() {
+  return array(
+    'doji_statistics_report_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+    'goldprice_statistics' => array(
+      'arguments' => array(
+        'nodes' => array(),
+        'a1' => TRUE,
+      )
+    ),
+    'goldprice_statistics_nguyenlieu' => array(
+      'arguments' => array(
+        'nodes' => array(),
+        'a1' => TRUE,
+      )
+    ),
+
+  );
+}

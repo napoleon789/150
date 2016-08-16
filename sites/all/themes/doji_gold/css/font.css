@@ -1,0 +1,26 @@
+@font-face {
+    font-family: 'MyriadPro';
+    src: url("fonts/MyriadPro.eot"); /* IE9 Compat Modes */
+    src: local("MyriadPro"), url("fonts/MyriadPro.ttf")  format("truetype"),
+         url("fonts/MyriadPro.eot?#iefix") format("embedded-opentype"),
+         url("fonts/MyriadPro.woff") format("woff"),
+         url("fonts/MyriadPro.svg#svgMyriadPro") format("svg");
+}
+
+@font-face {
+    font-family: 'OpenSansRegular';
+    src: url("fonts/OpenSansRegular.eot"); /* IE9 Compat Modes */
+    src: local("OpenSansRegular"), url("fonts/OpenSansRegular.ttf")  format("truetype"),
+         url("fonts/OpenSansRegular.eot?#iefix") format("embedded-opentype"),
+         url("fonts/OpenSansRegular.woff") format("woff"),
+         url("fonts/OpenSansRegular.svg#svgOpenSansRegular") format("svg");
+}
+
+@font-face {
+    font-family: 'OpenSansSemibold';
+    src: url("fonts/OpenSansSemibold.eot"); /* IE9 Compat Modes */
+    src: local("OpenSansSemibold"), url("fonts/OpenSansSemibold.ttf")  format("truetype"),
+         url("fonts/OpenSansSemibold.eot?#iefix") format("embedded-opentype"),
+         url("fonts/OpenSansSemibold.woff") format("woff"),
+         url("fonts/OpenSansSemibold.svg#svgOpenSansSemibold") format("svg");
+}

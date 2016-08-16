@@ -1,0 +1,13 @@
+name = App Iphone
+description = "Provides a servive used to send Push Notifications using the device token."
+package = Apple Push Notification Service Package
+version = "6.x-1.0"
+core = "6.x"
+project = "App Iphone"
+
+; Information added by drupal.org packaging script on 2011-08-04
+version = "6.x-1.2"
+core = "6.x"
+project = "1225224"
+datestamp = "1312462022"
+

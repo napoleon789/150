@@ -1,0 +1,105 @@
+<?php
+
+function doji_user_setting_id_hienthi() {
+  $query = db_query("SELECT field_set_user_value as uid FROM {content_type_user_setting}");
+  while($row = db_fetch_array($query)) {
+    $data[] = $row['uid'];
+  }
+  return $data;
+}
+
+function doji_show_gia_vang($uid = null) {
+  if(!isset($uid)) {
+    $user = doji_add_user_get();
+  }
+  else {
+    $user = array($uid => 'macdinh');
+  }
+
+  $output = '';
+  foreach($user as $uid => $giatri) {
+    $nid_node_show = db_result(db_query('SELECT nid from {content_type_show} WHERE field_set_user_value = %d',$uid));
+    $all_field = doji_show_get_allfield_from_nid($nid_node_show);
+    $data_path_details = doji_get_data_path_details();
+    $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  '_vungmien_' . $uid . '.dat';
+    $output = file_get_contents($data_path_details['filepath']);
+    if (empty($output) || !$output) {
+      $node = doji_get_node('last', 'goldprice');
+      $node1 = node_load($nid_node_show);
+
+      foreach ($node1->field_set_select_data as $k => $v) {
+        $m = $node1->{field_set_select_data}[$k]['value'];
+        $group_access[$m] = NULL;
+        if (isset($node1->field_set_label[$k]['value']) && $node1->field_set_label[$k]['value']) {
+          $group_access[$node1->field_set_select_data[$k]['value']]['label'] =  $node1->field_set_label[$k]['value'];
+        }
+      }
+      if (count($group_access)) {
+        $output .= '<h2 class="title_bang"> Bảng giá tại'.$uid.'</h2>';
+        $output .= theme('doji_goldprice_view_1', $node, NULL, NULL, $group_access);
+      }
+      else {
+        $output = t('Hiện không có dữ liệu phù hợp', array(), 'vi');
+      }
+      file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
+    }
+  }
+  return $output;
+}
+
+function doji_show_get_allfield_from_nid($nid) {
+  $query = db_query("SELECT field_set_select_data_value as group_name FROM {content_field_set_select_data} WHERE nid = %d",$nid);
+  while($row= db_fetch_array($query)) {
+    $data[] = $row['group_name'];
+  }
+  $rows = array();
+  foreach($data as $k => $value) {
+    $field = str_replace('group','field',$value);
+    $mua_vao = $field.'_muavao';
+    $ban_ra =  $field.'_banra';
+    $rows[] = $mua_vao;
+    $rows[] = $ban_ra;
+  }
+  return $rows;
+}
+
+function doji_show_select_vung() {
+  $user = doji_add_user_get();
+  $form['area'] = array(
+    '#type' => 'select',
+    '#title' => t('Chọn khu vực', array(), 'vi'),
+    '#default_value' => $vung,
+    '#options' => $user,
+  );
+  return $form;
+}
+
+/**
+ * implement hook_block
+ */
+
+function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
+  switch($op) {
+    case 'list':
+      $blocks = array();
+      $blocks['setting_biendo']['info'] = t('Thiết lập biên độ', array(), 'vi');
+      return $blocks;
+    case 'view' :
+      $blocks = array();
+      switch ($delta) {
+        case 'setting_biendo' :
+          $blocks['subject'] = 'Thiết lập biên độ';
+          $blocks['content'] = doji_show_setting_biendo();
+          break;
+      }
+      return $blocks;
+  }
+}
+
+function doji_show_setting_biendo() {
+  module_load_include('inc', 'node', 'node.pages');
+  $node = node_load(45748);
+  $form = node_page_edit($node);
+  $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
+  return $form;
+}

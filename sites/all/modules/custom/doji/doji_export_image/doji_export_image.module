@@ -1,0 +1,701 @@
+<?php
+// $Id: doji_export_image.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+
+/**
+ * Implements hook_menu().
+ */
+
+function doji_export_image_menu() {
+  $items = array();
+  $items['export/image'] = array(
+    'title' => t('Export biểu đồ ra ảnh', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_chart_create_form'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_CALLBACK
+  );
+  $items['export/filechart'] = array(
+    'title' => t('Export biểu đồ ra ảnh', array(), 'vi'),
+    'page callback' => 'doji_charts_create',
+    'access arguments' => array('administer users'),
+    'type' => MENU_CALLBACK
+  );
+  return $items;
+}
+function doji_charts_create() {
+  //doji_export_1tuan();
+  //doji_export_1day();
+  //doji_export_3day();
+  doji_export_tabs();
+  //doji_chart_save_server();
+}
+
+/**
+ * copy file to difference server
+ */
+function doji_chart_save_server() {
+
+  $conn = ftp_connect("192.241.211.27") or die("Could not connect");
+  ftp_login($conn,"tricv","chuvantri");
+ // ftp_put($conn,"1day.html","sites/default/files/bieudo/1day.html",FTP_ASCII);
+  //ftp_put($conn,"3day.html","sites/default/files/bieudo/3day.html",FTP_ASCII);
+  //ftp_put($conn,"1tuan.html","sites/default/files/bieudo/1tuan.html",FTP_ASCII);
+  ftp_put($conn,"tabs.html","sites/default/files/bieudo/tabs.html",FTP_ASCII);
+
+}
+function doji_export_1tuan() {
+    $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+    $doji_chat_show_block = $doji_chart_block_views['block_5'];
+    $data = '<script src="http://giavang.doji.vn/sites/all/modules/contrib/jquery_update/replace/jquery.min.js"></script>';
+    $data .= '<script src="http://giavang.doji.vn/sites/all/modules/custom/doji/doji_charts/misc/highchart/js/highcharts.src.js"></script>';
+    $data .= ' <meta charset="utf-8">';
+    $data .= '<div id ="bd7d" style="width: 335px;height: 220px"></div>';
+    $js =    doji_export_image_view_get(array('width' => '290', 'height' => '220', 'title_fontsize' => '16px','chart_block' => $doji_chat_show_block));
+    $data .= '<script>'.$js.'</script>';
+    file_save_data($data,'bieudo/1tuan.html',FILE_EXISTS_REPLACE);
+}
+function doji_export_1day() {
+  $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+  $doji_chat_show_block = $doji_chart_block_views['block_1'];
+  $data = '<script src="http://giavang.doji.vn/sites/all/modules/contrib/jquery_update/replace/jquery.min.js"></script>';
+  $data .= '<script src="http://giavang.doji.vn/sites/all/modules/custom/doji/doji_charts/misc/highchart/js/highcharts.src.js"></script>';
+  $data .= ' <meta charset="utf-8">';
+  $data .= '<div id ="bd1d" style="width: 335px;height: 220px"></div>';
+  $js =    doji_export_image_view_get(array('width' => '290', 'height' => '220', 'title_fontsize' => '16px','chart_block' => $doji_chat_show_block));
+  $data .= '<script>'.$js.'</script>';
+  file_save_data($data,'bieudo/1day.html',FILE_EXISTS_REPLACE);
+}
+
+function doji_export_3day() {
+  $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+  $doji_chat_show_block = $doji_chart_block_views['block_2'];
+  $data = '<script src="http://giavang.doji.vn/sites/all/modules/contrib/jquery_update/replace/jquery.min.js"></script>';
+  $data .= '<script src="http://giavang.doji.vn/sites/all/modules/custom/doji/doji_charts/misc/highchart/js/highcharts.src.js"></script>';
+  $data .= ' <meta charset="utf-8">';
+  $data .= '<div id ="bd3d" style="width: 335px;height: 220px"></div>';
+  $js =    doji_export_image_view_get(array('width' => '290', 'height' => '220', 'title_fontsize' => '16px','chart_block' => $doji_chat_show_block));
+  $data .= '<script>'.$js.'</script>';
+  file_save_data($data,'bieudo/3day.html',FILE_EXISTS_REPLACE);
+}
+
+function doji_export_tabs() {
+  $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+  $doji_chat_show_block = $doji_chart_block_views['block_1'];
+  $doji_chat_show_block1 = $doji_chart_block_views['block_2'];
+  $doji_chat_show_block2 = $doji_chart_block_views['block_5'];
+
+  $data = '<script src="http://giavang.doji.vn/sites/all/modules/contrib/jquery_update/replace/jquery.min.js"></script>';
+  $data .= '<script src="http://giavang.doji.vn/sites/all/modules/custom/doji/doji_charts/misc/highchart/js/highcharts.src.js"></script>';
+  //$data .= '<meta http-equiv="refresh" content="240">';
+  $data .= '<meta http-equiv="pragma" content="no-cache" />';
+  $data .= '
+  <script>
+  (function(i,s,o,g,r,a,m){i[\'GoogleAnalyticsObject\']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,\'script\',\'//www.google-analytics.com/analytics.js\',\'ga\');
+
+  ga(\'create\', \'UA-47831427-1\', \'doji.vn\');
+  ga(\'send\', \'pageview\');
+  
+    </script>';
+  $data .= ' <meta charset="utf-8">';
+  $data .= '<div id="tabs">';
+  $data .= '<div id ="bd1d" class="chart show1" style="width: 290px;height: 192px"></div>';
+  $data .= '<div id ="bd3d" class="chart" style="width: 290px;height: 192px"></div>';
+  $data .= '<div id ="bd7d" class="chart" style="width: 290px;height: 192px"></div>';
+  $data .= '</div>';
+  $data .= '<ul>';
+  $data .= '<li id="bd1d"><a >Biểu đồ 24h</a> | </li>';
+  $data .= '<li  id="bd3d"><a> 3 ngày</a> | </li>';
+  $data .= '<li  id="bd7d"><a> 1 tuần</a></li>';
+  $data .= '</ul>';
+
+  $js   =    doji_export_image_view_get(array('chart_block' => $doji_chat_show_block));
+  $js1  =    doji_export_image_view_get(array('chart_block' => $doji_chat_show_block1));
+  $js2  =    doji_export_image_view_get(array('chart_block' => $doji_chat_show_block2));
+  $jstab ='
+      $("ul li").each(function() {
+       $(".chart").hide();
+        $(".chart.show1").show();
+        $("ul li#bd1d").css("font-weight","bold")
+        $(this).click(function() {
+            $("ul li").css("font-weight","normal")
+            $(this).css("font-weight","bold");
+            var id = $(this).attr("id");
+            $(".chart").hide();
+            $("#tabs .chart").each(function() {
+                var chart = $(this).attr("id");
+                if(id == chart) {
+                    $(this).show();
+                }
+            })
+        })
+    })
+  ';
+  $css = '
+           ul a:hover {cursor:pointer;}
+           ul{margin:-7px auto 0;text-align: center;}
+           div#bd1d {display: block;}
+           ul li{display: inline;margin-right: 6px;float: left;}
+           a{font-size: 12px;line-height: 28px;}
+
+  ';
+  $data .= '<script>'. $js .'</script>';
+  $data .= '<script>'. $js1 .'</script>';
+  $data .= '<script>'. $js2 .'</script>';
+  $data .= '<script>'. $jstab .'</script>';
+  $data .= '<style>'. $css .'</style>';
+
+  file_save_data($data,'bieudo/tabs.html',FILE_EXISTS_REPLACE);
+}
+
+
+function doji_export_image_view_get($params = array()) {
+  $static_data = doji_chart_get_static_data($params);
+  if (isset($static_data['output']['data']) && !empty($static_data['output']['data'])) {
+    if (isset($static_data['jscontent']['data']) && !preg_match('|highcharts\.chart|i', $static_data['jscontent']['data'])) {
+      drupal_add_js(drupal_get_path('module', 'doji_export_image') .'/misc/highchart/js/highcharts.src.js');
+      drupal_add_js($static_data['jscontent']['data'], 'inline');
+      return $static_data['output']['data'];
+    }
+  }
+  $node = doji_get_node('last', 'goldprice');
+  //variable_set('doji_chart_in_processing', 1);
+
+  if (isset($node->nid)) {
+    $params = doji_get_params($params);
+    $sqlselect = 'SELECT ctg.field_' .  $params['middle_field'] . '_le_muavao_value, ctg.field_' .  $params['middle_field'] . '_le_banra_value, n.created
+      FROM {content_type_goldprice} ctg
+      INNER JOIN {node} n ON ctg.vid = n.vid
+      WHERE n.status = 1 AND n.created >= %d AND n.created <= %d
+      ORDER BY n.created ASC';
+
+    $doji_chart_price_setting = variable_get('doji_chart_price_setting', array());
+    $result = db_query($sqlselect, $params['time1'], $params['time2']);
+    $row = array();
+    $timenow = time();
+    $basetime = mktime(0, 0, 0, date('m', $timenow), date('d', $timenow), date('y', $timenow));
+    $time1 = NULL;
+    $time2 = NULL;
+    $y_categories = array();
+    $y_min = 999999;
+    $y_max = 0;
+
+
+    while ($obj = db_fetch_object($result)) {
+      $obj->{"field_$params[middle_field]" . "_le_muavao_value"} = str_replace(',', '', $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) * 10;
+      $obj->{"field_$params[middle_field]"."_le_banra_value"} = str_replace(',', '', $obj->{"field_$params[middle_field]"."_le_banra_value"}) * 10;
+      $le_muavao =  '[' . $obj->created . '000,' . $obj->{"field_$params[middle_field]" . "_le_muavao_value"} . ']';
+      $le_banra =  '[' . $obj->created . '000,' . $obj->{"field_$params[middle_field]"."_le_banra_value"} . ']';
+
+      $row['sjc_le_banra'][$obj->created] = $le_banra;
+      $row['sjc_le_muavao'][$obj->created] = $le_muavao;
+
+      if (!$first_time) {
+        if (!$params['hide_title']) {
+          $current_hour = date('G', $timenow);
+          $first_time = $timenow - 86400;
+          $params['tickInterval'] = 4 * 3600;
+          //$first_time = $basetime + 7200;
+        }
+        else {
+          $dec_time = (int)$params['chart_block']['time'] - 0.4;
+          if ($dec_time < 0) {
+            $dec_time = 2.6;
+          }
+          $first_time = $basetime - $dec_time*86400;
+        }
+        $row['sjc_le_banra'][$first_time] = '[' . $first_time . '000,' . $obj->{"field_$params[middle_field]" . "_le_banra_value"} . ']';
+        $row['sjc_le_muavao'][$first_time] = '[' . $first_time . '000,' . $obj->{"field_$params[middle_field]"."_le_muavao_value"} . ']';
+
+        if ($first_time < $obj->created && !$params['hide_title']) {
+          $sqlselect = 'SELECT ctg.field_' .  $params['middle_field'] . '_le_muavao_value, ctg.field_' .  $params['middle_field'] . '_le_banra_value, n.created
+            FROM {content_type_goldprice} ctg
+            INNER JOIN {node} n ON ctg.vid = n.vid
+            WHERE n.status = 1 AND n.created <= %d
+            ORDER BY n.created DESC LIMIT 1';
+          $first_obj = db_fetch_object(db_query($sqlselect, $first_time));
+
+          $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"} = str_replace(',', '', $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"}) * 10;
+          $first_obj->{"field_$params[middle_field]"."_le_banra_value"} = str_replace(',', '', $first_obj->{"field_$params[middle_field]"."_le_banra_value"}) * 10;
+
+          $row['sjc_le_banra'][$first_time] = '[' . $first_time . '000,' . $first_obj->{"field_$params[middle_field]" . "_le_banra_value"} . ']';
+          $row['sjc_le_muavao'][$first_time] = '[' . $first_time . '000,' . $first_obj->{"field_$params[middle_field]"."_le_muavao_value"} . ']';
+
+          if ($y_min > $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+            $y_min = $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+          }
+          if ($y_min > $first_obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+            $y_min = $first_obj->{"field_$params[middle_field]"."_le_banra_value"};
+          }
+          if ($y_max < $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+            $y_max = $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+          }
+          if ($y_max < $first_obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+            $y_max = $first_obj->{"field_$params[middle_field]"."_le_banra_value"};
+          }
+
+        }
+      }
+
+      $plottime = format_date($obj->created, 'custom', 'H:i');
+      $x_categories[] = $plottime;
+
+      if ($y_min > $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+        $y_min = $obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+      }
+      if ($y_min > $obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+        $y_min = $obj->{"field_$params[middle_field]"."_le_banra_value"};
+      }
+      if ($y_max < $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+        $y_max = $obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+      }
+      if ($y_max < $obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+        $y_max = $obj->{"field_$params[middle_field]"."_le_banra_value"};
+      }
+    }
+
+    $d = 50;
+
+    if (($y_max%100) > 55) {
+      $y_max = floor($y_max/100)*100 + 200;
+    }
+    else {
+      $y_max = floor($y_max/100)*100 + 100;
+    }
+
+    if (($y_min%100) < 1) {
+      $y_min = floor($y_min/100)*100 -100;
+    }
+    else {
+      $y_min = floor($y_min/100)*100;
+    }
+
+    $params['yaxis-tickInterval'] = ($y_max - $y_min)/$d;
+    $params['yaxis-tickInterval'] *= 10;
+    $items = array($y_min, $y_max, $params['yaxis-tickInterval']);
+    //dsm($items, 'items');
+
+    $params['yAxis-min-max'] = "
+       min: $y_min,
+       max: $y_max,
+    ";
+
+    if (!$params['hide_title']) {
+      $title = $params['label'] . ' (nghìn/lượng): ' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value'])*10) . '/' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10);
+      $subtitle= 'Biểu đồ 24h';
+      $params['sub_title_top'] = $params['title_top'] + 25;
+      $params['x-legend'] = -40;
+      $params['y-legend'] = 25;
+      $addtext = "
+        <span class='right-titlte-1 addtext'>(Nghìn/<br/>lượng)</span>
+        <span class='right-subtitlte-1 addtext'>(tg)</span>
+      ";
+    }
+    else {
+      $subtitle= $params['title'];
+      $params['x-legend'] = -40;
+      $params['y-legend'] = 0;
+      $params['sub_title_top'] = $params['title_top'];
+
+      if (!isset($params['block_title_show'])) {
+        $title = $params['label'] . ' (nghìn/lượng): ' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value'])*10) . '/' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10);
+      }
+      else {
+        $title = $params['label'] . ' (nghìn/lượng): ' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value'])*10) . '/' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10);
+        $params['sub_title_top'] = $params['title_top'] + 25;
+        $params['x-legend'] = -40;
+        $params['y-legend'] = 28;
+      }
+
+      $addtext = "
+        <span class='right-titlte-2 addtext'>(Nghìn/<br/>lượng)</span>
+        <span class='right-subtitlte-2 addtext'>(tg)</span>
+      ";
+    }
+
+    $subtitle_font_size = '12px';
+
+
+    $subtitle = t('Cập nhật lúc !timer !date_string', array('!timer' => format_date($node->created, 'custom', 'H:i'), '!date_string' => format_date($node->created, 'custom', 'd/m/Y')));
+    $subtitle_font_size = '9px';
+
+
+    if (isset($params['block_simple_block'])) {
+      $addtext = '';
+      $params['title_top'] = 7;
+      $params['sub_title_top'] = $params['title_top'] + 23;
+      $params['x-legend'] = -25;
+      $params['y-legend'] = 15;
+      $subtitle_font_size = '9px';
+    }
+
+    $subtitle = 'subtitle : {
+  						text : \'' . $subtitle . '\',
+              style: {
+              	color: \'#000000\',
+              	//fontSize: \'' . $params['title_fontsize'] . '\'
+                fontSize: \'' . $subtitle_font_size . '\'
+              },
+              align: \'left\',
+              x: 0,
+              y: ' . 35 . '
+              //floating: true,
+  					},  ';
+    $legend = '
+        		legend: {
+        			//layout: \'vertical\',
+        			align: \'' . $params['align-legend'] . '\',
+        			verticalAlign: \' ' . $params['verticalalign-legend'] . ' \',
+        			x: ' . -30 . ',
+        			y: ' . 18 . ',
+        			floating: true,
+        			borderWidth: 0,
+              style: {
+                fontSize: \'12px\'
+              }
+        		},
+    ';
+    $params['credits_text'] = '<br /><br />';
+    if ($params['external_site']) {
+      $params['redirect'] = 'parent.window.location="http://giavang.doji.vn";';
+      $params['external_class'] = ' external-view ';
+      $legend = '
+          		legend: {
+          			//layout: \'vertical\',
+          			align: \'' . $params['align-legend'] . '\',
+          			verticalAlign: \' ' . $params['verticalalign-legend'] . ' \',
+          			x: ' . $params['x-legend'] . ',
+          			y: ' . 40 . ',
+          			floating: true,
+          			borderWidth: 0,
+                enabled: true,
+                style: {
+                  fontSize: \'11px\'
+                }
+          		},
+      ';
+      $params['external_marginleft'] = 'marginLeft: 5,';
+      $params['credits_position'] = '
+        position: {
+        	align: \'right\',
+        	x: -10,
+        	verticalAlign: \'bottom\',
+        	y: 0
+        },
+        style: {
+          cursor: \'pointer\',
+          color: \'#000000\',
+          fontSize: \'10px\',
+          //fontWeight: \'bold\',
+        }
+      ';
+      $params['credits_text'] = 'Nguồn: www.giavang.doji.vn';
+    }
+    $plotline_value_1 = str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value']) * 10;
+    $plotline_value_2 = str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10;
+    $plotline_value_x = $plotline_value_2 - $plotline_value_1;
+
+    $row['sjc_le_banra'][$timenow] = '[' . $timenow . '000,' . $plotline_value_2 . ']';
+    $row['sjc_le_muavao'][$timenow] = '[' . $timenow . '000,' . $plotline_value_1 . ']';
+
+    if ($plotline_value_x < 50) {
+      $params['plot-y-y2axis-1'] = -7;
+      $params['plot-y-y2axis-2'] = 7;
+    }
+    $js = '
+   $(function() {
+  			var seriesOptions = [],
+  				yAxisOptions = [],
+  				seriesCounter = 0,
+  				colors = Highcharts.getOptions().colors;
+          Highcharts.setOptions({
+            lang: {
+            		//months: [\'Tháng 1\', \'Tháng 2\', \'Tháng 3\', \'Tháng 4\', \'Tháng 5\', \'Tháng 6\',\'Tháng 7\', \'Tháng 8\', \'Tháng 9\', \'Tháng 10\', \'Tháng 11\', \'Tháng 12\'],
+            		//weekdays: [\'CN\', \'Thứ 2\', \'Thứ 3\', \'Thứ 4\', \'Thứ 5\', \'Thứ 6\', \'Thứ 7\'],
+              	rangeSelectorZoom: \'\',
+              	rangeSelectorFrom: \'\',
+              	rangeSelectorTo: \'\',
+                exportButtonTitle: \'Tải biểu đồ\',
+                printButtonTitle: \'In biểu đồ\',
+                downloadPDF: \'Tải biểu đồ với kiểu tập tin là :  là PDF\',
+                downloadJPEG: \'Tải biểu đồ với kiểu tập tin là :  là JPEG\',
+                downloadPNG: \'Tải biểu đồ với kiểu tập tin là :  là PNG\',
+                downloadSVG: \'Tải biểu đồ với kiểu tập tin là :  là SVG\'
+            }
+          });
+
+  			var options = {
+            chart: {
+  			        renderTo: \'bd' . $params['chart_block']['time'] . '\',
+                marginRight: ' . $params['marginright'] . ',
+                ' . $params['external_marginleft'] . '
+                defaultSeriesType: \'line\',
+                plotBorderColor: \'#e0dede\',
+                plotBorderWidth: 2,
+                spacingBottom: ' . $params['spacingbottom'] . ',
+                 events: {
+                      click: function(e) {
+                       // $.colorbox({iframe:true, width:975, height:575, scrolling:false, href:\'' . $chart_simple_onday_url . '\'});
+                         ' . $params['redirect'] . '
+                      }
+                   }
+  			        },
+        		  xAxis: {
+                  type: \'datetime\',
+                  showFirstLabel: true,
+                  minRange: 4,
+                  dateTimeLabelFormats: {
+                      second: \'%H:%M:%S %d/%m<br>%Y\',
+                      minute: \'%H:%M\',
+                      hour: \'%H:%M\',
+                      day: \'%d/%m\',
+                      week: \'%d/%m<br>%Y\',
+                      month: \'%m/%Y\',
+                      year: \'%Y\'
+                  },
+
+
+                  tickInterval: ' . $params['tickInterval'] * 1000 . ',
+        					title: {
+        					//	text: \'' . format_date($params['time1'], 'custom', 'd/m/Y H:i') . ' - ' . format_date($params['time2'], 'custom', 'd/m/Y H:i') . '\',
+                    //verticalAlign: \'top\',
+      					  },
+            			labels: {
+            				//align: \'left\',
+                    style:{
+                      fontSize: \'8px\',
+                      color: \'#959595\'
+                    }
+            			}
+        		   },
+      			   yAxis : [{
+      			        title: \'seositetools.net\',
+                    startOnTick: false,
+              			showFirstLabel: true,
+                    showLastLabel: true,
+                    gridLineColor: \'#FFFFFF\',
+                    minorTickInterval: ' . $params['yaxis-tickInterval'] . ',
+                    tickInterval: ' . $params['yaxis-tickInterval'] . ',
+                    ' . $params['yAxis-min-max'] . '
+            			labels: {
+            				align: \'right\',
+                    enabled: false,
+            				x: 0,
+            				y: 300,
+            				formatter: function() {
+            					return Highcharts.numberFormat(this.value, 0);
+            				},
+                    style: {
+                      color: \'#959595\'
+                    }
+            			},
+                  plotLines : [{
+                      value : ' . $plotline_value_1 . ',
+//                    color : \'#FF0000\',
+                      color : \'#ffffff\',
+                      dashStyle : \'Dash\',
+                      width : 1,
+                      id: \'line1st\',
+                      label : {
+                        align: \'right\',
+                				x: ' . $params['plot-x-y2axis-1'] . ',
+                				y: ' . $params['plot-y-y2axis-1'] . ',
+                        text : \'' . $plotline_value_1 . '\',
+                        style : {
+                          fontSize: \'9px\',
+                          color: \'#000000\'
+                        }
+            					}
+    				      }, {
+            					value : ' . $plotline_value_2 . ',
+            					//color : \'#00a2ff\',
+                      color : \'#ffffff\',
+            					dashStyle : \'Dash\',
+            					width : 1,
+                      id: \'line2nd\',
+            					label : {
+            					  align: \'right\',
+                				x: ' . $params['plot-x-y2axis-2'] . ',
+                				y: ' . $params['plot-y-y2axis-2'] . ',
+            						text : \'' . $plotline_value_2 . '\',
+                        style : {
+                          fontSize: \'9px\',
+                          color: \'#000000\'
+                        }
+            					}
+    				      }]
+
+      			   }, { // right y axis
+            			linkedTo: 0,
+            			gridLineWidth: 0,
+            			opposite: true,
+                  title: \'abc\',
+                  minorTickInterval: ' . $params['yaxis-tickInterval'] . ',
+                  tickInterval: ' . $params['yaxis-tickInterval'] . ',
+            			labels: {
+            				align: \'right\',
+                    //enabled: false,
+                    step: 0,
+            				x: ' . $params['x-y2axis'] . ',
+            				y: ' . $params['y-y2axis'] . ',
+                    style:{
+                      fontSize: \'8px\',
+                      color: \'#959595\'
+                    },
+            				formatter: function() {
+            				  if (' . $plotline_value_1 . ' == this.value || Math.abs(' . $plotline_value_1 . ' - this.value) < 25 || ' . $plotline_value_2 . ' == this.value || Math.abs(' . $plotline_value_2 . ' - this.value) < 25) {
+            				    //return \'\';
+            				  }
+            					return Highcharts.numberFormat(this.value, 0);
+            				}
+            			},
+            			showFirstLabel: true,
+                  showLastLabel: true,
+                  ' . $params['yAxis-min-max'] . '
+                  customControl: \'tvazone\',
+                  gridCount: 6,
+            			labels: {
+            				align: \'right\',
+                    //enabled: false,
+                    step: 0,
+            				x: ' . $params['x-y2axis'] . ',
+            				y: ' . $params['y-y2axis'] . ',
+                    style:{
+                      fontSize: \'8px\',
+                      color: \'#959595\'
+                    },
+            				formatter: function() {
+            				  if (' . $plotline_value_1 . ' == this.value || Math.abs(' . $plotline_value_1 . ' - this.value) < 20 || ' . $plotline_value_2 . ' == this.value || Math.abs(' . $plotline_value_2 . ' - this.value) < 20) {
+            				    return \'\';
+            				  }
+            					return Highcharts.numberFormat(this.value, 0);
+            				}
+            			}
+      			   }],
+  					title : {
+  						text : \'' . $title . '\',
+              style: {
+              	color: \'#000000\',
+              	//fontSize: \'' . $params['title_fontsize'] . '\'
+                fontWeight: \'bold\',
+                fontSize: \'12px\'
+              },
+              align: \'left\',
+              x: 0,
+              y: ' . $params['title_top'] . '
+              //floating: true,
+  					},
+            ' . $subtitle . '
+  			    tooltip: {
+             formatter: function() {
+               return \'<b>\'+ this.series.name +\'</b><br/>\'+ this.y + \' (nghìn/lượng)\';
+             }
+
+  			    },
+            ' . $legend . '
+  			    credits : {
+                		text: \'' . $params['credits_text'] . '\',
+                		href: \'http://giavang.doji.vn\'
+                    ' . $params['credits_position'] . '
+  			    },
+      			navigator : {
+      				enabled : false
+      			},
+      			plotOptions: {
+      				series: {
+      					marker: {
+      						enabled: false,
+      						states: {
+      							hover: {
+      								enabled: true,
+      								radius: 3
+      							}
+      						}
+      					}
+      				},
+               line: {
+                lineWidth: 2
+               }
+      			},
+           series: [{
+             name: \'Mua\',
+             color: \'#FF0000\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_muavao']) . ']
+            }, {
+             name: \'Bán\',
+             color: \'#00a2ff\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_banra']) . ']
+
+        }]
+        };
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+        chart = new Highcharts.Chart(options);
+  		});
+
+    ';
+
+  }
+  return $js;
+}
+
+function doji_export_image_create_block() {
+  $title = '<span class="left d-block size-18">' . t('Giá vàng trong nước') . '</span>';
+  $title = '<div id="gv-left-title" class="clear-block clear p-b-20 line-height-1 p-l-10">' . $title . '</div>';
+  $noitce = '
+      <div id="noitce-message"><ul><li class="first">' . t('Cảnh báo:', array(), 'vi'). '</li></ul>
+        <div class="buttons"><input type="submit" class="form-submit" value="Sửa lại" id="edit-calcel"><input type="submit" class="form-submit" value="Cập nhật" id="edit-submit"></div>
+      </div>';
+
+  if (user_access('create goldprice content')) {
+    $left_content = drupal_get_form('doji_gold_price_short_form');
+    $right_add_classes = 'ant-form';
+  }
+  else {
+    $left_content = '<div class="ant-home-price">' . doji_goldprice_view_main_price() . '</div>';
+  }
+
+  $right_contents = array();
+  $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+
+  if (count($doji_chart_block_views)) {
+    unset($doji_chart_block_views['block_3']);
+    unset($doji_chart_block_views['block_4']);
+
+    foreach ($doji_chart_block_views as $doji_chart_block) {
+      $right_contents[] = doji_charts_view(array('width' => '335px', 'height' => '220px', 'title_fontsize' => '16px', 'chart_block' => $doji_chart_block));
+    }
+  }
+
+  if (count($right_contents)) {
+    $right_content = implode('', $right_contents);
+  }
+  else {
+    $right_content = doji_charts_view(array('width' => '335px', 'height' => '240px'));
+  }
+
+  $content = '
+        <div id="giavangtrongnuoc" class="clear-block block-bg border-gray p-10 size-18">
+          <div id="gv-left" class="left width-565 p-t-20">
+          ' . $noitce . $title . $left_content . '
+          </div>
+          <div id="gv-right" class="right width-335 ' . $right_add_classes . '">
+          ' . $right_content . '
+          </div>
+        </div>
+      ';
+
+  if (user_access('create goldprice content')) {
+    $node_form = doji_goldprice_add();
+    $content .= '<div id="goldprice-form" style="display:none">' . $node_form . '</div><div id="giavang_hien_thi_1"></div>';
+  }
+
+}

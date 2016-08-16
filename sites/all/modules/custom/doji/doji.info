@@ -1,0 +1,7 @@
+; $Id: doji.info,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+name = Doji
+package = Doji
+description = Doji Custom Module
+dependencies[] = doji_get
+core = 6.x
+version = VERSION

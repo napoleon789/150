@@ -1,0 +1,3 @@
+<?php
+
+include_once('doji_update.features.inc');

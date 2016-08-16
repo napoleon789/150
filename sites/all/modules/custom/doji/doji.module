@@ -1,0 +1,1015 @@
+<?php
+// $Id: doji.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+/**
+ * Implements hook_init().
+ */
+function doji_init() {
+  drupal_add_css(drupal_get_path('module', 'doji') .'/misc/doji.css');
+  drupal_add_js(drupal_get_path('module', 'doji') .'/misc/doji.js');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function doji_menu() {
+  $weight = 0;
+  $items = array();
+  $items['doji'] = array(
+    'title' => t('Trang chủ', array(), 'vi'),
+    'page callback' => 'doji_page_default',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK
+  );
+  $items['doji/cap-nhat-gia'] = array(
+    'title' => t('Trang chủ', array(), 'vi'),
+    'weight' => $weight++,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['doji/thiet-lap-gia'] = array(
+    'title' => t('Thiết lập giá', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_admin_settings'),
+    'access arguments' => array('create goldprice content'),
+    'file' => 'doji.admin.inc',
+    'weight' => $weight++,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/thiet-lap-gia/thiet-lap-cong-thuc'] = array(
+    'title' =>  t('Thiết lập công thức', array(), 'vi'),
+    'weight' => $weight++,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['doji/thiet-lap-gia/thiet-lap-cong-thuc/%'] = array(
+    'title' => t('Trang chủ', array(), 'vi'),
+    'page callback' => 'doji_formula_submit',
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_CALLBACK
+  );
+  $items['doji/thiet-lap-gia/cai-dat-truong-gia/%'] = array(
+    'title' => t('Trang chủ', array(), 'vi'),
+    'page callback' => 'doji_goldprice_field_setting_submit',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK
+  );
+  $items['doji/thiet-lap-gia/thay-doi-mo-ta/%'] = array(
+    'title' => t('Thay đổi mô tả', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_admin_group_description_setting'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'doji.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['doji/thiet-lap-gia/sap-xep-hien-thi'] = array(
+    'title' => t('Sắp xếp hiển thị', array(), 'vi'),
+    'page callback' => 'doji_admin_goldprice_view_setting',
+    'access arguments' => array('access administration pages'),
+    'file' => 'doji.admin.inc',
+    'weight' => $weight++,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/thiet-lap-gia/thiet-lap-khac'] = array(
+    'title' => t('Thiết lập khác', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_admin_global_settings'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'doji.admin.inc',
+    'weight' => $weight++,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/bang-gia-moi-nhat'] = array(
+    'title' => t('Bảng giá mới nhất', array(), 'vi'),
+    'page callback' => 'doji_gold_price_last',
+    'access arguments' => array('create goldprice content'),
+    'weight' => $weight++,
+    'type' => MENU_CALLBACK,
+  );
+  $items['doji/js/doji_calculator.js'] = array(
+    'access arguments' => array('create goldprice content'),
+    'page callback' => 'doji_calculator_js',
+    'file' => 'doji.js.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  /* Doji admin menu */
+  $items['doji/admin'] = array(
+    'title' => t('Quản trị, Tài khoản', array(), 'vi'),
+    'page callback' => 'doji_admin_page',
+    'access arguments' => array('access administration pages'),
+    'file' => 'doji.admin.inc',
+    'weight' => 49,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/admin/setting'] = array(
+    'title' => t('Quản trị', array(), 'vi'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['doji/admin/user'] = array(
+    'title' => t('Quản lí người dùng', array(), 'vi'),
+    'page callback' => 'doji_user_admin',
+    'page arguments' => array('list'),
+    'access arguments' => array('administer users'),
+    'file' => 'doji.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['doji/admin/user/list'] = array(
+    'title' => t('Danh sách', array(), 'vi'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['doji/admin/user/create'] = array(
+    'title' => t('Thêm người dùng', array(), 'vi'),
+    'page arguments' => array('create'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'doji.admin.inc',
+    'weight' => $weight++,
+  );
+  $items['doji/admin/user/permissions'] = array(
+    'title' => t('Phân quyền', array(), 'vi'),
+    'page callback' => 'doji_user_admin_perm',
+    'access arguments' => array('administer permissions'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'doji.admin.inc',
+    'weight' => $weight++,
+  );
+  return $items;
+}
+
+function doji_convert_to_number($number = 0) {
+  $number = preg_replace('|[^0-9\.\-]|i', '', $number);
+
+  if (!is_numeric($number)) {
+    $number = str_replace('-', '', $number);
+    $number = trim($number);
+  }
+
+  if (!is_numeric($number)) {
+    $number = 0;
+  }
+
+  return $number;
+}
+
+function doji_goldprice_change($newvalue, $oldvalue) {
+  $newvalue = doji_convert_to_number($newvalue);
+  $oldvalue = doji_convert_to_number($oldvalue);
+  $class = '';
+
+  if ($newvalue > $oldvalue) {
+    $class = 'lsup';
+  }
+  else if ($newvalue < $oldvalue) {
+    $class = 'lsdown';
+  }
+
+  return $class;
+}
+
+/**
+ * Menu callback; Get charts.
+ */
+function doji_goldprice_add() {
+  $output = '<div class="trangthaigiaodich">' . t('Hiện tại hệ thống đang ngừng giao dịch . Nếu bạn muốn cập nhật giá thì xin vui lòng kích hoạt giao dịch.', array(), 'vi'). '</div>';
+  if (variable_get('trangthaigiaodich', 1) || (drupal_is_front_page() && variable_get('trangthaigiaodich_extra', 1))) {
+    $node = doji_get_node('last', 'goldprice');
+    if (isset($node->nid)) {
+      module_load_include('inc', 'clone', 'clone.pages');
+      $gold_external = doji_get_gia_vang_quoc_te('return');
+      $node->field_gold_muavao[0]['value'] = str_replace(',', '', $gold_external['group_gold']['data']['bid']['data']);
+      $node->field_gold_banra[0]['value'] = str_replace(',', '', $gold_external['group_gold']['data']['ask']['data']);
+      $node->field_quidoi_muavao[0]['value'] = str_replace(',', '', $gold_external['group_quidoi']['data']['bid']['data']);
+      $node->field_quidoi_banra[0]['value'] = str_replace(',', '', $gold_external['group_quidoi']['data']['ask']['data']);
+      $node->field_usdvnd_muavao[0]['value'] = str_replace(',', '', $gold_external['group_usdvnd']['data']['bid']['data']);
+      $node->field_usdvnd_banra[0]['value'] = str_replace(',', '', $gold_external['group_usdvnd']['data']['ask']['data']);
+      $node->status = 0;
+      $output = clone_node_prepopulate($node);
+
+    }
+    else {
+      module_load_include('inc', 'node', 'node.pages');
+      $output = node_add('goldprice');
+    }
+  }
+  else {
+    drupal_set_title('');
+  }
+  return $output;
+}
+
+
+/**
+ * Menu callback; Generate a doji page.
+ */
+function doji_page_default() {
+  $output = '';
+  return $output;
+}
+
+/**
+ * Menu callback; Get Currency.
+ */
+function doji_gold_price_last() {
+  drupal_set_title('');
+  $output = t('Hiện tại chưa có nhật mới nào!', array(), 'vi');
+  if ($node = doji_get_node('last', 'goldprice')) {
+    $output = node_view($node);
+  }
+  return $output;
+}
+
+/**
+ * An array of allowable operator values.
+ *
+ */
+function doji_allowable_operators() {
+  return explode("\n", variable_get('doji_allowable_operators', implode("\n", array('+', '-', '*', '/', '(', ')', ',', 'ROUND'))));
+}
+
+/**
+ *  Add jquery plugin
+ * @param $plugin_name
+ *    The name of jquery plugin to load
+ */
+function doji_add_jquery_plugin($plugin_name) {
+  static $cached;
+  if (!isset($cached[$plugin_name])) {
+    drupal_add_js(drupal_get_path('module', 'doji') .'/jquery.plugin/jquery.'. $plugin_name .'.min.js');
+    $plugins[$plugin_name] = $plugin_name;
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ *
+ */
+function doji_perm() {
+  return array('create gold price', 'administer doji control');
+}
+
+/**
+ * Determine whether the current user may perform the given operation on the
+ * specified node.
+ *
+ * @param $op
+ *   The operation to be performed on the node. Possible values are:
+ *   - "view"
+ *   - "update"
+ *   - "delete"
+ *   - "create"
+ * @return
+ *   TRUE if the operation may be performed, or FALSE otherwise.
+ */
+function doji_access($op, $account = NULL) {
+  global $user;
+  return FALSE;
+}
+
+/**
+ * Add our own process function to cck number elements
+ */
+function doji_elements() {
+  return array(
+    'number' => array(
+      '#process' => array('doji_number_process'),
+    ),
+  );
+}
+
+/**
+ * Modify cck number field from a textfield to a numberfield
+ *
+ * !TODO: Add min and max implementation
+ */
+function doji_number_process($element, $edit, $form_state, $form) {
+  if ($element['value']['#type'] == 'textfield') {
+    $element['value']['#type'] = 'numberfield';
+  }
+  return $element;
+}
+
+/**
+ * Implementation of hook_block().
+ *
+ */
+function doji_block($op = 'list', $delta = 0, $edit = array()) {
+  global $user;
+  $content = '';
+
+  switch ($op) {
+    case 'list':
+      $blocks = array();
+      $blocks['gia_vang_quoc_te']['info'] = t('Giá vàng quốc tế, USD/VND', array(), 'vi');
+      $blocks['mobi_gia_vang_quoc_te']['info'] = t('Mobi - Giá vàng quốc tế, USD/VND', array(), 'vi');
+      return $blocks;
+    case 'view':
+      $blocks = array();
+      switch ($delta) {
+        case 'gia_vang_quoc_te':
+            $content .= '
+              <div id="giavangquocte" class="clear-block p-10">
+                <div class="left width-565">                
+                ' . doji_get_gia_vang_quoc_te() . '
+                  <div class="size-14" style="color:#666666; margin-top:15px;">' . t('Trực tiếp từ: Easy-forex & TPBank') . '</div>
+                </div>
+                <div class="right width-335">
+                ' . doji_get_bieu_do_gia_vang_quoc_te() . '
+                </div>
+              </div>
+            ';
+          $blocks['subject'] = t('Giá vàng quốc tế, USD/VND', array(), 'vi');
+          $blocks['content'] = $content;
+          break;
+        case 'mobi_gia_vang_quoc_te':
+            $content .= '
+              <div id="giavangquocte" class="clear-block p-10">
+                ' . doji_view_gia_vang_quocte() . '
+                  <div class="size-14" style="color:#666666; margin-top:15px;">' . t('Trực tiếp từ: Easy-forex & TPBank') . '</div>
+              </div>
+            ';
+          $blocks['subject'] = t('Giá vàng quốc tế, USD/VND', array(), 'vi');
+          $blocks['content'] = $content;
+          break;          
+      }
+      return $blocks;
+  }
+}
+
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function doji_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+  if ($form_id == 'goldprice_node_form') {
+    $form['#attributes']['class'] .= ' clear-block goldprice-form';
+    $form['menu']['#type'] = 'value';
+    $form['path']['#type'] = 'value';
+    $form['author']['name']['#type'] = 'value';
+    $form['revision_information']['#type'] = 'value';
+    $form['buttons']['submit']['#value'] = t('Cập nhật', array(), 'vi');
+    $form['buttons']['submit']['#attributes']['class'] .= ' right';
+    $form['buttons']['addprice'] = array(
+      '#type' => 'button',
+      '#value' => t('Thêm giá nhập tay', array(), 'vi'),
+      '#attributes' => array('onclick' => 'return false;', 'class' => 'button2-bg left add-price-item'),
+    );
+    unset($form['buttons']['preview']);
+    doji_goldprice_set_values($form);
+    drupal_set_title(t('Cập nhật giá vàng', array(), 'vi'));
+
+    if (!drupal_is_front_page()) {
+      $form['#prefix'] = '<div id="goldprice-form-v2">';
+      $form['#suffix'] = '</div>';
+    }
+
+  }
+  if ($form_id == 'doji_admin_settings') {
+    $form['#theme'] = 'doji_formula_table';
+    unset($form['buttons']['reset']);
+  }
+  unset($form['buttons']['preview']);
+  unset($form['buttons']['reset']);
+  //dsm($form, $form_id);
+}
+
+function doji_goldprice_set_values(&$form) {
+  $formula_groups = variable_get('formula_groups', array());
+  foreach ($formula_groups as $groupname => $groups) {
+    if (is_array($groups) && count($groups)) {
+      foreach ($groups as $fieldname => $fields) {
+        if (isset($fields['operator']) && is_numeric($fields['operator'])) {
+          if (isset($form[$fieldname][0]['#default_value']['value'])) {
+            $form[$fieldname][0]['#default_value']['value'] = $fields['operator'];
+          }
+        }
+      }
+    }
+  }
+
+ // $currencyrates = doji_get_currencyrate('return');
+  //if (isset($currencyrates->XAUUSD)) {
+  //  $form['field_gold_muavao'][0]['#default_value']['value'] = $currencyrates->XAUUSD[0];
+  //  $form['field_gold_banra'][0]['#default_value']['value'] = $currencyrates->XAUUSD[1];
+  //  $form['field_gold_chenhlech'][0]['#default_value']['value'] = $form['field_gold_banra'][0]['#default_value']['value'] - $form['field_gold_muavao'][0]['#default_value']['value'];
+  //}
+
+  if (drupal_is_front_page()) {
+    return;
+  }
+
+  $exchangerates = doji_get_exchangerate('return');
+  if (isset($exchangerates['USD']['BUY'])) {
+    $form['field_usdvnd_muavao'][0]['#default_value']['value'] = $exchangerates['USD']['BUY'];
+    $form['field_usdvnd_banra'][0]['#default_value']['value'] = $exchangerates['USD']['SELL'];
+    $form['field_usdvnd_chenhlech'][0]['#default_value']['value'] = $form['field_usdvnd_banra'][0]['#default_value']['value'] - $form['field_usdvnd_muavao'][0]['#default_value']['value'];
+  }
+
+  $golds = doji_view_gia_vang_quocte('return');
+
+  if (isset($golds['group_gold']['data']['bid']['data']) && isset($golds['group_gold']['data']['ask']['data'])) {
+    $form['field_gold_muavao'][0]['#default_value']['value'] = str_replace(',', '', $golds['group_gold']['data']['bid']['data']);
+    $form['field_gold_banra'][0]['#default_value']['value'] = str_replace(',', '', $golds['group_gold']['data']['ask']['data']);
+    $form['field_gold_chenhlech'][0]['#default_value']['value'] = $form['field_gold_banra'][0]['#default_value']['value'] - $form['field_gold_muavao'][0]['#default_value']['value'];
+  }
+  if (isset($golds['group_quidoi']['data']['bid']['data']) && isset($golds['group_quidoi']['data']['ask']['data'])) {
+    $form['field_quidoi_muavao'][0]['#default_value']['value'] = str_replace(',', '', $golds['group_quidoi']['data']['bid']['data']);
+    $form['field_quidoi_banra'][0]['#default_value']['value'] = str_replace(',', '', $golds['group_quidoi']['data']['ask']['data']);
+    $form['field_quidoi_chenhlech'][0]['#default_value']['value'] = $form['field_quidoi_banra'][0]['#default_value']['value'] - $form['field_quidoi_muavao'][0]['#default_value']['value'];
+  }
+}
+
+function doji_goldprice_set_attributes(&$element, $fieldname = NULL, $groupname = NULL) {
+  if (isset($element[0]['value']['#type'])) {
+    $elem = &$element[0]['value'];
+  }
+  elseif (isset($element[0]['#type'])) {
+    $elem = &$element[0];
+  }
+  else {
+    $elem = &$element;
+  }
+
+  $elem['#attributes']['class'] .= ' gold-price-input ';
+  $elem['#size'] = 10;
+
+  $formula_groups = variable_get('formula_groups', array());
+  $groupname = str_replace('group_', 'formula_group_', $groupname);
+
+  if (isset($formula_groups[$groupname][$fieldname]['active']) && $formula_groups[$groupname][$fieldname]['active'] == 1) {
+    $elem['#attributes']['idx'] = strtolower(trim($formula_groups[$groupname][$fieldname]['id']));
+    $elem['#attributes']['var'] = strtolower(trim($formula_groups[$groupname][$fieldname]['variable']));
+    $elem['#attributes']['operator'] = strtolower(trim($formula_groups[$groupname][$fieldname]['operator']));
+
+    if (!empty($formula_groups[$groupname][$fieldname]['operator']) && $formula_groups[$groupname][$fieldname]['operator'] != $formula_groups[$groupname][$fieldname]['variable']) {
+      $elem['#attributes']['class'] .= ' gold-price-input-disabled ';
+    }
+  }
+}
+
+function doji_goldprice_group_invisible($prefix_fieldname, $groupname) {
+  $formula_groups = variable_get('formula_groups', array());
+  $groupname = str_replace('group_', 'formula_group_', $groupname);
+  $suffix = array('_muavao', '_banra', '_chenhlech');
+  $d = 0;
+
+  foreach ($suffix as $k) {
+    $fieldname = $prefix_fieldname . $k;
+    if (isset($formula_groups[$groupname][$fieldname]['active']) && $formula_groups[$groupname][$fieldname]['active'] == 1) {
+      if (!empty($formula_groups[$groupname][$fieldname]['operator']) && $formula_groups[$groupname][$fieldname]['operator'] != $formula_groups[$groupname][$fieldname]['variable']) {
+        $d++;
+      }
+    }
+  }
+
+  if ($d == 3) {
+    return true;
+  }
+  else {
+    return false;
+  }
+
+}
+
+function theme_goldprice_node_form($form) {
+  global $user;
+  if (function_exists('format_number_add_js')) {
+    format_number_add_js();
+  }
+  if (isset($form['options']['promote']['#type'])) {
+    $form['options']['promote']['#type'] = 'hidden';
+  }
+
+  $suffix = array('_muavao', '_banra', '_chenhlech');
+  $rows = array();
+
+  $ascii_code = '65';
+  $maxcolumns = 4;
+  $suffix = array('_muavao', '_banra', '_chenhlech');
+  $headers = array();
+  $headers[] = array('data' => '', 'class' => 'first header');
+  $goldprice_group_settings = variable_get('goldprice_group_settings', array());
+  $formula_groups = variable_get('formula_groups', array());
+
+  for ($col = 0; $col < $maxcolumns; $col++) {
+    $headers[] = array('data' => chr($ascii_code + $col), 'class' => 'header header-col-' . ($col+2));
+  }
+
+  $row = array();
+  $row[] = array('data' => t('STT', array(), 'vi'), 'class' => 'first sub-header');
+  $row[] = array('data' => t('Loại', array(), 'vi'), 'class' => 'sub-header');
+  $row[] = array('data' => t('Mua vào', array(), 'vi'), 'class' => 'sub-header');
+  $row[] = array('data' => t('Bán ra', array(), 'vi'), 'class' => 'sub-header');
+  $row[] = array('data' => t('Spread'), 'class' => 'last sub-header');
+  $rows[] = $row;
+  $i = 1;
+
+  foreach ($form as $k => &$element) {
+    if (is_object($element)) {
+      $element = (array)$element;
+    }
+    if (!isset($element['#type'])) {
+      continue;
+    }
+    if ($element['#type'] != 'fieldset') {
+      continue;
+    }
+
+    $prefix_fieldname = str_replace('group_', 'field_', $k);
+    $formula_group_name = str_replace('group_', 'formula_group_', $k);
+
+    if (!isset($element[$prefix_fieldname .'_muavao'])) {
+      continue;
+    }
+
+    if (isset($formula_groups[$formula_group_name][$prefix_fieldname .'_muavao']) && !$formula_groups[$formula_group_name][$prefix_fieldname .'_muavao']['active']) {
+      continue;
+    }
+
+    $row = array();
+    $row[] = array('data' => $i++, 'class' => 'col-1 auto-index');
+
+    foreach ($suffix as $suffix_value) {
+      if (isset($element[$prefix_fieldname . $suffix_value])) {
+        if (!isset($row['label'])) {
+          $row['label'] = $element[$prefix_fieldname . $suffix_value]['#title'];
+        }
+        unset($element[$prefix_fieldname . $suffix_value]['#title']);
+        doji_goldprice_set_attributes($element[$prefix_fieldname . $suffix_value], $prefix_fieldname . $suffix_value, $k);
+        $row[$prefix_fieldname . $suffix_value] = preg_replace('|<label.*?<\/label\>|i', '', drupal_render($element[$prefix_fieldname . $suffix_value]));
+      }
+    }
+
+    drupal_render($element);
+    $line_item_class = '';
+
+    if (count($goldprice_group_settings)) {
+      if (isset($goldprice_group_settings[$k]['status'])) {
+        if (!$goldprice_group_settings[$k]['status']) {
+          $line_item_class = ' operator-hidden ';
+        }
+      }
+    }
+    if (!$goldprice_group_settings[$k]['status']) {
+      if (doji_goldprice_group_invisible($prefix_fieldname, $k) || in_array($prefix_fieldname, array('field_usdvnd'))) {
+        $line_item_class = ' operator-hidden ';
+      }
+    }
+
+    $rows[] = array('data'=> $row, 'class' => $line_item_class . ' ' . $k);
+    $goldfield_hidden_item[$k] = array(
+      '#type' => 'checkbox',
+      '#title' => $row['label'],
+      '#value' => $goldprice_group_settings[$k]['status'],
+      '#attributes' => array('fieldname' => $k, 'action' => url('doji/js/them-gia-nhap-tay')),
+    );
+
+  }
+
+  if (count($rows)) {
+    $output = theme('table', $headers, $rows, array('class' => 'tbl-gold'));
+
+    if (!drupal_is_front_page()) {
+    $noitce = '
+      <div id="noitce-message"><ul><li class="first">' . t('Cảnh báo:', array(), 'vi'). '</li></ul>
+        <div class="buttons"><input type="submit" value="Cập nhật" class="form-submit" id="auto-v2-submit"><input type="button" value="Sửa lại" class="button" id="edit-calcel"></div>
+      </div>';
+      $output .= $noitce;
+      $output = '<div id="goldprice-form-container">' . $output . '</div>';
+    }
+    $output .= drupal_render($form['buttons']);
+    $output = '<div class="p-5-20">&nbsp;</div>' . $output;
+  }
+
+  if (isset($form['vertical_tabs'])) {
+    drupal_render($form['vertical_tabs']);
+  }
+
+  $output .= '<div style="display:none">' . drupal_render($form) . '</div>';
+
+  if (isset($goldfield_hidden_item)) {
+    $goldfield_hidden = drupal_render($goldfield_hidden_item);
+    $goldfield_hidden= '<div id="goldfield-item-hidden"><a href="#close" class="close" onclick="return false;" title="Close">X</a>' . $goldfield_hidden . '</div>';
+    $output .= $goldfield_hidden;
+  }
+
+  return $output;
+}
+
+function theme_doji_goldprice_wget_node_form($form) {
+  global $user;
+  drupal_set_title('');
+  $button = drupal_render($form['buttons']['submit']);
+  $button = '<div class="m-b-10">' . $button . '</div>';
+  $output = '';
+
+  $output .= '<fieldset class="group-display-2"><legend>' . t('Thiết lập khu vực', array(), 'vi') . '</legend>'  . drupal_render($form['group_setting_hn']) . drupal_render($form['group_setting_dn']) . drupal_render($form['group_setting_hcm']). '</fieldset>' . $button;
+
+  $output .= drupal_render($form['group_display_home']) . $button;
+  $output .= '<fieldset class="group-display-2"><legend>' . t('Hiển thị trên trang doji.vn', array(), 'vi') . '</legend>' . drupal_render($form['group_display_1']) . drupal_render($form['group_display_6']);
+  $output .= '<div class="clear-block"></div>' .drupal_render($form['group_display_9']) . drupal_render($form['group_display_10']).drupal_render($form['group_display_11']);
+  $output .= '<div class="clear-block"></div>' . drupal_render($form['group_display_8']) . '</fieldset>' . $button;
+  $output .= '<fieldset class="group-display-2"><legend>' . t('Hiển thị trên trang sjchanoi.com.vn', array(), 'vi') . '</legend>' . drupal_render($form['group_display_2']) . drupal_render($form['group_display_7']) . '</fieldset>' . $button;
+  $output .= '<fieldset class="group-display-2"><legend>' . t('Bảng Hiển Thị Đôi', array(), 'vi') . '</legend>'  . drupal_render($form['group_display_3']) . drupal_render($form['group_display_4']) .  '</fieldset>' . $button;
+  $output .= '<fieldset class="group-display-2"><legend>' . t('Bảng Giá Theo Vùng Miền', array(), 'vi') . '</legend>'  . drupal_render($form['group_display_hn']) . drupal_render($form['group_display_hcm']) . drupal_render($form['group_display_dn']). '</fieldset>' . $button;
+  $output .= drupal_render($form['group_display_5']) . $button;
+  $output .= '<div style="display:none">' . drupal_render($form) . '</div>';
+  $output = '<div class="wget-form-setting">' . $output . '</div>';
+  return $output;
+}
+
+function theme_doji_formula_table($form) {
+  global $user;
+  $formula_groups = variable_get('formula_groups', array());
+  $ascii_code = '65';
+  $maxcolumns = 6;
+  $suffix = array('_muavao', '_banra', '_chenhlech');
+  $headers = array();
+  $headers[] = '';
+
+  for ($col = 0; $col < $maxcolumns; $col++) {
+    if ($col >=1 && $col <=3) {
+      $headers[] = array('data'=>chr($ascii_code + $col), 'colspan'=>2);
+    }
+    else {
+      $headers[] = chr($ascii_code + $col);
+    }
+  }
+
+  $node = doji_get_node('last', 'goldprice');
+  $rows = array();
+  $row = array();
+  $row[] = array('data' => t('STT', array(), 'vi'), 'class' => 'first sub-header');
+  $row[] = array('data' => t('Chủng loại', array(), 'vi'), 'class' => 'sub-header');
+  $row[] = array('data' => t('Giá mua', array(), 'vi'), 'colspan'=>2, 'class' => 'sub-header');
+  $row[] = array('data' => t('Giá bán', array(), 'vi'), 'colspan'=>2, 'class' => 'sub-header');
+  $row[] = array('data' => t('Chênh lệch', array(), 'vi'), 'colspan'=>2, 'class' => 'sub-header');
+  $row[] = array('data' => t('Điều chỉnh', array(), 'vi'), 'class' => 'sub-header');
+  $row[] = array('data' => t('Trạng thái', array(), 'vi'), 'class' => 'last sub-header');
+
+  //$row[] = array('data' => '', 'class' => 'active');;
+  $rows[] = $row;
+
+  //Formula Group
+  $formula_form = &$form['formula_groups'];
+  $inc = 0;
+  $doji_i = 0;
+  foreach ($formula_form as $k => &$element) {
+    if (is_object($element)) {
+      $element = (array)$element;
+    }
+    if (!isset($element['#type'])) {
+      continue;
+    }
+    if ($element['#type'] != 'fieldset') {
+      continue;
+    }
+
+    $fieldname = str_replace('formula_group_', 'field_', $k);
+
+    if (!isset($element[$fieldname .'_muavao'])) {
+      continue;
+    }
+
+    $inc++;
+    $row = array();
+    $row[] = $inc;
+    $group_status = 0;
+    $output = '';
+
+    foreach ($suffix as $id=>$suffix_value) {
+      if (isset($element[$fieldname . $suffix_value])) {
+        if (!isset($row['label'])) {
+          $row['label'] = $element['group_label']['#default_value'];
+          $group_description = t('Sửa mô tả', array(), 'vi');
+
+          if (isset($element['group_label']['#attributes']['group_name'])) {
+            $group_name = $element['group_label']['#attributes']['group_name'];
+            unset($element['group_label']['#attributes']['group_name']);
+          }
+          if (isset($element['group_label']['#attributes']['group_description']) && !empty($element['group_label']['#attributes']['group_description'])) {
+            $group_description = $element['group_label']['#attributes']['group_description'];
+            unset($element['group_label']['#attributes']['group_description']);
+          }
+
+          $row['label'] .= '<br />' . l($group_description, 'doji/thiet-lap-gia/thay-doi-mo-ta/' . $group_name . '/goldprice', array('html'=>TRUE, 'query'=>drupal_get_destination()));
+          $group_status = $formula_groups[$k][$fieldname . $suffix_value]['active'];
+        }
+
+        unset($element[$fieldname . $suffix_value]['operator']['#title']);
+        $_gold_value = str_replace(',', '', $node->{$fieldname . $suffix_value}[0]['value']);
+        $_gold_value_view = format_number($_gold_value);
+        $_id = chr($ascii_code + $id + 1) . $inc;
+        $_id = strtolower($_id);
+        $row[$fieldname . $suffix_value . '_value'] = array('data'=>$_gold_value_view, 'id'=>$_id, 'value'=>(float)$_gold_value);
+        $row[$fieldname . $suffix_value] = preg_replace('|<label.*?<\/label\>|i', '', drupal_render($element[$fieldname . $suffix_value]));
+      }
+    }
+    drupal_render($element);
+    $group_ele = $element['group_name']['#value'];
+    $group_uid = doji_group_getall_group($user ->uid);
+    if(in_array($group_ele,$group_uid)) {
+      $row['operator'] = '<a href="#" class="do-edit" onclick="return false;">' . t('Sửa', array(), 'vi') . '</a><span class="cancel-save hide"><a href="#" class="do-cancel" onclick="return false;">' . t('Hủy', array(), 'vi') . '</a>&nbsp;|&nbsp;<a href="#" class="do-save" action="' . url('doji/thiet-lap-gia/thiet-lap-cong-thuc') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t('Lưu lại', array(), 'vi') . '</a></span>';
+      $row['status'] = '<a href="#" class="do-update-status" action="' . url('doji/thiet-lap-gia/cai-dat-truong-gia') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t($group_status ? 'Bật' : 'Tắt', array(), 'vi') . '</a></span>';
+    }
+    else {
+      $row['operator'] = '<a href="#" class="do-edit_save" onclick="return false;">' . t('Sửa', array(), 'vi') . '</a><span class="cancel-save hide"><a href="#" class="do-cancel" onclick="return false;">' . t('Hủy', array(), 'vi') . '</a>&nbsp;|&nbsp;<a href="#" class="do-save" action="' . url('doji/thiet-lap-gia/thiet-lap-cong-thuc') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t('Lưu lại', array(), 'vi') . '</a></span>';
+      $row['status'] = '<a href="#" class="do-update-status" action="' . url('doji/thiet-lap-gia/cai-dat-truong-gia') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t($group_status ? 'Bật' : 'Tắt', array(), 'vi') . '</a></span>';
+    }
+    if($inc % 30 == 0) {
+      $doji_i++;
+      $rows[] = array('data' => $row,'class' => "vantri".$doji_i);
+    }
+    else
+      $rows[] = $row;
+
+  }
+
+  if (count($rows)) {
+    $output .= theme('table', $headers, $rows, array('class' => 'admin-tbl-gold'), t('Thiết lập công thức', array(), 'vi'));
+  }
+
+  drupal_render($form['formula_groups']);
+  $output .= drupal_render($form);
+  return $output;
+}
+
+function theme_doji_goldprice_view($node, $caption = NULL, $footer_message = NULL, $group_access = array(), $add_empty_rows_number = 0, $table_attributes = array('class' => 'goldprice-view')) {
+  global $user;
+  $suffix = array('_muavao', '_banra');
+  $headers = array();
+  $headers[] = array('data' => '<div>' . t('Loại', array(), 'vi') .'</div>', 'class' => 'first');
+  $headers[] = array('data' => '<div>' . t('Mua vào', array(), 'vi') .'</div>');
+  $headers[] = array('data' => '<div>' . t('Bán ra', array(), 'vi') .'</div>', 'class' => 'last');
+
+  $rows = array();
+  $goldprices = $node->content;
+
+  foreach ($goldprices as $k => $element) {
+    if (!isset($element['group'])) {
+      continue;
+    }
+
+    if (is_array($group_access) && count($group_access)) {
+      if (!array_key_exists($k, $group_access)) {
+        continue;
+      }
+    }
+
+    $fieldname = str_replace('group_', 'field_', $k);
+
+    if (!isset($node->{$fieldname .'_muavao'}[0]['value'])) {
+      continue;
+    }
+
+    $row = array();
+
+    foreach ($suffix as $id => $suffix_value) {
+      if (isset($node->{$fieldname . $suffix_value}[0]['value'])) {
+        if (!isset($row['label'])) {
+          $label = isset($group_access[$k]['label']) ? $group_access[$k]['label'] : $element['group']['#title'];
+          $row['label'] = array('data' => $label, 'class' => 'label first');
+        }
+
+        $td_class = 'goldprice-td goldprice-td-' . $id;
+
+        if ($id == count($suffix) -1 ) {
+          $td_class .= ' last';
+        }
+
+        $row[$fieldname . $suffix_value] = array('data' => '<span class="price-bg">' . format_number(str_replace(',', '', $node->{$fieldname . $suffix_value}[0]['value'])) . '</span>', 'class' => $td_class);
+
+      }
+    }
+
+    $rows[] = $row;
+  }
+
+  if (count($rows)) {
+    if ($add_empty_rows_number) {
+      for ($i = 1; $i<= $add_empty_rows_number; $i++) {
+        $row = array();
+        $row[] = array('data' => '&nbsp;', 'colspan' => 3);
+        $rows[] = $row;
+      }
+    }
+    if ($footer_message) {
+      $row = array();
+      $row[] = array('data' => $footer_message, 'colspan' => 3, 'class' => 'footer-message');
+      $rows['footer-message'] = $row;
+    }
+    $output = theme('table', $headers, $rows, $table_attributes, $caption);
+  }
+
+  return $output;
+}
+
+function theme_doji_mark($number = 0) {
+  $numeric = doji_convert_to_number($number);
+
+  if ($numeric > 0) {
+    $content = '<span class="mark-green">' . $number . '</span>';
+  }
+  else if ($numeric < 0) {
+    $content = '<span class="mark-red">' . $number . '</span>';
+  }
+  else {
+    $content = '<span class="mark-black">' . $number . '</span>';
+  }
+  return $content;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function doji_theme() {
+  return array(
+    'goldprice_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+    'doji_goldprice_wget_node_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+    'doji_formula_table' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+    'doji_goldprice_view' => array(
+      'arguments' => array(
+        'node' => NULL,
+        'caption' => NULL,
+        'footer_message' => NULL,
+        'group_access' => NULL,
+        'add_empty_rows_number' => null,
+        'table_attributes' => NULL,
+      )
+    ),
+    'doji_mark' => array(
+      'arguments' => array(
+        'number' => array()
+      ),
+    ),
+  );
+}
+
+function doji_formula_submit($form, &$form_state) {
+  $formula_groups = variable_get('formula_groups', array());
+  $object = new stdClass;
+  if (arg(3) && $_POST['formula_groups'][arg(3)]) {
+    unset($_POST['formula_groups'][arg(3)]['group_name']);
+    unset($_POST['formula_groups'][arg(3)]['group_label']);
+
+    $formula_groups[arg(3)] = $_POST['formula_groups'][arg(3)];
+    variable_set('formula_groups', $formula_groups);
+    drupal_set_message(t('Thiết lập thành công.', array(), 'vi'));
+    $object->error = 0;
+  }
+  else {
+    drupal_set_message(t('Thiết lập không thành công.', array(), 'vi'));
+    $object->error = 1;
+  }
+
+  drupal_json($object);exit;
+}
+
+function doji_goldprice_field_setting_submit($form, &$form_state) {
+  $formula_groups = variable_get('formula_groups', array());
+  $object = new stdClass;
+  if (arg(4) && isset($_POST['formula_groups'][arg(3)])) {
+    if (!isset($formula_groups[arg(3)])) {
+      $_POST['formula_groups'][arg(3)][arg(4)]['active'] = 0;
+      $formula_groups[arg(3)] = $_POST['formula_groups'][arg(3)];
+    }
+
+    $active = $formula_groups[arg(3)][arg(4)]['active'];
+
+    if (!$active) {
+      $active = 1;
+      $object->text = t('Bật', array(), 'vi');
+
+    }
+    else {
+      $active = 0;
+      $object->text = t('Tắt', array(), 'vi');
+    }
+
+    foreach ($formula_groups[arg(3)] as $k => $element) {
+      if (isset($element['active'])) {
+        $formula_groups[arg(3)][$k]['active'] = $active;
+      }
+    }
+
+    variable_set('formula_groups', $formula_groups);
+    drupal_set_message(t('Thiết lập thành công.', array(), 'vi'));
+    $object->error = 0;
+  }
+  else {
+    drupal_set_message(t('Thiết lập không thành công.', array(), 'vi'));
+    $object->error = 1;
+  }
+  $object->element = $formula_groups[arg(3)];
+  drupal_json($object);exit;
+}
+
+/**
+ * Data path details.
+ *
+ * @return
+ *   An array(path, prefix)
+ *   path: point to data path
+ *   prefix: prefix of file name
+ *   transaction_status: status of transaction
+ */
+function doji_get_data_path_details() {
+  static $ret;
+
+  if (!isset($ret)) {
+    $ret = array();
+    $ret['path'] = file_directory_path() .'/data/hienthi';
+    file_check_directory($path, FILE_CREATE_DIRECTORY);
+    $ret['prefix'] = 'ant' . variable_get('dojigold_prefix_filename', -32767);
+    $ret['transaction_status'] = variable_get('trangthaigiaodich', 1);
+
+    $ret['transaction_status_extra'] = variable_get('trangthaigiaodich_extra', 1);
+    $ret['transaction_status_dn'] = variable_get('trangthaigiaodich_dn', 1);
+    $ret['transaction_status_hcm'] = variable_get('trangthaigiaodich_hcm', 1);
+  }
+  return $ret;
+}
+
+function doji_detect_mobile() {
+  $ret = FALSE;
+  $useragent=$_SERVER['HTTP_USER_AGENT'];
+  if(preg_match('/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i',$useragent)||preg_match('/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i',substr($useragent,0,4))) {
+    $ret = TRUE;
+  }
+  if (isset($_GET['fakemobi']) && $_GET['fakemobi']) {
+     $ret = TRUE;
+  }
+  return $ret;
+}
+
+function doji_service($url, $action = 'GET', $parameter = '') {
+  $i = 0;
+
+  if (!function_exists(curl_init)) {
+    die("<hr>Could not suppoted CURL<hr>");
+  }
+
+  while ($i++ <= 1) {
+    $init = curl_init();
+    curl_setopt($init, CURLOPT_URL, $url);
+    curl_setopt($init, CURLOPT_REFERER, $url);
+
+//     $header = array();
+//     $header['POST'] = 'http://www.easy-forex.com/int/wp-content/plugins/ezfx-api-functions/ajax/ef-currency-rates-ajax.php HTTP/1.1';
+//     $header['Host'] = 'www.easy-forex.com';
+//     $header['User-Agent'] = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:18.0) Gecko/20100101 Firefox/18.0';
+//     $header['Accept'] = '*/*';
+//     $header['Accept-Language:'] = 'en-US,en;q=0.5';
+//     $header['Accept-Encoding'] = 'gzip, deflate';
+//     $header['Content-Type'] = ' application/x-www-form-urlencoded; charset=UTF-8';
+//     $header['X-Requested-With'] = 'XMLHttpRequest';
+//     $header['Referer'] = 'http://www.easy-forex.com/int/vi/currencyratespage/';
+//     $header['Content-Length'] = '215';
+//     //$header['Cookie'] = 'cor=3183fe3cfc1300000dc4025193bd020016000000; LSCulture=int-vn; Dragon=1; k_visit=2; __utma=1.474493942.1359135761.1359135761.1359482060.2; __utmz=1.1359135761.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); PumaCurrentCulture=Int-vn; session_start_time=1359482059570; __utmb=1.3.10.1359482060; __utmc=1; EZFX.Start=1359483916362';
+//     $header['Connection'] = 'keep-alive';
+//     $header['Pragma'] = 'no-cache';
+//     $header['Cache-Control'] = 'no-cache';
+//     curl_setopt($init, CURLOPT_HTTPHEADER, $header);
+    curl_setopt($init, CURLOPT_RETURNTRANSFER, true);
+//     curl_setopt($init, CURLOPT_COOKIEJAR, $cookiefile);
+//     curl_setopt($init, CURLOPT_COOKIEFILE, $cookiefile);
+
+    curl_setopt($init, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2");
+    curl_setopt($init, CURLOPT_TIMEOUT, 5);
+    curl_setopt($init, CURLOPT_FOLLOWLOCATION, true);
+
+    if ($action == "POST") {
+      curl_setopt($init, CURLOPT_POST, 1);
+      curl_setopt($init, CURLOPT_POSTFIELDS, $parameter);
+    }
+
+    if ($action == "GET" && $parameter != "") {
+      $url .= "?".$parameter;
+    }
+
+    $page = curl_exec($init);
+    $httpcode = curl_getinfo($init, CURLINFO_HTTP_CODE);
+
+    curl_close($init);
+
+    if ($httpcode == 504 || ($httpcode < 300 && $page != ""))
+      break;
+  }
+
+  return $page;
+}

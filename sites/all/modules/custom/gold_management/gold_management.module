@@ -1,0 +1,154 @@
+<?php
+
+include_once('gold_management_function.php');
+
+/**
+ * Implements hook_menu().
+ */
+function gold_management_menu() {
+  
+  $items = array();
+ 
+  $items['api/user/login'] = array(
+    'title' => t('User login', array(), 'vi'),
+    'page callback' => 'gold_management_login',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['api/user/create'] = array(
+    'title' => t('User register', array(), 'vi'),
+    'page callback' => 'gold_management_register',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['api/user/forgotPassword'] = array(
+    'title' => t('User register', array(), 'vi'),
+    'page callback' => 'gold_management_pass',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['api/transaction/add'] = array(
+    'title' => t('Add transaction', array(), 'vi'),
+    'page callback' => 'gold_management_transaction_add',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['api/transaction/get'] = array(
+    'title' => t('get transactions', array(), 'vi'),
+    'page callback' => 'gold_management_transaction_get',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['api/diadiem'] = array(
+    'title' => t('Địa điểm', array(), 'vi'),
+    'page callback' => 'gold_management_diadiem',
+    'access arguments' => array('access content'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+function gold_management_pass()
+{
+  global $language;
+  $email = $_GET['mail'];
+  $query = db_query("SELECT * FROM {users} WhERE mail = '%s'",$email);
+  $number = db_affected_rows($query);
+  if($number>0) {
+  while($row= db_fetch_object($query)) {
+    $account = $row;
+  }
+  // Mail one time login URL and instructions using current language.
+  _user_mail_notify('password_reset', $account, $language);
+  watchdog('user', 'Password reset instructions mailed to %name at %email.', array('%name' => $account->name, '%email' => $account->mail));
+    drupal_json(array('success' => 1));
+  }
+  else {
+    drupal_json(array("success"=>0));
+  }
+}
+function gold_management_mail_alter(&$message) {
+  $message['headers']['From'] = 'App Gia Vang DOJI<info@doji.vn>';
+}
+
+function gold_management_login() {
+	if (isset($_GET['email']) && isset($_GET['password'])) {
+		$result = _gold_management_login($_GET['email'], $_GET['password']);
+		drupal_json($result);
+	} else {
+		drupal_json(array('success' => 0));
+	}
+}
+
+function gold_management_register() {
+	if (isset($_GET['name']) && isset($_GET['password']) && isset($_GET['email'])) {
+		$result = _gold_management_register($_GET['name'], $_GET['password'], $_GET['email']);
+		drupal_json($result);
+	} else {
+		drupal_json(array('success' => 0,'error' => 'Email đã được sử dụng11'));
+	}
+}
+
+function gold_management_transaction_add() {
+	$headers = apache_request_headers();
+	$sessionToken = $headers['sessionToken'];
+	$uid = $headers['uid'];
+	
+	$returnData = array();
+	
+	if (_gold_management_verify_session($sessionToken, $uid)) {
+		if (isset($_POST['gold_type']) && isset($_POST['date']) && isset($_POST['amount']) && isset($_POST['price'])) {
+			if (_gold_management_add_transaction($_POST['gold_type'], $_POST['date'], $_POST['amount'], $_POST['price'], $uid)) {
+				$returnData['success'] = 1;
+			} else {
+				$returnData['success'] = 0;
+				$returnData['errorMsg'] = 'Somethings went wrong';
+			}
+		} else {
+			$returnData['success'] = 0;
+			$returnData['errorMsg'] = 'Missing fields';
+		}
+	} else {	
+		header('HTTP/1.1 401 Unauthorized', true, 401);		
+		exit();
+	}
+	
+	drupal_json($returnData);
+}
+
+function gold_management_transaction_get() {
+	$headers = apache_request_headers();
+	$sessionToken = $headers['sessionToken'];
+	$uid = $headers['uid'];
+	
+	$returnData = array();
+	
+	if (_gold_management_verify_session($sessionToken, $uid)) {
+	
+	} else {	
+		header('HTTP/1.1 401 Unauthorized', true, 401);		
+		exit();
+	}
+	
+	drupal_json($returnData);
+}
+
+function gold_management_diadiem() {
+  if (isset($_GET['tid'])) {
+    $result = _gold_management_diadiem($_GET['tid']);
+    drupal_json($result);
+  } else {
+    drupal_json(array('success' => 0));
+  }
+
+}

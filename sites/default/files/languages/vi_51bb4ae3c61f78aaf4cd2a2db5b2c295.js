@@ -1,0 +1,1 @@
+Drupal.locale = { 'strings': { "Unspecified error": "Lỗi không xác định", "Not published": "Chưa công bố", "Anonymous": "Ẩn danh" } };

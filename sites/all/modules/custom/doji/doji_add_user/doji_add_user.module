@@ -1,0 +1,320 @@
+<?php
+
+/**
+ * Implement hook_init
+ */
+function doji_add_user_init() {
+  drupal_add_js(drupal_get_path('module', 'doji_add_user') . '/js/add_user.js');
+}
+
+function doji_add_user_menu() {
+  $items = array();
+  $items['doji/cap'] = array(
+    'title' => t('Trạng thái giao dịch', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_add_user_get_form'),
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function doji_add_user_block($op = 'list', $delta = 0) {
+  $block = array();
+  switch ($op) {
+    case 'list':
+      $block[0]['info'] = t('Update gia vang');
+      return $block;
+    case 'view':
+      switch ($delta) {
+        case 0:
+          $block['subject'] = t('Update gia vang');
+          $block['content'] = '1';
+          break;
+      }
+      return $block;
+  }
+}
+function doji_add_user_get() {
+  $query = db_query("SELECT u.uid as uid, u.name as name FROM {users} u INNER JOIN {users_roles} r ON u.uid = r.uid WHERE r.rid = 3");
+  while($row = db_fetch_array($query)) {
+    $data[$row['uid']] = $row['name'];
+  }
+  return $data;
+}
+
+function doji_add_user_get_form() {
+  global $user;
+  $uid = $user ->uid;
+  $dlieu = doji_get_node('last');
+  $data = doji_add_user_get_data($uid);
+  $biendo = doji_area_get_info('field_dieukien');
+  $btn_updown = doji_gold_price_btn_updown();
+  $btn_updown_disabled = doji_gold_price_btn_updown(array('class' => 'btn-up btn-updown-children disabled'), array('class' => 'btn-down btn-updown-children disabled'));
+  $node = doji_get_node('last');
+  $timehn = db_result(db_query('SELECT max(changed) from {node} WHERE uid = 1  '));
+  $timesg = db_result(db_query('SELECT max(changed) from {node} WHERE uid = 109 '));
+  $timedn = db_result(db_query('SELECT max(changed) from {node} WHERE uid = 108  '));
+
+  $form = array();
+  $form['#attributes']['class'] = 'form-goldprice-updown';
+  $form['#prefix'] = '<div id= "doji-gold-price-short-form">';
+  $form['#suffix'] = '</div>';
+  foreach($data as $k =>$value) {
+    $tham_so ='group_'.$value['field'];
+    $gia_tri = doji_add_user_biendo($tham_so);
+    $field = str_replace('group','field',$gia_tri[0]['gia_chuan']);
+    $chuan_mua = $node->{$field._muavao}[0]['value'];
+    $chuan_ban = $node->{$field._banra}[0]['value'];
+    $mua_vao = $value['field'].'_muavao';
+    $ban_ra = $value['field'].'_banra';
+
+    $form[$mua_vao] = array(
+      '#type' => 'textfield',
+      '#title' => t(''),
+      '#default_value' => isset($node->{field_.$value['field']._muavao}[0]['value']) ? format_number(str_replace(',', '', $node->{field_.$value['field']._muavao}[0]['value'])) : '',
+      '#attributes' => array('class' => 'price-bg hn-pushall','name_t'=>$value['title'].' mua vào','biendo'=> $gia_tri[0]['mua'],'chuan' => $chuan_mua,
+'oldvalue' => isset($node->{field_.$value['field']._muavao}[0]['value']) ? format_number(str_replace(',', '', $node->{field_.$value['field']._muavao}[0]['value'])) : 0),
+      '#size' => 5,
+      '#suffix' => $btn_updown,
+    );
+    $form[$ban_ra] = array(
+      '#type' => 'textfield',
+      '#title' => t(''),
+      '#default_value' => isset($node->{field_.$value['field']._banra}[0]['value']) ? format_number(str_replace(',', '', $node->{field_.$value['field']._banra}[0]['value'])) : '',
+      '#attributes' => array('class' => 'price-bg hn-pushall','name_t'=>$value['title'].' bán ra','biendo'=> $gia_tri[0]['ban'],'chuan' => $chuan_ban,'oldvalue' => isset($node->{field_.$value['field']._banra}[0]['value']) ? format_number(str_replace(',', '', $node->{field_.$value['field']._banra}[0]['value'])) : 0),
+      '#size' => 5,
+      '#suffix' => $btn_updown,
+    );
+  }
+  $form['submit_gold'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cập nhật', array(), 'vi'),
+    '#attributes' => array('onclick' => 'return (false);'),
+  );
+  return  $form;
+}
+//Get
+function doji_add_user_get_data($uid, $ex = null) {
+  if(isset($ex)) {
+    $field_user = 'AND user_d.field_dlieu_user_value != '.$uid;
+  }
+  else {
+    $field_user = ' AND user_d.field_dlieu_user_value = '.$uid;
+  }
+  $sql = "SELECT chon.field_dlieu_gia_value as field, label.field_label_value as title FROM {content_field_dlieu_gia} chon
+          INNER JOIN {content_field_dlieu_user} user_d ON chon.nid = user_d.nid
+          INNER JOIN {content_field_nhaptay} nhaptay ON nhaptay.nid = user_d.nid
+          INNER JOIN {content_field_label} label ON label.nid = nhaptay.nid
+          AND chon.delta = user_d.delta
+          AND user_d.delta = nhaptay.delta
+          AND label.delta = nhaptay.delta
+          AND nhaptay.field_nhaptay_value = 1
+  ".$field_user;
+  $query = db_query($sql);
+  while($row = db_fetch_array($query)) {
+    $field = $row['field'];
+    $field= str_replace('group_','',$field);
+    $data['field'] = $field;
+    $data['title'] = $row['title'];
+    $datas[] = $data;
+  }
+  return $datas;
+}
+
+function doji_add_user_theme() {
+  return array(
+    'doji_add_user_get_form' => array(
+      'arguments' => array(
+        'form' => array()
+      )
+    ),
+  );
+}
+
+function theme_doji_add_user_get_form ($form) {
+  global $user;
+  $uid = $user ->uid;
+  $headers = array();
+  $headers[] = array('data' => '<div>Giá vàng Hà Nội</div>', 'class' => 'first');
+  $headers[] = array('data' => '<div>' . t('Mua', array(), 'vi') .'</div>');
+  $headers[] = array('data' => '<div>' . t('Bán', array(), 'vi') .'</div>', 'class' => 'last');
+
+  $trangthaigiaodich = variable_get('trangthaigiaodich', 1);
+
+  if ($trangthaigiaodich) {
+    $trangthaigiaodich_link = l(t('Ngừng giao dịch', array(), 'vi'), 'trang-thai-giao-dich/0', array('attributes' => array('title' => t('Ngừng giao dịch vàng', array(), 'vi'), 'class' => 'btn-ngunggiaodich')));
+  }
+  else {
+    $trangthaigiaodich_link = l(t('Giao dịch vàng', array(), 'vi'), 'trang-thai-giao-dich/1', array('attributes' => array('title' => t('Giao dịch vàng', array(), 'vi'), 'class' => 'btn-giaodich')));
+    $trangthaigiaodich_class = 'form-ngunggiaodich';
+  }
+
+  $data = doji_add_user_get_data($uid);
+  doji_add_user_biendo();
+  foreach($data as $key => $value) {
+    $row = array();
+    $mua_vao = $value['field'].'_muavao';
+    $ban_ra = $value['field'].'_banra';
+    $row[] = array('data' => t('<span class="title clear-block clear size-18 normal">'.$value['title'].'</span><span class="sub-title clear size-13 normal">(nghìn/chỉ)</span>', array(), 'vi'), 'class' => 'first value_1'.$key);
+    $row[] = array('data' => '<div class="item-relative">' . drupal_render($form[$mua_vao]) . '</div>', 'class' => 'mua goldprice-td value_2'.$key);
+    $row[] = array('data' => '<div class="item-relative">' . drupal_render($form[$ban_ra]) . '</div>', 'class' => 'ban goldprice-td value_3'.$key);
+    $rows[] = $row;
+  }
+  $time = db_result(db_query('SELECT max(changed) from {node} WHERE uid = %d',$uid));
+  $time = '<span class="update-time">' . t('Cập nhập lúc: @time', array('@time' => format_date($time, 'custom', 'H:i d/m/Y')), 'vi') . '</span>';
+  $row1[] = array('data' => t('<span class="title clear-block clear size-18 normal">'.$trangthaigiaodich_link.'</span><span class="sub-title clear size-13 normal">(nghìn/chỉ)</span>', array(), 'vi'), 'class' => 'first');
+  $row1[] = array('data' => '<div class="item-relative">' . $time. '</div>', 'class' => 'goldprice-td goldprice-td-1');
+  $row1[] = array('data' => '<div class="item-relative">' . drupal_render($form['submit_gold']) . '</div>');
+  $rows[] = $row1;
+  $output = theme('table', $headers, $rows, array('class' => 'goldprice-view ' . $trangthaigiaodich_class));
+  return $output;
+}
+
+
+function doji_add_user_field_in_group($var) {
+  $query = db_query("SELECT field_name FROM {content_group_fields} WHERE group_name = %d",$var);
+  while($row = db_fetch_array($query)) {
+    $data[] = $row['field_name'];
+  }
+  return $data;
+}
+
+
+function doji_add_user_biendo($field) {
+  $sql = "SELECT
+               mua.field_bien_do_value as bien_mua,
+               ban.field_bien_do_ban_value as bien_ban,
+               chuan.field_gia_chuan_value as gia_chuan
+               FROM {content_field_bien_do} mua
+               INNER JOIN {content_field_bien_do_ban} ban ON mua.nid = ban.nid
+               INNER JOIN {content_field_gia_chuan} chuan ON chuan.nid = ban.nid
+               INNER JOIN {content_field_can_thamchieu} tham_chieu ON tham_chieu.nid = chuan.nid
+               AND mua.delta = ban.delta
+               AND ban.delta = chuan.delta
+               AND chuan.delta = tham_chieu.delta
+               AND tham_chieu.field_can_thamchieu_value = '".$field."'";
+
+  $query = db_query($sql);
+  while($row = db_fetch_array($query)) {
+    $data['mua'] = $row['bien_mua'];
+    $data['ban'] = $row['bien_ban'];
+    $data['gia_chuan'] = $row['gia_chuan'];
+    $rows[] = $data;
+  }
+  return $rows;
+}
+
+function doji_add_user_values($node = NULL) {
+  global $user;
+  $uid = $user -> uid;
+  $data = doji_add_user_get_data($uid);
+  foreach($data as $k => $result) {
+    $value_bien = 'group_'.$result['field'];
+    $data_bien = doji_add_user_biendo_relate($value_bien);
+    $chuan = str_replace('group','field',$data_bien['chuan']);
+
+    $gia_chuan_mua = $node->{$chuan._muavao}[0]['value'];
+    $gia_muavao = doji_convert_to_number($node->{field_.$result['field']._muavao}[0]['value']);
+    $gia_bien_mua = $data_bien['bien_mua'];
+    $row[] = array($gia_muavao,$gia_bien_mua,$gia_chuan_mua,$result['title'].' mua vao');
+
+    $gia_chuan_ban = $node->{$chuan._banra}[0]['value'];
+    $gia_banra = doji_convert_to_number($node->{field_.$result['field']._banra}[0]['value']);
+    $gia_bien_ban = $data_bien['bien_ban'];
+    $row[] = array($gia_banra,$gia_bien_ban,$gia_chuan_ban,$result['title'].' ban ra');
+  }
+  return $row;
+}
+
+function doji_add_user_biendo_relate($field = null) {
+  $sql = 'SELECT mua.field_bien_do_value as gia_mua, ban.field_bien_do_ban_value as gia_ban, chuan.field_gia_chuan_value as gia_chuan
+          FROM {content_field_bien_do} mua
+          INNER JOIN {content_field_bien_do_ban} ban ON mua.nid = ban.nid
+          INNER JOIN {content_field_gia_chuan} chuan ON chuan.nid = ban.nid
+          INNER JOIN {content_field_can_thamchieu} thamchieu ON thamchieu.nid = chuan.nid
+          AND ban.delta = mua.delta
+          AND mua.delta = chuan.delta
+          AND thamchieu.delta = chuan.delta
+          AND thamchieu.field_can_thamchieu_value = "'.$field.'"';
+  $query = db_query($sql);
+  $data = array();
+  while($row = db_fetch_array($query)) {
+    $data['bien_mua']= $row['gia_mua'];
+    $data['bien_ban']= $row['gia_ban'];
+    $data['chuan']= $row['gia_chuan'];
+  }
+  return $data;
+}
+// xu ly loi cuoi cung de hien len canh bao
+function doji_add_user_get_error($node = null) {
+  $text_e = '';
+  $text_e_pop = '';
+  $count = 0;
+  $data= doji_add_user_values($node);
+
+  for($i = 0; $i++ ;$i < 10) {
+    if($data[$i][0] > $data[$i][2]-$data[$i][1] || $data[$i][0] < $data[$i][2]+$data[$i][1]) {
+      $text_e .= $data[$i][3] .' thay đổi ngoài phạm vi,';
+      $text_e_pop .= 'Giá mới cập nhật: ';
+      $text_e_pop .= $data[$i][1].',';
+      $bd_dn_duoi = $data[$i][2] - $data[$i][1];
+      $bd_dn_tren = $data[$i][2] + $data[$i][1];
+      $text_e_pop .= 'Biên độ cho phép: ' . $bd_dn_duoi .' - ' . $bd_dn_tren .';';
+      $count  = 1;
+    }
+  }
+  if($data[0][0] > $data[1][0]) {
+    $text_e .= $data[0][3].' <= '.$data[1][3] .',';
+    $text_e_pop .= $data[0][3].': '.$data[0][0].',';
+    $text_e_pop .= $data[1][3] .': '.$data[1][0].';';
+    $count  = 1;
+  }
+
+  return array($count,$text_e,$text_e_pop);
+}
+function doji_add_user_process($node = null) {
+  global $user;
+  $uid = $user -> uid;
+  $check = doji_add_user_get_error($node);
+  $nd_error .= $check[1];
+  $nd_error_popup .= $check[2];
+  if($user ->uid == 1) {
+    db_query('UPDATE {node} SET status=1 WHERE vid = %d', $node->vid);
+    drupal_set_message(t('Giá vàng cập nhật thành công', array(), 'vi'));
+    $dojigold_prefix_filename = variable_get('dojigold_prefix_filename', -32767);
+    $dojigold_prefix_filename++;
+    variable_set('dojigold_prefix_filename', $dojigold_prefix_filename);
+    // $redirect = 'window.location = \'' . $redirect_url . '\';';
+    $_SESSION['doji_gold_update'] = 1;
+  }
+  else{
+    if ($check[0] == 0) {
+      drupal_set_message(t('Giá vàng cập nhật thành công', array(), 'vi'));
+      $dojigold_prefix_filename = variable_get('dojigold_prefix_filename', -32767);
+      $dojigold_prefix_filename++;
+      variable_set('dojigold_prefix_filename', $dojigold_prefix_filename);
+    }
+    else {
+      db_query('UPDATE {node} SET status = 0 WHERE vid = %d', $node->vid);
+      drupal_set_message(t('Giá cập nhật của bạn đang chờ xét duyệt', array(), 'vi'));
+      $row['nid'] = $node->nid;
+      $row['uid'] = $uid;
+      $row['nd'] = $nd_error;
+      $row['ndpoup'] = $nd_error_popup;
+      $row['time'] = time();
+      $row['status'] = 0;
+      db_query("INSERT INTO {canhbao} (nid,uid,nd,ndpoup,time,status) VALUES ('%s','%s','%s','%s','%s','%s')",$row['nid'],$row['uid'],$row['nd'],$row['ndpoup'], $row['time'],$row['status']);
+    }
+    doji_area_check_status();
+  }
+}
+function doji_gold_price_verify_page($op) {
+  drupal_get_messages();
+  $node = doji_get_node('last', 'goldprice');
+  doji_add_user_process($node);
+}

@@ -1,0 +1,696 @@
+<?php
+// $Id: doji_get.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+/**
+ * Implements hook_init().
+ */
+function doji_get_init() {
+  if (drupal_is_front_page()) {
+    drupal_add_js(drupal_get_path('module', 'doji_get') .'/misc/doji_get.js');
+  }
+  drupal_add_css(drupal_get_path('module', 'doji_get') .'/misc/doji_get.css');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function doji_get_menu() {
+  $weight = 10;
+  $items = array();
+  $items['doji/get'] = array(
+    'title' => t('Lấy dữ liệu', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_get_settings'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['doji/get/json/gia_vang_quoc_te'] = array(
+    'title' => t('Lấy dữ liệu giá vàng quốc tế', array(), 'vi'),
+    'page callback' => 'doji_get_gia_vang_quoc_te',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['doji/get/json/update_message_by_time'] = array(
+    'title' => t('Cập nhật message theo thời gian thực', array(), 'vi'),
+    'page callback' => 'doji_get_update_message_by_time',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['doji/get/settings'] = array(
+    'title' => t('Thiết lập thông số', array(), 'vi'),
+    'weight' => $weight++,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['doji/get/currencyrate'] = array(
+    'title' => t('Tỷ giá Tiền tệ trực tiếp', array(), 'vi'),
+    'page callback' => 'doji_get_currencyrate',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+    'weight' => $weight++,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['doji/get/exchangerate'] = array(
+    'title' => t('Tỷ giá ngoại tệ', array(), 'vi'),
+    'page callback' => 'doji_get_exchangerate',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+    'weight' => $weight++,
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+function doji_json_decode($json, $assoc = FALSE){
+  $json = str_replace(array("\n","\r"),"",$json);
+  $json = preg_replace('/([{,])(\s*)([^"]+?)\s*:/','$1"$3":',$json);
+  return json_decode($json, $assoc);
+}
+
+function dpji_get_currencyrate_defined() {
+  $currency_defined = array();
+  $currency_defined['EURUSD'] = t('EUR/USD');
+  $currency_defined['GBPUSD'] = t('GBP/USD');
+  $currency_defined['USDJPY'] = t('USD/JPY');
+  $currency_defined['USDCHF'] = t('USD/CHF');
+  $currency_defined['USDCAD'] = t('USD/CAD');
+  $currency_defined['AUDUSD'] = t('AUD/USD');
+  $currency_defined['EURGBP'] = t('EUR/GBP');
+  $currency_defined['EURJPY'] = t('EUR/JPY');
+  $currency_defined['GBPJPY'] = t('GBP/JPY');
+  $currency_defined['AUDJPY'] = t('AUD/JPY');
+  $currency_defined['USDNOK'] = t('USD/NOK');
+  $currency_defined['XAUUSD'] = t('XAU/USD');
+  $currency_defined['XAGUSD'] = t('XAG/USD');
+  $currency_defined['OILUSD'] = t('OIL/USD');
+  return $currency_defined;
+}
+
+function doji_get_exchangerate_defined() {
+  $exchangerate_defined = array();
+  $exchangerate_defined['AUD'] = t('AUST.DOLLAR');
+  $exchangerate_defined['CAD'] = t('CANADIAN DOLLAR');
+  $exchangerate_defined['CHF'] = t('SWISS FRANCE');
+  $exchangerate_defined['DKK'] = t('DANISH KRONE');
+  $exchangerate_defined['EUR'] = t('EURO');
+  $exchangerate_defined['GBP'] = t('BRITISH POUND');
+  $exchangerate_defined['HKD'] = t('HONGKONG DOLLAR');
+  $exchangerate_defined['INR'] = t('INDIAN RUPEE');
+  $exchangerate_defined['JPY'] = t('JAPANESE YEN');
+  $exchangerate_defined['KRW'] = t('SOUTH KOREAN WON');
+  $exchangerate_defined['KWD'] = t('KUWAITI DINAR');
+  $exchangerate_defined['MYR'] = t('MALAYSIAN RINGGIT');
+  $exchangerate_defined['NOK'] = t('NORWEGIAN KRONER');
+  $exchangerate_defined['RUB'] = t('RUSSIAN RUBLE');
+  $exchangerate_defined['SEK'] = t('SWEDISH KRONA');
+  $exchangerate_defined['SGD'] = t('SINGAPORE DOLLAR');
+  $exchangerate_defined['THB'] = t('THAI BAHT');
+  $exchangerate_defined['USD'] = t('US DOLLAR');
+  return $exchangerate_defined;
+}
+
+/**
+ * Get a node based on default settings.
+ *
+ * @param $settings
+ *   An associative array of settings to change from the defaults, keys are
+ *   node properties, for example 'title' => 'Hello, world!'.
+ * @return
+ *   Created node object.
+ */
+function doji_get_node_base($settings = array()) {
+  // Populate defaults array.
+  $settings += array(
+    'uid'       => 1,
+    'body'      => NULL,
+    'title'     => rand(0, 999),
+    'comment'   => 0,
+    'format'    => FILTER_FORMAT_DEFAULT,
+    'moderate'  => 0,
+    'promote'   => 0,
+    'revision'  => 1,
+    'log'       => '',
+    'status'    => 1,
+    'sticky'    => 0,
+    'type'      => 'page',
+    'revisions' => NULL,
+    'taxonomy'  => NULL,
+  );
+
+  if (!isset($settings['changed'])) {
+    $settings['changed'] = time();
+  }
+  // Use the original node's created time for existing nodes.
+  if (isset($settings['created']) && !isset($settings['date'])) {
+    $settings['date'] = format_date($settings['created'], 'custom', 'Y-m-d H:i:s O');
+  }
+
+  $node = (object) $settings;
+  return $node;
+}
+
+/**
+ * Get a node.
+ *
+ * @param $access_point
+ *   Get order by nid : first, last, default
+ * @param $type
+ *   Node type
+ * @return
+ *   Node object.
+ */
+function doji_get_node1($access_point = 'first', $type = 'goldprice', $status = 1) {
+  static $cached;
+  if (!isset($cached[$access_point][$type])) {
+    switch ($access_point) {
+      case 'first':
+        $node = db_fetch_object(db_query('SELECT nid FROM {node} WHERE type="%s" AND status=%d ORDER BY created ASC LIMIT 1', $type, $status));
+        break;
+      case 'last':
+        $node = db_fetch_object(db_query('SELECT nid FROM {node} WHERE type="%s" AND status=%d ORDER BY created DESC LIMIT 1', $type, $status));
+        break;
+      default:
+        $node = db_fetch_object(db_query('SELECT nid FROM {node} WHERE type="%s" AND status=%d LIMIT 1', $type, $status));
+       break;
+    }
+
+    if (isset($node->nid)) {
+      $cached[$access_point][$type] = node_load($node->nid);
+    }
+    else {
+      $cached[$access_point][$type] = FALSE;
+    }
+
+  }
+  return $cached[$access_point][$type];
+}
+
+function doji_get_node($access_point = 'first', $type = 'goldprice', $status = 1, $reset = FALSE) {
+  static $cached;
+  if (!isset($cached[$access_point][$type]) || $reset) {
+    switch ($access_point) {
+      case 'first':
+        $node = db_fetch_object(db_query('SELECT nid FROM {node} WHERE type="%s" AND status=%d ORDER BY nid ASC LIMIT 1', $type, $status));
+        break;
+      case 'last':
+        if ($type == 'goldprice') {
+          $node = db_fetch_object(db_query('SELECT n.nid
+            FROM {node} n
+            INNER JOIN {content_type_goldprice} ctg on n.vid = ctg.vid
+            WHERE n.type="goldprice" AND status=1 AND ctg.field_sjc_le_muavao_value IS NOT NULL AND ctg.field_sjc_le_muavao_value != "" AND ctg.field_sjc_le_muavao_value != "0" AND ctg.field_sjc_le_banra_value IS NOT NULL AND ctg.field_sjc_le_banra_value != "" AND ctg.field_sjc_le_banra_value != "0" AND ctg.field_ng5_muavao_value IS NOT NULL AND ctg.field_ng5_muavao_value != "" AND ctg.field_ng5_muavao_value != "0" AND ctg.field_ng5_banra_value IS NOT NULL AND ctg.field_ng5_banra_value != "" AND ctg.field_ng5_banra_value != "0" AND ctg.field_sjc_d2_banra_value IS NOT NULL AND ctg.field_sjc_d2_banra_value != "" AND ctg.field_sjc_d2_banra_value != "0" AND ctg.field_sjc_d2_muavao_value IS NOT NULL AND ctg.field_sjc_d2_muavao_value != "" AND ctg.field_sjc_d2_muavao_value != "0" AND ctg.field_nhan_tai5_muavao_value IS NOT NULL AND ctg.field_nhan_tai5_muavao_value != "0" AND ctg.field_nhan_tai5_muavao_value != ""
+            ORDER BY n.nid DESC LIMIT 1'));
+
+          if (isset($node->nid)) {
+            $node = node_load($node->nid);
+            if (isset($node->nid)) {
+              $cached[$access_point][$type] = $node;
+              return $cached[$access_point][$type];
+            }
+            else {
+              doji_get_node('last', 'goldprice', 1, TRUE);
+            }
+          }
+        }
+        else {
+          $node = db_fetch_object(db_query('SELECT nid FROM {node} WHERE type="%s" AND status=%d ORDER BY nid DESC LIMIT 1', $type, $status));
+        }
+        break;
+      default:
+        $node = db_fetch_object(db_query('SELECT nid FROM {node} WHERE type="%s" AND status=%d ORDER BY nid DESC LIMIT 1', $type, $status));
+        break;
+    }
+    if (isset($node->nid)) {
+      $cached[$access_point][$type] = node_load($node->nid);
+    }
+    else {
+      $cached[$access_point][$type] = FALSE;
+    }
+
+  }
+  return $cached[$access_point][$type];
+}
+/**
+ *  Get node form
+ * @param $type_name
+ *    The name of node type
+ */
+function doji_get_node_form($type_name = 'goldprice') {
+  static $form;
+  if (!isset($form)) {
+    module_load_include('inc', 'content', 'includes/content.admin');
+    $form_state = array();
+    $form_state['storage'] = NULL;
+    $form_state['submitted'] = FALSE;
+    $form_state['post'] = array();
+    $form_id = 'doji_gold_price_tmp';
+    $form = content_field_overview_form($form_state, $type_name);
+    drupal_prepare_form($form_id, $form, $form_state);
+    drupal_process_form($form_id, $form, $form_state);
+  }
+  return $form;
+}
+
+/**
+ * Form Settings.
+ */
+function doji_get_settings() {
+  $form = array();
+  $form['#validate'][] = 'doji_get_settings_validate';
+  $node = node_load(0);
+  return system_settings_form($form);
+}
+
+/**
+ * Form Setting Validate.
+ */
+function doji_get_settings_validate($form, &$form_state) {
+  $form_values = $form_state['values'];
+}
+
+/**
+ * Menu callback; Get currencyrate.
+ */
+function doji_get_currencyrate($op = NULL) {
+  $global_settings = variable_get('doji_global_settings', array());
+  $currencyrate_defined = dpji_get_currencyrate_defined();
+  $currencyrates = array();
+  $sess_currencyrates = variable_get('sess_currencyrates', array());
+  $timenow = time();
+  $is_new = 0;
+
+  if (isset($sess_currencyrates['timer']) && $timenow - $sess_currencyrates['timer'] < 2) {
+    $currencyrates = $sess_currencyrates['currencyrates'];
+  }
+
+  if (!count($currencyrates)) {
+  //$url = 'http://www.easy-forex.com/int/wp-content/plugins/ezfx-api-functions/ajax/ef-currency-rates-ajax.php';
+   $url = 'http://www.easy-forex.com/ajax/ef-currency-rates-ajax.php';
+
+    if ($url) {
+      $parameter = 'curr_pairs=EURUSD-GBPUSD-USDJPY-USDCHF-USDCAD-AUDUSD-EURGBP-EURJPY-GBPJPY-AUDJPY-USDNOK-XAUUSD-XAGUSD-OILUSD&curr_vals=1.3481:1.5755:90.62:0.9214:1.0027:1.0464:0.8555:122.18:142.77:94.82:5.4945:1661.32:31.2002:97.26';
+      $page = doji_service($url, 'POST', $parameter);
+      preg_match('!XAUUSD\:([0-9\.\-]+?)\:([0-9\.\-]+?)\:([0-9\.\-]+?)\:(dwn|up)!i', $page, $t);
+
+      if ($t[4] && in_array($t[4], array('up', 'dwn'))) {
+        $currencyrates['XAUUSD'][] = $t[1];
+        $currencyrates['XAUUSD'][] = $t[2];
+        $currencyrates['XAUUSD'][] = $t[3];
+        $currencyrates['XAUUSD'][] = $t[4];
+        $is_new = 1;
+      }
+    }
+  }
+
+  if (!count($currencyrates)) {
+    if (isset($sess_currencyrates['currencyrates']) && count($sess_currencyrates['currencyrates'])) {
+      $currencyrates = $sess_currencyrates['currencyrates'];
+    }
+  }
+
+  switch ($op) {
+    case 'return':
+      if ($is_new) {
+        $sess_currencyrates['timer'] = time();
+        $sess_currencyrates['currencyrates'] = $currencyrates;
+        variable_set('sess_currencyrates', $sess_currencyrates);
+      }
+      $output = $currencyrates;
+      break;
+    case 'json':
+      if ($is_new) {
+        $sess_currencyrates['timer'] = time();
+        $sess_currencyrates['currencyrates'] = $currencyrates;
+        variable_set('sess_currencyrates', $sess_currencyrates);
+      }
+      drupal_json($currencyrates);exit;
+      break;
+    default:
+      $output = theme('doji_get_currencyrate', $currencyrates);
+      break;
+  }
+
+  return $output;
+}
+
+function theme_doji_get_currencyrate($currencyrates = array()) {
+  global $user;
+  $headers = array();
+  $headers[] = t('Tiền tệ', array(), 'vi');
+  $headers[] = t('Bán', array(), 'vi');
+  $headers[] = t('Mua', array(), 'vi');
+  $headers[] = t('Thay đổi', array(), 'vi');
+  $headers[] = t('Trạng thái', array(), 'vi');
+
+  $rows = array();
+  $row = array();
+  $rates = $currencyrates;
+  $currencyrate_defined = dpji_get_currencyrate_defined();
+  $output = t('Hiện tại không có cập nhật nào', array(), 'vi');
+
+  foreach ($rates as $currency_key => $currency) {
+    if (is_array($currency) && count($currency)) {
+      $row = array();
+
+      $row[] = $currencyrate_defined[$currency_key];
+      foreach ($currency as $k=>$value) {
+        $value = trim($value);
+        $row[] = $value;
+      }
+      $rows[] = $row;
+    }
+  }
+
+  if (count($rows)) {
+    $output = theme('table', $headers, $rows, array('class' => 'currencyrates'));
+  }
+
+  drupal_set_title(t('Tỷ giá Tiền tệ trực tiếp', array(), 'vi'));
+  return $output;
+}
+
+/**
+ * Menu callback; Get currencyrate.
+ */
+function doji_get_exchangerate($param = NULL) {
+  $doji_global_settings = variable_get('doji_global_settings', array());
+  $exchangerate_defined = doji_get_exchangerate_defined();
+  $exchangerates = array();
+  $sess_exchangerates = variable_get('sess_exchangerates', array());
+  $timenow = time();
+  $spec_time = $timenow - $sess_exchangerates['timer'];
+  $is_new = 0;
+
+  if (isset($sess_exchangerates['timer']) && count($sess_exchangerates['exchangerates'])) {
+    if ($spec_time < 1800) {
+      $exchangerates = $sess_exchangerates['exchangerates'];
+    }
+  }
+
+  if (!count($exchangerates) || isset($_GET['reset'])) {
+    if (isset($doji_global_settings['url_exchangerate']) && !empty($doji_global_settings['url_exchangerate'])) {
+      $headers = array();
+      $headers['Host'] = 'www.vietcombank.com.vn';
+      $headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:11.0) Gecko/20100101 Firefox/11.0';
+      $headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
+      $headers['Accept-Language'] = 'en-us,en;q=0.5';
+      $headers['Accept-Encoding:'] = 'gzip, deflate';
+      $headers['Connection'] = 'keep-alive';
+      $headers['Cache-Control'] = 'max-age=0';
+      $m = $doji_global_settings['url_exchangerate'];
+      $data = doji_service($doji_global_settings['url_exchangerate']);
+
+      if ($data && !empty($data)) {
+        $xmldata = $data;
+        $xml = simplexml_load_string($xmldata);
+
+        if ($xml) {
+          $items = $xml->xpath('//item');
+          foreach ($items as $k=>$item) {
+            $key = (string)$item->mangoaite;
+            if (drupal_strtolower(trim($key)) == 'usd') {
+              $row = array();
+              $row['CURRENCYCODE'] = 'USD';
+              $row['CURRENCYNAME'] = 'US DOLLAR';
+              $row['BUY'] = isset($item->muatienmat) ? (string)$item->muatienmat : 0;
+              $row['TRANSFER'] = isset($item->muachuyenkhoan) ? (string)$item->muachuyenkhoan : 0;
+              $row['SELL'] = isset($item->banra) ? (string)$item->banra : 0;
+              $exchangerates['USD'] = $row;
+              $is_new = 1;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if ($is_new) {
+    $sess_exchangerates['timer'] = time();
+    $sess_exchangerates['exchangerates'] = $exchangerates;
+    variable_set('sess_exchangerates', $sess_exchangerates);
+  }
+
+  switch ($param) {
+    case 'return':
+      $output = $exchangerates;
+      break;
+    case 'json':
+      drupal_json($exchangerates);exit;
+      break;
+    default:
+      $output = theme('doji_get_exchangerate', $exchangerates);
+      break;
+  }
+
+  return $output;
+}
+
+function doji_get_bieu_do_gia_vang_quoc_te($attributes = array()) {
+  $global_settings = variable_get('doji_global_settings', array());
+  $css_attributes = array(
+    'width' => 338,
+    'height' => 239,
+  );
+  $css_attributes += $attributes;
+  $attribute_string = drupal_attributes($css_attributes);
+
+  if (!$global_settings['url_bieudo_giavang_quocte']) {
+    $global_settings['url_bieudo_giavang_quocte'] = url(trim(drupal_get_path('theme', 'doji_gold'), '/') . '/images/goldprice-graphy.png');
+  }
+
+  $content = "<img class='w-100 border-gray' style=$attribute_string src='$global_settings[url_bieudo_giavang_quocte]' />";
+  return $content;
+}
+
+function doji_get_gia_vang_quoc_te($op = 'view') {
+  $content = '';
+  $node = doji_get_node('last', 'goldprice');
+  $oldvalues = variable_get('goldprice_quocte_oldvalue', array());
+
+  if (!isset($oldvalues['group_gold']['min'])) {
+    variable_del('goldprice_quocte_oldvalue');
+  }
+
+  $rows = array();
+  $headers = array();
+  $headers[] = array('data' => '<div class="table_title">' . t('Giá vàng quốc tế, USD/VND', array(), 'vi') . '</div>', 'class' => 'first');
+  $headers[] = t('Bid');
+  $headers[] = t('Ask');
+  $headers[] = t('Cao nhất', array(), 'vi');
+  $headers[] = t('Thấp nhất', array(), 'vi');
+
+  $currencyrates = doji_get_currencyrate('return');
+  if (isset($currencyrates['XAUUSD'])) {
+    $row = array();
+    $row['label'] = array('data'=>t('XAU/USD <br /> <span class="size-11">(Giao ngay)</span>', array(), 'vi'), 'class'=>'first');
+    $row['bid'] = $currencyrates['XAUUSD'][0];
+    $row['ask'] = $currencyrates['XAUUSD'][1];
+    $row['max'] = '-';
+    $row['min'] = '-';
+    $rows['group_gold'] = $row;
+  }
+  else if ($oldvalues['group_gold']) {
+    $rows['group_gold'] = $oldvalues['group_gold'];
+  }
+
+  $exchangerates = doji_get_exchangerate('return');
+  if (isset($exchangerates['USD']['BUY'])) {
+    $row = array();
+    $row['label'] = array('data'=>t('USD/VND <br /> <span class="size-11">(Liên NH)</span>', array(), 'vi'), 'class'=>'first');
+    $row['bid'] = $exchangerates['USD']['BUY'];
+    $row['ask'] = $exchangerates['USD']['SELL'];
+    $row['max'] = '-';
+    $row['min'] = '-';
+    $rows['group_usdvnd'] = $row;
+  }
+  else if ($oldvalues['group_usdvnd']) {
+    $rows['group_usdvnd'] = $oldvalues['group_usdvnd'];
+  }
+
+  //Qui doi = GOLD(USD/oz) * 1.205656 * Tỷ giá USD/VND
+  if (isset($rows['group_gold']) && isset($rows['group_usdvnd'])) {
+    $bid = ($currencyrates['XAUUSD'][0] * 1.205656 * str_replace(',', '', $exchangerates['USD']['BUY']))/1000;
+    $ask = ($currencyrates['XAUUSD'][1] * 1.205656 * str_replace(',', '', $exchangerates['USD']['SELL']))/1000;
+    //$max = ($currencyrates->XAUUSD[3] * 1.205656 * $exchangerates['USD']['BUY'])/1000;
+    //$min = ($currencyrates->XAUUSD[4] * 1.205656 * $exchangerates['USD']['BUY'])/1000;
+
+    $row = array();
+    $row['label'] = array('data'=>t('Quy đổi <br /> <span class="size-11">(Nghìn/lượng)</span>', array(), 'vi'), 'class'=>'first');
+    $row['bid'] = $bid;
+    $row['ask'] = $ask;
+    $row['max'] = '-';
+    $row['min'] = '-';
+    $rows['group_quidoi'] = $row;
+  }
+  else if ($oldvalues['group_quidoi']) {
+    $rows['group_quidoi'] = $oldvalues['group_quidoi'];
+  }
+
+  variable_set('goldprice_quocte_oldvalue', $rows);
+
+  foreach ($rows as $key => $row) {
+    $new_bid = doji_convert_to_number($row['bid']);
+    $old_bid = doji_convert_to_number($oldvalues[$key]['bid']);
+    $new_ask = doji_convert_to_number($row['ask']);
+    $old_ask = doji_convert_to_number($oldvalues[$key]['ask']);
+    $new_spread_value = $new_ask - $old_bid;
+    $old_spread_value = $old_ask - $old_bid;
+
+    $new_bid_view = str_replace('.00', '', format_number($new_bid, 2));
+    $new_ask_view = str_replace('.00', '', format_number($new_ask, 2));
+    $new_max_view = str_replace('.00', '', format_number($row['max'], 2));
+    $new_min_view = str_replace('.00', '', format_number($row['min'], 2));
+
+    if (!$new_bid_view) {
+      $new_bid_view = '-';
+    }
+    if (!$new_ask_view) {
+      $new_ask_view = '-';
+    }
+    if (!$new_max_view) {
+      $new_max_view = '-';
+    }
+    if (!$new_min_view) {
+      $new_min_view = '-';
+    }
+
+    $rows[$key]['bid'] = array('data' => $new_bid_view, 'class' => 'bid ' . doji_goldprice_change($new_bid, $old_bid));
+    $rows[$key]['ask'] = array('data' => $new_ask_view, 'class' => 'ask ' . doji_goldprice_change($new_ask, $old_ask));
+    $rows[$key]['max'] = array('data' => $new_max_view, 'class' => 'percent');
+    $rows[$key]['min'] = array('data' => $new_min_view, 'class' => 'spread');
+    $rows[$key] = array('data' => $rows[$key], 'class' => $key);
+  }
+
+  $node_wget = doji_get_node('first', 'doji_goldprice_wget');
+  $rows1 = array();
+
+  foreach ($node_wget->field_goldprice_field_status_5 as $k => $v) {
+    $v1 = strtolower($v['value']);
+
+    if ($v1 != 'on') {
+      continue;
+    }
+
+    if (isset($rows[$node_wget->field_goldprice_field_5[$k]['value']])) {
+      $rows1[$node_wget->field_goldprice_field_5[$k]['value']] = $rows[$node_wget->field_goldprice_field_5[$k]['value']];
+    }
+  }
+
+  $rows = $rows1;
+
+  if ($op == 'return') {
+    return $rows;
+  }
+
+  if (count($rows)) {
+    $content = theme('table', $headers, $rows, array('class' => 'goldprice-view'));
+  }
+  if ($op == 'json') {
+    $object = new stdCLass;
+    if (count($rows)) {
+      $object->text = $content;
+      $object->error = 0;
+    }
+    else {
+      $object->error = 1;
+    }
+
+    if (function_exists('doji_goldprice_view_main_price')) {
+      $object->main_price = doji_goldprice_view_main_price();
+    }
+
+    $object->status = 1;
+    drupal_json($object);exit;
+  }
+
+  return $content;
+}
+
+function doji_get_update_message_by_time($op = 'view', $node = NULL) {
+  if (!isset($node->created)) {
+    $node = doji_get_node('last');;
+  }
+
+  $output = t('Cập nhập lúc @time ' . t('ago'), array('@time' => format_interval(time() - $node->created)));
+
+  if ($op == 'json') {
+    $node->text = $output;
+    drupal_json($node);
+    exit;
+  }
+
+  return $output;
+}
+
+function theme_doji_get_exchangerate($exchangerates = array()) {
+  global $user;
+  $headers = array();
+  $headers[] = t('Mã NT', array(), 'vi');
+  $headers[] = t('Tên ngoại tệ', array(), 'vi');
+  $headers[] = t('Mua tiền mặt', array(), 'vi');
+  $headers[] = t('Mua chuyển khoản', array(), 'vi');
+  $headers[] = t('Bán', array(), 'vi');
+
+  $rows = array();
+  $row = array();
+  $rates = $exchangerates;
+  $exchangerate_defined = doji_get_exchangerate_defined();
+  $output = t('Hiện tại không có cập nhật nào', array(), 'vi');
+
+  foreach ($rates as $exchange_key => $exchange) {
+    if (is_array($exchange) && count($exchange)) {
+      $row = array();
+
+      if (!isset($exchangerate_defined[$exchange_key])) {
+        //Email to Developer
+      }
+
+      foreach ($exchange as $k=>$value) {
+        $value = trim($value);
+        $row[] = is_numeric($value) && $value == 0 ? '-' : $value;
+      }
+      $rows[] = $row;
+    }
+  }
+
+  if (count($rows)) {
+    $output = theme('table', $headers, $rows, array('class' => 'exchangerates'));
+  }
+
+  drupal_set_title(t('Tỷ giá ngoại tệ', array(), 'vi'));
+  return $output;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function doji_get_theme() {
+  return array(
+    'doji_get_currencyrate' => array(
+      'arguments' => array(
+        'currencyrates' => array()
+      )
+    ),
+    'doji_get_exchangerate' => array(
+      'arguments' => array(
+        'exchangerates' => array()
+      )
+    ),
+  );
+}
+
+function doji_get_find_min_max($items) {
+  $min = 0;
+  $max = 0;
+
+  foreach ($items as $v) {
+    if ($min > $v) {
+      $min = $v;
+    }
+    if ($max < $v) {
+      $max = $v;
+    }
+  }
+  return array('min' => $min, 'max' => $max);
+}

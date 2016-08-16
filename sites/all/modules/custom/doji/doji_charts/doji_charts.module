@@ -1,0 +1,2389 @@
+<?php
+// $Id: doji_charts.module,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+
+/**
+ * Implements hook_init().
+ */
+function doji_charts_init() {
+  drupal_add_css(drupal_get_path('module', 'doji_charts') .'/misc/doji_charts.css');
+  //drupal_add_js(drupal_get_path('module', 'doji_charts') .'/misc/doji_charts.js');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function doji_charts_menu() {
+  $weight = 3;
+  $items = array();
+  $items['doji/bieudo'] = array(
+    'title' => t('Biểu dồ', array(), 'vi'),
+    //'page callback' => 'doji_charts_page_default',
+    'page callback' => 'doji_charts_view_2',
+    'access arguments' => array('access content'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['doji/admin/cai-dat-bieu-do'] = array(
+    'title' => t('Cài đặt biểu đồ', array(), 'vi'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('doji_charts_setting'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  $items['doji/chart/bieudo'] = array(
+    'title' => t('Biểu đồ', array(), 'vi'),
+    'page callback' => 'doji_charts_view',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'weight' => $weight++,
+  );
+  $items['view/bieudo'] = array(
+    'title' => t('Biểu đồ', array(), 'vi'),
+    'page callback' => 'doji_charts_view',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'weight' => $weight++,
+  );
+  $items['mobile/bieudo/1d'] = array(
+    'title' => t('Biểu đồ 24h', array(), 'vi'),
+    'page callback' => 'doji_charts_view',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'weight' => $weight++,
+  );
+  $items['mobile/bieudo/3d'] = array(
+    'title' => t('3 ngày', array(), 'vi'),
+    'page callback' => 'doji_charts_view',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'weight' => $weight++,
+  );
+  $items['mobile/bieudo/7d'] = array(
+    'title' => t('1 tuần', array(), 'vi'),
+    'page callback' => 'doji_charts_view',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'weight' => $weight++,
+  );
+  $items['view/bieudo2'] = array(
+    'title' => t('Biểu đồ', array(), 'vi'),
+    'page callback' => 'doji_charts_view_2',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'weight' => $weight++,
+  );
+  $items['doji/chart/simple'] = array(
+    'title' => t('Lấy dữ liệu biểu đồ', array(), 'vi'),
+    'page callback' => 'doji_charts_page_default',
+    'page arguments' => array(2,3,4),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['doji/chart/popup'] = array(
+    'title' => t('Lấy dữ liệu biểu đồ', array(), 'vi'),
+    'page callback' => 'doji_charts_page_default',
+    'page arguments' => array(2,3,4),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_block().
+ *
+ */
+function doji_charts_block($op = 'list', $delta = 0, $edit = array()) {
+  global $user;
+  $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+
+  if (count($doji_chart_block_views)) {
+    unset($doji_chart_block_views['block_3']);
+    unset($doji_chart_block_views['block_4']);
+  }
+
+  switch ($op) {
+    case 'list':
+      $blocks = array();
+      foreach ($doji_chart_block_views as $key=>$doji_chart_block) {
+        $blocks[$key]['info'] = $doji_chart_block['title'] . ' - ' . $doji_chart_block['time'];
+      }
+      return $blocks;
+
+    case 'view':
+      $blocks = array();
+
+      foreach ($doji_chart_block_views as $key=>$doji_chart_block) {
+        if ($delta == $key) {
+          $blocks['subject'] = $doji_chart_block['title'] . ' - ' . $doji_chart_block['time'];
+          $doji_chart_block['simple_block'] = 1;
+          $doji_chart_block['width'] = 290;
+          $doji_chart_block['height'] = 192;
+          if (arg(0) == 'doji' && arg(1) == 'bieudo' && !arg(2)) {
+            $doji_chart_block['width'] = 320;
+            $doji_chart_block['height'] = 222;
+          }
+          $blocks['content'] = doji_charts_view(array('width' => '335px', 'height' => '220px', 'title_fontsize' => '16px', 'chart_block' => $doji_chart_block));
+          break;
+        }
+      }
+
+      return $blocks;
+  }
+}
+
+function doji_chart_get_times($params = array(), $count = 9999) {
+  $timenow = time();
+  $ret = array();
+  $node = doji_get_node('last', 'goldprice');
+
+  if (isset($params['time'])) {
+    $params['time2'] = $timenow;
+
+    if (isset($node->created)) {
+      $params['time2'] = $node->created;
+    }
+
+    $timestr = substr($params['time'], -1, 1);
+    $inc = (int)$params['time'];
+
+    switch ($timestr) {
+      case 'h':
+        $ret['time_type'] = 'hours';
+        $ret['plottime'] = $inc * 3600;
+        break;
+      case 'd':
+        $ret['time_type'] = 'day';
+        $ret['tickInterval'] = 86400;
+        $ret['plottime'] = $inc * 86400;
+
+        if ($inc == 1) {
+          $ret['time_type'] = 'hours';
+          $ret['tickInterval'] = 3600;
+        }
+        break;
+      case 'w':
+        $ret['time_type'] = 'week';
+        $ret['tickInterval'] = 24 * 3600;
+        $ret['plottime'] = $inc * 7 * 86400;
+        break;
+      case 'm':
+        $ret['time_type'] = 'month';
+        $ret['tickInterval'] = 24 * 3 * 3600;
+        $ret['plottime'] = $inc * 30 * 86400;
+        break;
+      case 'y':
+        $ret['time_type'] = 'year';
+        $ret['tickInterval'] = 24 * 30 * 3600;
+        $ret['plottime'] = $inc * 365 * 86400;
+        break;
+    }
+
+    //if ($ret['time_type'] && $inc) {
+    //  $params['time1'] = strtotime("-$inc $ret[time_type]");
+   // }
+   if ($ret['plottime']) {
+     $params['time1'] = $params['time2'] - $ret['plottime'];
+   }
+  }
+
+  if (isset($params['time1']) && isset($params['time2'])) {
+    $ret['time1'] = $params['time1'];
+    $ret['time2'] = $params['time2'];
+  }
+  else {
+    $ret['time1'] = strtotime("-1 day");
+    $ret['time2'] = $timenow;
+  }
+
+  return $ret;
+}
+
+function doji_get_params($params = array()) {
+  if (!is_array($params)) {
+    $params = (array)$params;
+  }
+
+  if (arg(2) == 'dojivn') {
+  $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+	$doji_chart_block_views['block_1']['width'] = '253';
+   $doji_chart_block_views['block_1']['height'] = '220';
+   $params['chart_block'] = $doji_chart_block_views['block_1'];
+  $params['external_site'] = TRUE;
+  }
+
+  if (arg(2) == 'sjchanoi') {
+    $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+	$doji_chart_block_views['block_1']['width'] = '253';
+	$doji_chart_block_views['block_1']['height'] = '220';
+    $params['chart_block'] = $doji_chart_block_views['block_1'];
+    $params['external_site'] = TRUE;
+  }
+  //$chart_simple_onday_url = url('doji/chart/popup/' . $pre_timenow . '/' . $timenow, array('absolute' => true));
+  $redirect_url = url('doji/bieudo', array('absolute' => true));
+  $redirect = 'window.location = \'' . $redirect_url . '\';';
+
+  if (isset($_GET['redirect_parent'])) {
+    $redirect = 'parent.window.location = \'' . $redirect_url . '\';';
+  }
+
+  $params_default = array(
+    'id' => 'chart-view',
+    'render-to' => 'chart-container',
+    'width' => '900px',
+    'height' => '500px',
+    'marginright' => 45,
+    'spacingbottom' => 15,
+    'title' => t('SJC', array(), 'vi'),
+    'title_fontsize' => '18px',
+    'title_top' => 15,
+    'hide_title' => FALSE,
+    'label' => t('SJC', array(), 'vi'),
+    'middle_field' => 'sjc',
+    'timenow' => time(),
+    'time2' => time(),
+    'time1' => time() - 86400,
+    'time_type' => 'day',
+    'tickInterval' => 3600,
+    'rediect_url' => $redirect,
+    'x-y2axis' => 35,
+    'y-y2axis' => 0,
+    'plot-x-y2axis' => 35,
+    'plot-y-y2axis' => 3,
+    'plot-x-y2axis-1' => 37,
+    'plot-y-y2axis-1' => 3,
+    'plot-x-y2axis-2' => 37,
+    'plot-y-y2axis-2' => 3,
+    //Legend Attrs
+    'align-legend' => 'right',
+    'verticalalign-legend' => 'top',
+    'x-legend' => -12,
+    'y-legend' => 0,
+  );
+
+  $params = array_merge($params_default, $params);
+  //Get Times
+  if (isset($_GET['time1']) && is_numeric($_GET['time1'])) {
+    $time_params['time1'] = $_GET['time1'];
+  }
+  if (isset($_GET['time2']) && is_numeric($_GET['time2'])) {
+    $time_params['time2'] = $_GET['time2'];
+  }
+  if (isset($_GET['time'])) {
+    $time_params['time'] = $_GET['time'];
+  }
+
+  if (isset($params['chart_block'])) {
+    static $renderid;
+
+    if (!isset($renderid)) {
+      $renderid = 0;
+    }
+    if (strtolower(trim($params['chart_block']['title'])) == 'none' || in_array($params['chart_block']['time'], array('3d', '7d'))) {
+      $params['hide_title'] = TRUE;
+    }
+    if (isset($params['chart_block']['simple_block'])) {
+      $params['block_title_show'] = TRUE;
+      $params['block_simple_block'] = TRUE;
+    }
+    //dsm($params['chart_block'], 'chart blocks' . $renderid);
+    $params['title'] = $params['chart_block']['title'];
+    $params['middle_field'] = $params['chart_block']['group_name'];
+    $params['render-to'] .= '-ant-' . $renderid++;
+    $params['width'] = is_numeric($params['chart_block']['width']) ? $params['chart_block']['width'] . 'px' : $params['chart_block']['width'];
+    $params['height'] = is_numeric($params['chart_block']['height']) ? $params['chart_block']['height'] . 'px' : $params['chart_block']['height'];
+
+    if (is_numeric($params['chart_block']['time'])) {
+      $time_params['time'] = $params['chart_block']['time'] . 'h';
+    }
+    else {
+      $time_params['time'] = $params['chart_block']['time'];
+    }
+
+    //$params['plot-x-y2axis'] = -50;
+    //$params['plot-y-y2axis'] = 0;
+
+    $params['align-legend'] = 'right';
+    $params['verticalalign-legend'] = 'top';
+    //$params['x-legend'] = 0;
+    //$params['y-legend'] = 30;
+
+    if ($params['hide_title']) {
+      $params['y-legend'] = 0;
+    }
+  }
+
+  //Get Op
+  if (isset($_GET['width']) && is_numeric($_GET['width'])) {
+    $params['width'] = $_GET['width'] . 'px';
+  }
+  if (isset($_GET['height']) && is_numeric($_GET['height'])) {
+    $params['height'] = $_GET['height'] . 'px';
+  }
+  if (isset($_GET['title_fontsize'])) {
+    $params['title_fontsize'] = (float)$_GET['title_fontsize'] . 'px';
+  }
+  if (isset($_GET['title_top'])) {
+    $params['title_top'] = (float)$_GET['title_top'];
+  }
+
+  $time_params = doji_chart_get_times($time_params);
+  $params = array_merge($params, $time_params);
+
+  return $params;
+}
+
+function doji_chart_short_form() {
+  $form = array();
+  /*
+  $form['item'] = array(
+    '#type' => 'item',
+    '#value' => '<h3>' . t('Xem thời gian tùy chọn:', array(), 'vi') . '</h3>',
+  );
+  */
+  $form['from'] = array(
+    '#type' => 'date_popup',
+    '#title' => NULL,
+    '#size' => 20,
+    '#date_format' => 'd/m/Y',
+    '#date_year_range' => '-3:+3'
+  );
+  $form['to'] = array(
+    '#type' => 'date_popup',
+    '#title' => NULL,
+    '#size' => 20,
+    '#date_format' => 'd/m/Y',
+    '#date_year_range' => '-3:+3'
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Xem', array(), 'vi'),
+    '#attributes' => array('action' => url('doji/chart/simple'), 'onclick' => 'return false;'),
+  );
+  return $form;
+}
+
+/**
+ * Menu callback; Chart view
+ */
+function doji_charts_view($params = array()) {
+   $_SESSION['create_file'] = 1;
+   if(isset($_SESSION['create_file'])) {
+  if (arg(0) == 'mobile') {
+    $params = array(
+      'width' => '335px',
+      'height' => '220px',
+      'title_fontsize' => '16px',
+      'chart_block' => array(
+        'title' => t('Biểu đồ 24h', array(), 'vi'),
+        'time' => '1d',
+        'width' => 320,
+        'height' => 222,
+        'group_name' => 'sjc',
+        'simple_block' => 1,
+        'mobile' => 1
+      )
+    );
+
+    switch(arg(2)) {
+      case '1d':
+        $params['chart_block']['time'] = '1d';
+        $params['chart_block']['title'] = t('Biểu đồ 24h', array(), 'vi');
+        break;
+      case '3d':
+        $params['chart_block']['time'] = '3d';
+        $params['chart_block']['title'] = t('3 ngày', array(), 'vi');
+        break;
+      case '7d':
+        $params['chart_block']['time'] = '7d';
+        $params['chart_block']['title'] = t('1 tuần', array(), 'vi');
+        break;
+    }
+
+    if (intval(arg(3)) > 0) {
+      $params['chart_block']['width'] = intval(arg(3));
+    }
+    if (intval(arg(4)) > 0) {
+      $params['chart_block']['height'] = intval(arg(4));
+    }
+  }
+
+  $static_data = doji_chart_get_static_data($params);
+  if (isset($static_data['output']['data']) && !empty($static_data['output']['data'])) {
+    drupal_add_js(drupal_get_path('module', 'doji_charts') .'/misc/highchart/js/highcharts.src.js');
+    drupal_add_js($static_data['jscontent']['data'], 'inline');
+    return $static_data['output']['data'];
+  }
+
+  $node = doji_get_node('last', 'goldprice');
+  variable_set('doji_chart_in_processing', 1);
+
+  if (isset($node->nid)) {
+    $params = doji_get_params($params);
+    $sqlselect = 'SELECT ctg.field_' .  $params['middle_field'] . '_le_muavao_value, ctg.field_' .  $params['middle_field'] . '_le_banra_value, n.created
+      FROM {content_type_goldprice} ctg
+      INNER JOIN {node} n ON ctg.vid = n.vid
+      WHERE n.status = 1 AND n.created >= %d AND n.created <= %d
+      ORDER BY n.created ASC';
+
+    $doji_chart_price_setting = variable_get('doji_chart_price_setting', array());
+    $result = db_query($sqlselect, $params['time1'], $params['time2']);
+    $row = array();
+    $timenow = time();
+    $basetime = mktime(0, 0, 0, date('m', $timenow), date('d', $timenow), date('y', $timenow));
+    $time1 = NULL;
+    $time2 = NULL;
+    $y_categories = array();
+    $y_min = 999999;
+    $y_max = 0;
+
+
+    while ($obj = db_fetch_object($result)) {
+      $obj->{"field_$params[middle_field]" . "_le_muavao_value"} = str_replace(',', '', $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) * 10;
+      $obj->{"field_$params[middle_field]"."_le_banra_value"} = str_replace(',', '', $obj->{"field_$params[middle_field]"."_le_banra_value"}) * 10;
+      $le_muavao =  '[' . $obj->created . '000,' . $obj->{"field_$params[middle_field]" . "_le_muavao_value"} . ']';
+      $le_banra =  '[' . $obj->created . '000,' . $obj->{"field_$params[middle_field]"."_le_banra_value"} . ']';
+
+      $row['sjc_le_banra'][$obj->created] = $le_banra;
+      $row['sjc_le_muavao'][$obj->created] = $le_muavao;
+
+      if (!$first_time) {
+        if (!$params['hide_title']) {
+          $current_hour = date('G', $timenow);
+          $first_time = $timenow - 86400;
+          $params['tickInterval'] = 4 * 3600;
+          //$first_time = $basetime + 7200;
+        }
+        else {
+          $dec_time = (int)$params['chart_block']['time'] - 0.4;
+          if ($dec_time < 0) {
+            $dec_time = 2.6;
+          }
+          $first_time = $basetime - $dec_time*86400;
+        }
+        $row['sjc_le_banra'][$first_time] = '[' . $first_time . '000,' . $obj->{"field_$params[middle_field]" . "_le_banra_value"} . ']';
+        $row['sjc_le_muavao'][$first_time] = '[' . $first_time . '000,' . $obj->{"field_$params[middle_field]"."_le_muavao_value"} . ']';
+
+        if ($first_time < $obj->created && !$params['hide_title']) {
+          $sqlselect = 'SELECT ctg.field_' .  $params['middle_field'] . '_le_muavao_value, ctg.field_' .  $params['middle_field'] . '_le_banra_value, n.created
+            FROM {content_type_goldprice} ctg
+            INNER JOIN {node} n ON ctg.vid = n.vid
+            WHERE n.status = 1 AND n.created <= %d
+            ORDER BY n.created DESC LIMIT 1';
+          $first_obj = db_fetch_object(db_query($sqlselect, $first_time));
+
+          $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"} = str_replace(',', '', $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"}) * 10;
+          $first_obj->{"field_$params[middle_field]"."_le_banra_value"} = str_replace(',', '', $first_obj->{"field_$params[middle_field]"."_le_banra_value"}) * 10;
+
+          $row['sjc_le_banra'][$first_time] = '[' . $first_time . '000,' . $first_obj->{"field_$params[middle_field]" . "_le_banra_value"} . ']';
+          $row['sjc_le_muavao'][$first_time] = '[' . $first_time . '000,' . $first_obj->{"field_$params[middle_field]"."_le_muavao_value"} . ']';
+
+          if ($y_min > $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+            $y_min = $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+          }
+          if ($y_min > $first_obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+            $y_min = $first_obj->{"field_$params[middle_field]"."_le_banra_value"};
+          }
+          if ($y_max < $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+            $y_max = $first_obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+          }
+          if ($y_max < $first_obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+            $y_max = $first_obj->{"field_$params[middle_field]"."_le_banra_value"};
+          }
+
+        }
+      }
+
+      $plottime = format_date($obj->created, 'custom', 'H:i');
+      $x_categories[] = $plottime;
+
+      if ($y_min > $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+        $y_min = $obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+      }
+      if ($y_min > $obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+        $y_min = $obj->{"field_$params[middle_field]"."_le_banra_value"};
+      }
+      if ($y_max < $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+        $y_max = $obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+      }
+      if ($y_max < $obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+        $y_max = $obj->{"field_$params[middle_field]"."_le_banra_value"};
+      }
+    }
+
+    $d = 50;
+
+    if (($y_max%100) > 55) {
+      $y_max = floor($y_max/100)*100 + 200;
+    }
+    else {
+      $y_max = floor($y_max/100)*100 + 100;
+    }
+
+    if (($y_min%100) < 1) {
+      $y_min = floor($y_min/100)*100 -100;
+    }
+    else {
+      $y_min = floor($y_min/100)*100;
+    }
+
+    $params['yaxis-tickInterval'] = ($y_max - $y_min)/$d;
+    $params['yaxis-tickInterval'] *= 10;
+    $items = array($y_min, $y_max, $params['yaxis-tickInterval']);
+    //dsm($items, 'items');
+
+    $params['yAxis-min-max'] = "
+       min: $y_min,
+       max: $y_max,
+    ";
+
+    if (!$params['hide_title']) {
+      $title = $params['label'] . ' (nghìn/lượng): ' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value'])*10) . '/' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10);
+      $subtitle= 'Biểu đồ 24h';
+     // $params['sub_title_top'] = $params['title_top'] + 20;
+      $params['sub_title_top'] = 35;
+      $params['x-legend'] = -40;
+      $params['y-legend'] = 15;
+      $addtext = "
+        <span class='right-titlte-1 addtext'>(Nghìn/<br/>lượng)</span>
+        <span class='right-subtitlte-1 addtext'>(tg)</span>
+      ";
+    }
+    else {
+      $subtitle= $params['title'];
+      $params['x-legend'] = -40;
+      $params['y-legend'] = 0;
+      $params['sub_title_top'] = $params['title_top'];
+
+      if (!isset($params['block_title_show'])) {
+        $title = NULL;
+      }
+      else {
+        $title = $params['label'] . ' (nghìn/lượng): ' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value'])*10) . '/' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10);
+        $params['sub_title_top'] = $params['title_top'] + 20;
+        $params['x-legend'] = -40;
+        $params['y-legend'] = 28;
+      }
+
+      $addtext = "
+        <span class='right-titlte-2 addtext'>(Nghìn/<br/>lượng)</span>
+        <span class='right-subtitlte-2 addtext'>(tg)</span>
+      ";
+    }
+
+    $subtitle_font_size = '12px';
+
+    if (isset($params['block_title_show'])) {
+      $subtitle = t('Cập nhật lúc !timer !date_string', array('!timer' => format_date($node->created, 'custom', 'H:i'), '!date_string' => format_date($node->created, 'custom', 'd/m/Y')));
+      $subtitle_font_size = '11px';
+    }
+
+    if (isset($params['block_simple_block'])) {
+      $addtext = '';
+      $params['title_top'] = 7;
+      $params['sub_title_top'] = $params['title_top'] + 23;
+      $params['x-legend'] = -25;
+      $params['y-legend'] = 15;
+      $subtitle_font_size = '9px';
+    }
+
+	if (arg(0) == 'mobile') {
+		$title = "";
+		
+		if (arg(5) && arg(5) == 'landscape') {
+			$subtitle = $params['label'] . ' (nghìn/lượng): ' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value'])*10) . '/' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10);						
+		} else {
+			$subtitle = "Quay ngang máy để xem biểu đồ lớn hơn";
+		}
+		$subtitle_font_size = '10px';
+		$params['x-legend'] = 0;
+		$params['y-legend'] = -18;
+		$params['sub_title_top'] = 1;		
+	}
+    $subtitle = 'subtitle : {
+  						text : \'' . $subtitle . '\',
+              style: {
+              	color: \'#000000\',
+              	//fontSize: \'' . $params['title_fontsize'] . '\'
+                fontSize: \'' . $subtitle_font_size . '\',
+                fontWeight: \'italic\',
+              },
+              align: \'left\',
+              x: 0,
+              y: ' . $params['sub_title_top']  . ',
+              //floating: true,
+  					},  ';
+    $legend = '
+        		legend: {
+        			//layout: \'vertical\',
+        			align: \'' . $params['align-legend'] . '\',
+        			verticalAlign: \' ' . $params['verticalalign-legend'] . ' \',
+        			x: ' . $params['x-legend'] . ',
+        			y: ' . $params['y-legend'] . ',
+        			floating: true,
+        			borderWidth: 0,
+              style: {
+                fontSize: \'12px\'
+              }
+        		},
+    ';
+
+    $params['credits_text'] = '<br /><br />';
+
+    if ($params['external_site']) {
+
+      //unset($addtext);
+      //unset($subtitle);
+      $params['redirect'] = 'parent.window.location="http://giavang.doji.vn";';
+      $params['external_class'] = ' external-view ';
+      $legend = '
+          		legend: {
+          			//layout: \'vertical\',
+          			align: \'' . $params['align-legend'] . '\',
+          			verticalAlign: \' ' . $params['verticalalign-legend'] . ' \',
+          			x: ' . $params['x-legend'] . ',
+          			y: ' . 18 . ',
+          			floating: true,
+          			borderWidth: 0,
+                enabled: true,
+                style: {
+                  fontSize: \'11px\'
+                }
+          		},
+      ';
+      $params['external_marginleft'] = 'marginLeft: 5,';
+      $params['credits_position'] = '
+        position: {
+        	align: \'right\',
+        	x: -10,
+        	verticalAlign: \'bottom\',
+        	y: 0
+        },
+        style: {
+          cursor: \'pointer\',
+          color: \'#000000\',
+          fontSize: \'10px\',
+          //fontWeight: \'bold\',
+
+        }
+      ';
+      $params['credits_text'] = 'Nguồn: www.giavang.doji.vn';
+    }
+
+    $plotline_value_1 = str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value']) * 10;
+    $plotline_value_2 = str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10;
+    $plotline_value_x = $plotline_value_2 - $plotline_value_1;
+
+    $row['sjc_le_banra'][$timenow] = '[' . $timenow . '000,' . $plotline_value_2 . ']';
+    $row['sjc_le_muavao'][$timenow] = '[' . $timenow . '000,' . $plotline_value_1 . ']';
+
+    if ($plotline_value_x < 50) {
+      $params['plot-y-y2axis-1'] = -7;
+      $params['plot-y-y2axis-2'] = 7;
+    }
+
+    $jscontent = '
+  		$(function() {
+  			var seriesOptions = [],
+  				yAxisOptions = [],
+  				seriesCounter = 0,
+  				colors = Highcharts.getOptions().colors;
+          Highcharts.setOptions({
+            lang: {
+            		//months: [\'Tháng 1\', \'Tháng 2\', \'Tháng 3\', \'Tháng 4\', \'Tháng 5\', \'Tháng 6\',\'Tháng 7\', \'Tháng 8\', \'Tháng 9\', \'Tháng 10\', \'Tháng 11\', \'Tháng 12\'],
+            		//weekdays: [\'CN\', \'Thứ 2\', \'Thứ 3\', \'Thứ 4\', \'Thứ 5\', \'Thứ 6\', \'Thứ 7\'],
+              	rangeSelectorZoom: \'\',
+              	rangeSelectorFrom: \'\',
+              	rangeSelectorTo: \'\',
+                exportButtonTitle: \'Tải biểu đồ\',
+                printButtonTitle: \'In biểu đồ\',
+                downloadPDF: \'Tải biểu đồ với kiểu tập tin là :  là PDF\',
+                downloadJPEG: \'Tải biểu đồ với kiểu tập tin là :  là JPEG\',
+                downloadPNG: \'Tải biểu đồ với kiểu tập tin là :  là PNG\',
+                downloadSVG: \'Tải biểu đồ với kiểu tập tin là :  là SVG\',
+            }
+          });
+
+  			var options = {
+            chart: {
+  			        renderTo: \'' . $params['render-to'] . '\',
+                marginRight: ' . $params['marginright'] . ',
+                ' . $params['external_marginleft'] . '
+                defaultSeriesType: \'line\',
+                plotBorderColor: \'#c3c3c3\',
+                plotBackgroundColor: \'#ffffff\',
+                backgroundColor: \'none\',
+                plotBorderWidth: 1,
+                spacingBottom: ' . $params['spacingbottom'] . ',
+                 events: {
+                      click: function(e) {
+                       // $.colorbox({iframe:true, width:975, height:575, scrolling:false, href:\'' . $chart_simple_onday_url . '\'});
+                         ' . $params['redirect'] . '
+                      }
+                   }
+  			        },
+        		   xAxis: {
+                  type: \'datetime\',
+                  showFirstLabel: true,
+                  minRange: 4,
+                  dateTimeLabelFormats: {
+                      second: \'%H:%M:%S %d/%m<br>%Y\',
+                      minute: \'%H:%M\',
+                      hour: \'%H:%M\',
+                      day: \'%d/%m\',
+                      week: \'%d/%m<br>%Y\',
+                      month: \'%m/%Y\',
+                      year: \'%Y\'
+                  },
+                  tickInterval: ' . $params['tickInterval'] * 1000 . ',
+        					title: {
+        					//	text: \'' . format_date($params['time1'], 'custom', 'd/m/Y H:i') . ' - ' . format_date($params['time2'], 'custom', 'd/m/Y H:i') . '\',
+                    //verticalAlign: \'top\',
+      					  },
+            			labels: {
+            				//align: \'left\',
+                    style:{
+                      fontSize: \'8px\',
+                      color: \'#959595\',
+                    },
+            			},
+        		   },
+      			   yAxis : [{
+      			        title: \'seositetools.net\',
+                    startOnTick: false,
+              			showFirstLabel: true,
+                    showLastLabel: true,
+                    gridLineColor: \'#FFFFFF\',
+                    minorTickInterval: ' . $params['yaxis-tickInterval'] . ',
+                    tickInterval: ' . $params['yaxis-tickInterval'] . ',
+                    ' . $params['yAxis-min-max'] . '
+            			labels: {
+            				align: \'right\',
+                    enabled: false,
+            				x: 0,
+            				y: 16,
+            				formatter: function() {
+            					return Highcharts.numberFormat(this.value, 0);
+            				},
+                    style: {
+                      color: \'#959595\',
+                    }
+            			},
+                  plotLines : [{
+                      value : ' . $plotline_value_1 . ',
+//                    color : \'#FF0000\',
+                      color : \'#ffffff\',
+                      dashStyle : \'Dash\',
+                      width : 1,
+                      id: \'line1st\',
+                      label : {
+                        align: \'right\',
+                				x: ' . $params['plot-x-y2axis-1'] . ',
+                				y: ' . $params['plot-y-y2axis-1'] . ',
+                        text : \'' . $plotline_value_1 . '\',
+                        style : {
+                          fontSize: \'9px\',
+                          color: \'#000000\',
+                        },
+            					}
+    				      }, {
+            					value : ' . $plotline_value_2 . ',
+            					//color : \'#00a2ff\',
+                      color : \'#ffffff\',
+            					dashStyle : \'Dash\',
+            					width : 1,
+                      id: \'line2nd\',
+            					label : {
+            					  align: \'right\',
+                				x: ' . $params['plot-x-y2axis-2'] . ',
+                				y: ' . $params['plot-y-y2axis-2'] . ',
+            						text : \'' . $plotline_value_2 . '\',
+                        style : {
+                          fontSize: \'9px\',
+                          color: \'#000000\',
+                        },
+            					}
+    				      }]
+
+      			   }, { // right y axis
+            			linkedTo: 0,
+            			gridLineWidth: 0,
+            			opposite: true,
+                  title: \'tvazone\',
+                  minorTickInterval: ' . $params['yaxis-tickInterval'] . ',
+                  tickInterval: ' . $params['yaxis-tickInterval'] . ',
+            			showFirstLabel: true,
+                  showLastLabel: true,
+                  ' . $params['yAxis-min-max'] . '
+                  customControl: \'tvazone\',
+                  gridCount: 6,
+            			labels: {
+            				align: \'right\',
+                    //enabled: false,
+                    step: 0,
+            				x: ' . $params['x-y2axis'] . ',
+            				y: ' . $params['y-y2axis'] . ',
+                    style:{
+                      fontSize: \'8px\',
+                      color: \'#959595\',
+                    },
+            				formatter: function() {
+            				  if (' . $plotline_value_1 . ' == this.value || Math.abs(' . $plotline_value_1 . ' - this.value) < 20 || ' . $plotline_value_2 . ' == this.value || Math.abs(' . $plotline_value_2 . ' - this.value) < 20) {
+            				    return \'\';
+            				  }
+            					return Highcharts.numberFormat(this.value, 0);
+            				}
+            			},
+      			   }],
+  					title : {
+  						text : \'' . $title . '\',
+              style: {
+              	color: \'#000000\',
+              	//fontSize: \'' . $params['title_fontsize'] . '\'
+                fontWeight: \'bold\',
+                fontSize: \'12px\'
+              },
+              align: \'left\',
+              x: 0,
+              y: 20'/* . $params['title_top'] */. ',
+              //floating: true,
+  					},
+            ' . $subtitle . '
+  			    tooltip: {
+             formatter: function() {
+               return \'<b>\'+ this.series.name +\'</b><br/>\'+ this.y + \' (nghìn/lượng)\';
+             },
+             crosshairs: [true, true],
+  			    },
+            ' . $legend . '
+  			    credits : {
+                		text: \'' . $params['credits_text'] . '\',
+                		href: \'http://giavang.doji.vn\',
+                    ' . $params['credits_position'] . '
+  			    },
+      			navigator : {
+      				enabled : false,
+      			},
+      			plotOptions: {
+      				series: {
+      					marker: {
+      						enabled: false,
+      						states: {
+      							hover: {
+      								enabled: true,
+      								radius: 3
+      							}
+      						}
+      					}
+      				},
+               line: {
+                lineWidth: 2,
+               },
+      			},
+           series: [{
+             name: \'Mua\',
+             color: \'#FF0000\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_muavao']) . ']
+            }, {
+             name: \'Bán\',
+             color: \'#00a2ff\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_banra']) . ']
+        }],
+  			};
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+        chart = new Highcharts.Chart(options);
+  		});
+    ';
+
+    drupal_set_title('');
+    file_save_data($jscontent, $static_data['jscontent']['filepath']);
+    drupal_add_js($jscontent, 'inline');
+    drupal_add_js(drupal_get_path('module', 'doji_charts') .'/misc/highchart/js/highcharts.src.js');
+  }
+
+
+  $output = '<div id="' . $params['id'] . '" class="clear-block ' . $params['external_class'] . '">' . $addtext . '<div id="' . $params['render-to'] . '" style="width:' . $params['width'] . ';height:' .  $params['height'] . '"></div></div>';
+  file_save_data($output, $static_data['output']['filepath']);
+  variable_set('doji_chart_in_processing', 0);
+  unset($_SESSION['create_file']);
+
+  return $output;
+  }
+  return;
+}
+
+/**
+ * Menu callback; chartStock
+ */
+function doji_charts_page_default($op = 'view', $a1 = NULL, $a2 = NULL) {
+  if ($node = doji_get_node('last', 'goldprice')) {
+    $from = preg_replace('|([\d]+)\/([\d]+)\/([\d]+)|i', '\2/\1/\3', $_GET['from']['date']);
+    $to = preg_replace('|([\d]+)\/([\d]+)\/([\d]+)|i', '\2/\1/\3', $_GET['to']['date']);
+    $timenow = time();
+    $from = strtotime($from);
+    $to = strtotime($to);
+
+    if (!$from && $to) {
+      $from = $to;
+    }
+
+    if (!$to && $from) {
+      $to = $from;
+    }
+
+    if ($op == 'popup') {
+      $from = $a1;
+      $to = $a2;
+    }
+
+    if (!$from && !$to) {
+      $result = db_query('
+        SELECT ctg.field_sjc_le_muavao_value, ctg.field_sjc_le_banra_value, n.created
+        FROM {content_type_goldprice} ctg
+        INNER JOIN {node} n ON ctg.vid = n.vid
+        WHERE n.status = 1
+        ORDER BY n.created ASC'
+      );
+      $rangeSelector = '
+         rangeSelector : {
+          //inputDateFormat: \'%Y-%m-%d %H:%M:%S\',
+          //inputEditDateFormat: \'%Y-%m-%d %H:%M:%S\',
+  				buttons : [{
+  					type : \'hour\',
+  					count : 1,
+  					text : \'1 giờ\'
+  				},{
+  					type : \'hour\',
+  					count : 2,
+  					text : \'2 giờ\'
+  				},{
+  					type : \'hour\',
+  					count : 4,
+  					text : \'4 giờ\'
+  				},{
+  					type : \'hour\',
+  					count : 8,
+  					text : \'8 giờ\'
+  				},{
+  					type : \'day\',
+  					count : 1,
+  					text : \'1 ngày\'
+  				},{
+  					type : \'day\',
+  					count : 3,
+  					text : \'3 ngày\'
+  				},{
+  					type : \'week\',
+  					count : 1,
+  					text : \'1 tuần\'
+  				}, {
+  					type : \'month\',
+  					count : 1,
+  					text : \'1 tháng\'
+  				}, {
+  					type : \'month\',
+  					count : 3,
+  					text : \'3 tháng\'
+  				}, {
+  					type : \'year\',
+  					count : 1,
+  					text : \'1 năm\'
+  				}],
+  		    buttonTheme: {
+      			width: 45,
+      			height: 15,
+      			padding: 5,
+          },
+          buttonSpacing: 4,
+          selected: 4,
+  				inputEnabled: false,
+  			   }
+      ';
+    }
+    else {
+      $simple_view = 1;
+      $result = db_query('
+        SELECT ctg.field_sjc_le_muavao_value, ctg.field_sjc_le_banra_value, n.created
+        FROM {content_type_goldprice} ctg
+        INNER JOIN {node} n ON ctg.vid = n.vid
+        WHERE n.status = 1 AND n.created >=%d AND n.created <=%d
+        ORDER BY n.created ASC', $from, $to
+      );
+      $rangeSelector = '
+         rangeSelector : {
+          //inputDateFormat: \'%Y-%m-%d %H:%M:%S\',
+          //inputEditDateFormat: \'%Y-%m-%d %H:%M:%S\',
+
+  		    buttonTheme: {
+      			width: 45,
+      			height: 15,
+      			padding: 5,
+          },
+
+  				inputEnabled: false,
+  			   }
+      ';
+    }
+
+    $row = array();
+    while ($obj = db_fetch_object($result)) {
+      $obj->field_sjc_le_muavao_value = str_replace(',', '', $obj->field_sjc_le_muavao_value) * 10;
+      $obj->field_sjc_le_banra_value = str_replace(',', '', $obj->field_sjc_le_banra_value) * 10;
+      $row['sjc_le_muavao'][] =  '[' . $obj->created . '000,' . $obj->field_sjc_le_muavao_value . ']';
+      $row['sjc_le_banra'][] =  '[' . $obj->created . '000,' . $obj->field_sjc_le_banra_value . ']';
+    }
+    $jscontent = '
+  		$(function() {
+  			var seriesOptions = [],
+  				yAxisOptions = [],
+  				seriesCounter = 0,
+  				colors = Highcharts.getOptions().colors;
+          Highcharts.setOptions({
+            lang: {
+            		months: [\'Tháng 1\', \'Tháng 2\', \'Tháng 3\', \'Tháng 4\', \'Tháng 5\', \'Tháng 6\',\'Tháng 7\', \'Tháng 8\', \'Tháng 9\', \'Tháng 10\', \'Tháng 11\', \'Tháng 12\'],
+            		weekdays: [\'CN\', \'Thứ 2\', \'Thứ 3\', \'Thứ 4\', \'Thứ 5\', \'Thứ 6\', \'Thứ 7\'],
+              	rangeSelectorZoom: \'\',
+              	rangeSelectorFrom: \'\',
+              	rangeSelectorTo: \'\',
+                exportButtonTitle: \'Tải biểu đồ\',
+                printButtonTitle: \'In biểu đồ\',
+                downloadPDF: \'Tải biểu đồ với kiểu tập tin là :  là PDF\',
+                downloadJPEG: \'Tải biểu đồ với kiểu tập tin là :  là JPEG\',
+                downloadPNG: \'Tải biểu đồ với kiểu tập tin là :  là PNG\',
+                downloadSVG: \'Tải biểu đồ với kiểu tập tin là :  là SVG\',
+            }
+          });
+
+  			var options = {
+            chart: {
+  			        renderTo: \'container-charts\',
+  			    },
+            exporting: {
+                enabled: false,
+                type: \'image/jpeg\',
+                buttons: {
+                    exportButton: {
+                        menuItems: null,
+                        onclick: function() {
+                            this.exportChart();
+                        }
+                    }
+                }
+            },
+           plotOptions: {
+             line: {
+              lineWidth: 2,
+             },
+           },
+           '. $rangeSelector . ',
+        		   xAxis: {
+                  type: \'datetime\',
+                  dateTimeLabelFormats: {
+                      second: \'%H:%M:%S %d/%m<br>%Y\',
+                      minute: \'%H:%M %d/%m<br>%Y\',
+                      hour: \'%H:%M %d/%m<br>%Y\',
+                      day: \'%d/%m<br>%Y\',
+                      week: \'%d/%m<br>%Y\',
+                      month: \'%m/%Y\',
+                      year: \'%Y\'
+                  },
+        		   },
+
+      			   yAxis : {
+  				    	labels: {
+  				    		formatter: function() {
+  				    			return Highcharts.numberFormat(this.value, 0);
+  				    		}
+  				    	},
+                showFirstLabel: false,
+      				  plotLines : [{
+      					value : ' . str_replace(',', '', $node->field_sjc_le_muavao[0]['value']) * 10 . ',
+      					color : \'#FF0000\',
+      					dashStyle : \'Dash\',
+      					width : 1,
+      					label : {
+      						text : \'' . format_number(str_replace(',', '', $node->field_sjc_le_muavao[0]['value']) * 10) . '\',
+                  align: \'right\',
+      					}
+      				}, {
+      					value : ' . str_replace(',', '', $node->field_sjc_le_banra[0]['value']) * 10 . ',
+      					color : \'#4c96c5\',
+      					dashStyle : \'Dash\',
+      					width : 1,
+      					label : {
+      						text : \'' . format_number(str_replace(',', '', $node->field_sjc_le_banra[0]['value']) * 10) . '\',
+                  align: \'right\',
+      					}
+      				}]
+      			   },
+  					title : {
+  						text : \'SJC (Nghìn/lượng): ' . format_number(str_replace(',', '', $node->field_sjc_le_muavao[0]['value'] * 10)) . '/' . format_number(str_replace(',', '', $node->field_sjc_le_banra[0]['value'] * 10)) . '\',
+              style: {
+              	color: \'#000000\',
+              	fontSize: \'18px\'
+              },
+              align: \'left\',
+              x: 0,
+              y: 15,
+  					},
+  			    tooltip: {
+  			    	pointFormat: \'<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> <br/>\',
+  			    	yDecimals: 3,
+              crosshairs: [true, true],
+  			    },
+  			    credits : {
+                		text: \'Doji.vn <br> <br>\',
+                		href: \'http://www.doji.vn\',
+  			    },
+      			navigator : {
+      				enabled : false,
+      			},
+           series: [{
+             name: \'Mua\',
+             color: \'#FF0000\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_muavao']) . '],
+             pointInterval: 3600 * 1000,
+            }, {
+             name: \'Bán\',
+             color: \'#4c96c5\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_banra']) . '],
+             pointInterval: 3600 * 1000,
+        }],
+  			};
+        chart = new Highcharts.StockChart(options);
+        $(\'#print-export #print\').click(function(){
+          chart.print();
+        });
+        $(\'#print-export #export\').click(function(){
+          chart.exportChart();
+        });
+  		});
+    ';
+  }
+
+  drupal_add_js($jscontent, 'inline');
+  drupal_set_title('');
+  drupal_add_js(drupal_get_path('module', 'doji_charts') .'/misc/highstock/js/highstock.src.js');
+  drupal_add_js(drupal_get_path('module', 'doji_charts') .'/misc/highstock/js/modules/exporting.src.js');
+
+  if (!$simple_view) {
+    $buttons = doji_charts_create_buttons($min_date, $max_date);
+    $buttons = '<div id="chart-buttons">' . $buttons . '</div>';
+  }
+
+  $buttons .= '<div id="print-export"><span id="export"></span><span id="print"></span></div>';
+  $output = '<div id="doji-charts" class="clear-block"><div id="container-charts" style="width:930px;height:500px"></div> ' . $buttons . '</div>';
+
+  if (!$simple_view) {
+    $output .= drupal_get_form('doji_chart_short_form');
+    $output .= '<iframe src="#" id="iframe-chart" style="width: 100%; border: medium none; overflow: hidden; height: 535px;display:none" scrolling="none"></iframe>';
+  }
+
+  return $output;
+}
+
+function doji_charts_create_buttons($min_date, $max_date) {
+  $weight = 0;
+  $id = 0;
+  $output = '';
+  $form = array();
+  $form['1hour'] = array(
+    '#type' => 'button',
+    '#value' => t('1 giờ', array(), 'vi'),
+    '#attributes' => array('class' => 'bieudo-btn-bg doji-charts-' . $id++),
+    '#weight' => $weight++,
+  );
+  $form['1day'] = array(
+    '#type' => 'button',
+    '#value' => t('1 ngày', array(), 'vi'),
+    '#attributes' => array('class' => 'bieudo-btn-bg doji-charts-' . $id++ . ' chart-actived'),
+    '#weight' => $weight++,
+  );
+  $form['3days'] = array(
+    '#type' => 'button',
+    '#value' => t('3 ngày', array(), 'vi'),
+    '#attributes' => array('class' => 'bieudo-btn-bg doji-charts-' . $id++),
+    '#weight' => $weight++,
+  );
+  $form['1week'] = array(
+    '#type' => 'button',
+    '#value' => t('1 tuần', array(), 'vi'),
+    '#attributes' => array('class' => 'bieudo-btn-bg doji-charts-' . $id++),
+    '#weight' => $weight++,
+  );
+  $form['1month'] = array(
+    '#type' => 'button',
+    '#value' => t('1 tháng', array(), 'vi'),
+    '#attributes' => array('class' => 'bieudo-btn-bg doji-charts-' . $id++),
+    '#weight' => $weight++,
+  );
+  $form['3months'] = array(
+    '#type' => 'button',
+    '#value' => t('3 tháng', array(), 'vi'),
+    '#attributes' => array('class' => 'bieudo-btn-bg doji-charts-' . $id++),
+    '#weight' => $weight++,
+  );
+  $form['1year'] = array(
+    '#type' => 'button',
+    '#value' => t('1 năm', array(), 'vi'),
+    '#attributes' => array('class' => 'bieudo-btn-bg doji-charts-' . $id++),
+    '#weight' => $weight++,
+  );
+
+  $items = array();
+
+  foreach ($form as $element) {
+    $items[] = l('<span>' . $element['#value'] . '</span>', '', array('html' => TRUE, 'attributes' => array('class' => $element['#attributes']['class'], 'onclick' => 'return false;')));
+  }
+  //$output = drupal_render($form);
+  $output = theme('item_list', $items, NULL, 'ul', array('class' => 'chartbuttons'));
+  return $output;
+}
+
+/**
+ * Menu callback; chartStock
+ */
+function doji_charts_get_form_chart() {
+  if ($node = doji_get_node('last', 'goldprice')) {
+    $jscontent = '
+  		$(function() {
+        $.get(\'' . url('doji/chart/json') . '\', null,
+          function(data){
+      			var options2 = {
+                chart: {
+      			        renderTo: \'container-chart-2\',
+      			    },
+                exporting: {
+                    enabled: false,
+                    type: \'image/jpeg\',
+                    buttons: {
+                        exportButton: {
+                            menuItems: null,
+                            onclick: function() {
+                                this.exportChart();
+                            }
+                        }
+                    }
+                },
+               plotOptions: {
+                 line: {
+                  lineWidth: 1,
+                 },
+               },
+                 rangeSelector : {
+                  //inputDateFormat: \'%Y-%m-%d %H:%M:%S\',
+                  //inputEditDateFormat: \'%Y-%m-%d %H:%M:%S\',
+          				buttons : [{
+          					type : \'hour\',
+          					count : 1,
+          					text : \'1 giờ\'
+          				},{
+          					type : \'hour\',
+          					count : 2,
+          					text : \'2 giờ\'
+          				},{
+          					type : \'hour\',
+          					count : 4,
+          					text : \'4 giờ\'
+          				},{
+          					type : \'hour\',
+          					count : 8,
+          					text : \'8 giờ\'
+          				},{
+          					type : \'day\',
+          					count : 1,
+          					text : \'1 ngày\'
+          				},{
+          					type : \'day\',
+          					count : 3,
+          					text : \'3 ngày\'
+          				},{
+          					type : \'week\',
+          					count : 1,
+          					text : \'1 tuần\'
+          				}, {
+          					type : \'month\',
+          					count : 1,
+          					text : \'1 tháng\'
+          				}, {
+          					type : \'month\',
+          					count : 3,
+          					text : \'3 tháng\'
+          				}, {
+          					type : \'year\',
+          					count : 1,
+          					text : \'1 năm\'
+          				}],
+          		    buttonTheme: {
+              			width: 45,
+              			height: 15,
+              			padding: 5,
+                  },
+                  buttonSpacing: 4,
+                  selected: 4,
+          				inputEnabled: false,
+          			   },
+            		   xAxis: {
+                      type: \'datetime\',
+                      dateTimeLabelFormats: {
+                          second: \'%H:%M:%S %d/%m<br>%Y\',
+                          minute: \'%H:%M %d/%m<br>%Y\',
+                          hour: \'%H:%M %d/%m<br>%Y\',
+                          day: \'%d/%m<br>%Y\',
+                          week: \'%d/%m<br>%Y\',
+                          month: \'%m/%Y\',
+                          year: \'%Y\'
+                      },
+            		   },
+
+          			   yAxis : {
+      				    	labels: {
+      				    		formatter: function() {
+      				    			return Highcharts.numberFormat(this.value, 0);
+      				    		}
+      				    	},
+                    showFirstLabel: false,
+          				  plotLines : [{
+          					value : ' . str_replace(',', '', $node->field_sjc_le_muavao[0]['value']) * 10 . ',
+          					color : \'#FF0000\',
+          					dashStyle : \'Dash\',
+          					width : 1,
+          					label : {
+          						text : \'' . format_number(str_replace(',', '', $node->field_sjc_le_muavao[0]['value']) * 10) . '\',
+                      align: \'right\',
+          					}
+          				}, {
+          					value : ' . str_replace(',', '', $node->field_sjc_le_banra[0]['value']) * 10 . ',
+          					color : \'#4c96c5\',
+          					dashStyle : \'Dash\',
+          					width : 1,
+          					label : {
+          						text : \'' . format_number(str_replace(',', '', $node->field_sjc_le_banra[0]['value']) * 10) . '\',
+                      align: \'right\',
+          					}
+          				}]
+          			   },
+      					title : {
+      						text : \'SJC (Nghìn/lượng): ' . format_number(str_replace(',', '', $node->field_sjc_le_muavao[0]['value'] * 10)) . '/' . format_number(str_replace(',', '', $node->field_sjc_le_banra[0]['value'] * 10)) . '\',
+                  style: {
+                  	color: \'#000000\',
+                  	fontSize: \'18px\'
+                  },
+                  align: \'left\',
+                  x: 0,
+                  y: 15,
+      					},
+      			    tooltip: {
+      			    	pointFormat: \'<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> <br/>\',
+      			    	yDecimals: 3,
+                  crosshairs: [true, true],
+      			    },
+      			    credits : {
+                    		text: \'Doji.vn <br> <br>\',
+                    		href: \'http://www.doji.vn\',
+      			    },
+          			navigator : {
+          				enabled : false,
+          			},
+               series: [{
+                 name: \'Mua\',
+                 color: \'#FF0000\',
+                 width : 1,
+                 data: [data.muavao.join(\',\')],
+                 pointInterval: 3600 * 1000,
+                }, {
+                 name: \'Bán\',
+                 color: \'#4c96c5\',
+                 width : 1,
+                 data: [data.banra.join(\',\')],
+                 pointInterval: 3600 * 1000,
+            }],
+      			};
+
+            var chart2 = new Highcharts.StockChart(options2);
+            $(\'#form-charts #print\').click(function(){
+              chart2.print();
+            });
+            $(\'#print-export #export\').click(function(){
+              chart2.exportChart();
+            });
+          }
+        , "json");
+  		});
+    ';
+    drupal_add_js($jscontent, 'inline');
+  }
+
+  $buttons = '<div id="print-export"><span id="export"></span><span id="print"></span></div>';
+  $output = drupal_get_form('doji_chart_short_form');
+  $output .= '<div id="form-charts" class="clear-block"><div id="container-chart-2" style="width:930px;height:500px"></div>' . $buttons . '</div>';
+
+  return $output;
+}
+
+function doji_chart_json_data($op = 'view', $date1, $date2) {
+  $result = db_query('
+    SELECT ctg.field_sjc_le_muavao_value, ctg.field_sjc_le_banra_value, n.created
+    FROM {content_type_goldprice} ctg
+    INNER JOIN {node} n ON ctg.vid = n.vid
+    WHERE n.status = 1
+    ORDER BY n.created ASC'
+  );
+
+  $row = array();
+
+  while ($obj = db_fetch_object($result)) {
+    $obj->field_sjc_le_muavao_value = str_replace(',', '', $obj->field_sjc_le_muavao_value) * 10;
+    $obj->field_sjc_le_banra_value = str_replace(',', '', $obj->field_sjc_le_banra_value) * 10;
+    $row['muavao'][] =  '[' . $obj->created . '000,' . $obj->field_sjc_le_muavao_value . ']';
+    $row['banra'][] =  '[' . $obj->created . '000,' . $obj->field_sjc_le_banra_value . ']';
+  }
+
+ $object = new stdClass;
+
+ if (count($row)) {
+  $object->muavao = $row['muavao'];//'[' . implode(',', $row['muavao']) . ']';
+  $object->banra = $row['banra'];//'[' . implode(',', $row['banra']) . ']';
+ }
+
+  drupal_json($object);die;
+}
+
+function doji_charts_setting() {
+  drupal_set_title('');
+  $doji_chart_block_views = variable_get('doji_chart_block_views', array());
+  $doji_chart_price_setting = variable_get('doji_chart_price_setting', array());
+  $form = array();
+  $form['doji_chart_block_views'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Cài đặt hiển thị các khối biểu đồ trên trang chủ', array(), 'vi'),
+    '#tree' => TRUE,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $blocks = array();
+  $blocks['block_1'] = t('Khối hiển thị 1', array(), 'vi');
+  $blocks['block_2'] = t('Khối hiển thị 2', array(), 'vi');
+  $blocks['block_5'] = t('Khối hiển thị 3', array(), 'vi');
+  $blocks['block_3'] = t('Khối hiển thị trên trang doji.vn', array(), 'vi');
+  $blocks['block_4'] = t('Khối hiển thị trên trang sjchanoi.com.vn', array(), 'vi');
+
+  foreach ($blocks as $block_key => $label) {
+    $form['doji_chart_block_views'][$block_key] = array(
+      '#type' => 'fieldset',
+      '#title' => $label,
+      '#tree' => TRUE,
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    $form['doji_chart_block_views'][$block_key]['title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Nhãn hiển thị', array(), 'vi'),
+      '#size' => 35,
+      '#description' => t('Để không hiển thị nhãn thì nhập vào ô nhập là: <strong>none</strong>', array(), 'vi'),
+      '#default_value' => isset($doji_chart_block_views[$block_key]['title']) ? $doji_chart_block_views[$block_key]['title'] : '',
+    );
+    $form['doji_chart_block_views'][$block_key]['time'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Thời gian', array(), 'vi'),
+      '#size' => 7,
+      '#description' => t('Đơn vị: <strong>Ngày</strong>.', array(), 'vi'),
+      '#default_value' => isset($doji_chart_block_views[$block_key]['time']) ? $doji_chart_block_views[$block_key]['time'] : 1,
+    );
+    $form['doji_chart_block_views'][$block_key]['width'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Width', array(), 'vi'),
+      '#size' => 5,
+      '#description' => t('Đơn vị: <strong>số</strong>.', array(), 'vi'),
+      '#default_value' => isset($doji_chart_block_views[$block_key]['width']) ? $doji_chart_block_views[$block_key]['width'] : 335,
+    );
+    $form['doji_chart_block_views'][$block_key]['height'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Height', array(), 'vi'),
+      '#size' => 5,
+      '#description' => t('Đơn vị: <strong>số</strong>.', array(), 'vi'),
+      '#default_value' => isset($doji_chart_block_views[$block_key]['height']) ? $doji_chart_block_views[$block_key]['height'] : 220,
+    );
+    $form['doji_chart_block_views'][$block_key]['group_name'] = array(
+      '#type' => 'select',
+      '#title' => t('Chọn trường dữ liệu', array(), 'vi'),
+      '#options' => array(
+        'sjc' => t('DOJI Hà Nội'),
+        'sjc_sg' => t('DOJI HCM'),
+      ),
+      '#default_value' => isset($doji_chart_block_views[$block_key]['group_name']) ? $doji_chart_block_views[$block_key]['group_name'] : '',
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+function doji_charts_view_2() {
+  drupal_set_title('');
+  if (function_exists('doji_detect_mobile') && doji_detect_mobile()) {
+    return '';
+  }
+  if ($node = doji_get_node('last', 'goldprice')) {
+    $path = drupal_get_path('module', 'doji_charts');
+    $from = preg_replace('|([\d]+)\/([\d]+)\/([\d]+)|i', '\2/\1/\3', $_GET['from']['date']);
+    $to = preg_replace('|([\d]+)\/([\d]+)\/([\d]+)|i', '\2/\1/\3', $_GET['to']['date']);
+    $timenow = time();
+    $from = strtotime($from);
+    $to = strtotime($to);
+
+    if (!$from && $to) {
+      $from = $to;
+    }
+
+    if (!$to && $from) {
+      $to = $from;
+    }
+
+    if ($op == 'popup') {
+      $from = $a1;
+      $to = $a2;
+    }
+
+    if (!$from && !$to) {
+      $result = db_query('
+        SELECT ctg.field_sjc_le_muavao_value, ctg.field_sjc_le_banra_value, n.created
+        FROM {content_type_goldprice} ctg
+        INNER JOIN {node} n ON ctg.vid = n.vid
+        WHERE n.status = 1
+        ORDER BY n.created ASC'
+      );
+      $rangeSelector = '
+         rangeSelector : {
+          inputDateFormat: \'%Y-%m-%d\',
+          inputEditDateFormat: \'%Y-%m-%d\',
+  				buttons : [{
+  					type : \'hour\',
+  					count : 1,
+  					text : \'1 giờ\'
+  				},{
+  					type : \'day\',
+  					count : 1,
+  					text : \'1 ngày\'
+  				},{
+  					type : \'day\',
+  					count : 3,
+  					text : \'3 ngày\'
+  				},{
+  					type : \'week\',
+  					count : 1,
+  					text : \'1 tuần\'
+  				}, {
+  					type : \'month\',
+  					count : 1,
+  					text : \'1 tháng\'
+  				}, {
+  					type : \'month\',
+  					count : 3,
+  					text : \'3 tháng\'
+  				}, {
+  					type : \'year\',
+  					count : 1,
+  					text : \'1 năm\'
+  				}],
+  		    buttonTheme: {
+      			width: 45,
+      			height: 15,
+      			padding: 5,
+          },
+          buttonSpacing: 4,
+          selected: 1,
+  				inputEnabled: true,
+  			   }
+      ';
+    }
+    else {
+      $simple_view = 1;
+      $result = db_query('
+        SELECT ctg.field_sjc_le_muavao_value, ctg.field_sjc_le_banra_value, n.created
+        FROM {content_type_goldprice} ctg
+        INNER JOIN {node} n ON ctg.vid = n.vid
+        WHERE n.status = 1 AND n.created >=%d AND n.created <=%d
+        ORDER BY n.created ASC', $from, $to
+      );
+      $rangeSelector = '
+         rangeSelector : {
+          //inputDateFormat: \'%Y-%m-%d %H:%M:%S\',
+          //inputEditDateFormat: \'%Y-%m-%d %H:%M:%S\',
+
+  		    buttonTheme: {
+      			width: 45,
+      			height: 15,
+      			padding: 5,
+          },
+
+  				inputEnabled: true,
+  			   }
+      ';
+    }
+
+    $row = array();
+    while ($obj = db_fetch_object($result)) {
+      $obj->field_sjc_le_muavao_value = str_replace(',', '', $obj->field_sjc_le_muavao_value) * 10;
+      $obj->field_sjc_le_banra_value = str_replace(',', '', $obj->field_sjc_le_banra_value) * 10;
+      $row['sjc_le_muavao'][] =  '[' . $obj->created . '000,' . $obj->field_sjc_le_muavao_value . ']';
+      $row['sjc_le_banra'][] =  '[' . $obj->created . '000,' . $obj->field_sjc_le_banra_value . ']';
+    }
+
+   $plotline_value_1 = str_replace(',', '', $node->field_sjc_le_muavao[0]['value']) * 10;
+   $plotline_value_2 = str_replace(',', '', $node->field_sjc_le_banra[0]['value']) * 10;
+   $yaxis_lot_1 = $yaxis_lot_2 = 3;
+   $plotline_value_x = $plotline_value_2 - $plotline_value_1;
+
+   if ($plotline_value_x < 30) {
+     $yaxis_lot_1 = -7;
+     $yaxis_lot_2 = 7;
+   }
+
+    $jscontent = '
+  		$(function() {
+  			var seriesOptions = [],
+  				yAxisOptions = [],
+  				seriesCounter = 0,
+  				colors = Highcharts.getOptions().colors;
+          Highcharts.setOptions({
+            lang: {
+            		months: [\'Tháng 1\', \'Tháng 2\', \'Tháng 3\', \'Tháng 4\', \'Tháng 5\', \'Tháng 6\',\'Tháng 7\', \'Tháng 8\', \'Tháng 9\', \'Tháng 10\', \'Tháng 11\', \'Tháng 12\'],
+            		weekdays: [\'CN\', \'Thứ 2\', \'Thứ 3\', \'Thứ 4\', \'Thứ 5\', \'Thứ 6\', \'Thứ 7\'],
+              	rangeSelectorZoom: \'\',
+              	rangeSelectorFrom: \'\',
+              	rangeSelectorTo: \'\',
+                exportButtonTitle: \'Tải biểu đồ\',
+                printButtonTitle: \'In biểu đồ\',
+                downloadPDF: \'Tải biểu đồ với kiểu tập tin là :  là PDF\',
+                downloadJPEG: \'Tải biểu đồ với kiểu tập tin là :  là JPEG\',
+                downloadPNG: \'Tải biểu đồ với kiểu tập tin là :  là PNG\',
+                downloadSVG: \'Tải biểu đồ với kiểu tập tin là :  là SVG\',
+            }
+          });
+
+  			var options = {
+            chart: {
+  			        renderTo: \'container-charts\',
+                borderColor: \'#fffff\',
+                borderWidth: 0,
+                borderRadius: 0,
+                spacingRight: 70,
+                marginTop: 32,
+                backgroundColor: {
+                    linearGradient: {
+                        x1: 0,
+                        y1: 0,
+                        x2: 0,
+                        y2: 1,
+                    },
+                    stops: [
+                        [0, \'rgb(255, 255, 255)\'],
+                        [1, \'rgb(244, 244, 244)\']
+                    ]
+                },
+                plotBackgroundColor: \'#FFFFFF\',
+                plotBorderColor : \'#C3C3C3\',
+                plotBorderWidth: 1,
+                borderRadius: 0,
+  			    },
+            exporting: {
+                enabled: false,
+                type: \'image/jpeg\',
+                buttons: {
+                    exportButton: {
+                        menuItems: null,
+                        onclick: function() {
+                            this.exportChart();
+                        }
+                    }
+                }
+            },
+           plotOptions: {
+             line: {
+              lineWidth: 2,
+             },
+           },
+           '. $rangeSelector . ',
+        		   xAxis: {
+                  type: \'datetime\',
+                  dateTimeLabelFormats: {
+                      second: \'%H:%M:%S\',
+                      minute: \'%H:%M\',
+                      hour: \'%H:%M\',
+                      day: \'%d/%m\',
+                      week: \'%d/%m\',
+                      month: \'%m/%Y\',
+                      year: \'%Y\'
+                  },
+                  events: {
+                      setExtremes: function(e) {
+                          $(\'#chart-timeline\').html(Highcharts.dateFormat(\'%d/%m/%Y\', e.min) +\' - \'+ Highcharts.dateFormat(\'%d/%m/%Y\', e.max));
+                      }
+                  },
+                  labels : {
+                    style: {
+                      color: \'#959595\',
+                    }
+                  }
+/*
+                  labels: {
+                      formatter: function() {
+                         if (this.isFirst) {
+                            return Highcharts.dateFormat(\'%d/%m %H:%M\', this.value);
+                         }
+                      }
+                  },
+                	title:  {
+             	      align: \'left\',
+                		text: \'abc\',
+                	}
+*/
+        		   },
+
+      			   yAxis : {
+  			          showFirstLabel: true,
+                  showLastLabel: true,
+                  opposite: \'true\',
+                  customControl: \'tvazone\',
+                  maxZoom: 25,
+                  labels: {
+                    align: \'right\',
+                    x: 50,
+                    y: 4,
+                  	formatter: function() {
+                  	  if (' . $plotline_value_1 . ' == this.value || Math.abs(' . $plotline_value_1 . ' - this.value) <= 5 || ' . $plotline_value_2 . ' == this.value || Math.abs(' . $plotline_value_2 . ' - this.value) <= 5) {
+               	        return \'\';
+                  	  }
+                  		return Highcharts.numberFormat(this.value, 0);
+                  	},
+                    style: {
+                      color: \'#959595\',
+                    }
+                   },
+        				  plotLines : [{
+          					value : ' . $plotline_value_2 . ',
+          					//color : \'#4c96c5\',
+                    color : \'#FFFFFF\',
+          					dashStyle : \'Dash\',
+          					width : 1,
+          					label : {
+          						text : \'' . format_number($plotline_value_2) . '\',
+                      align: \'right\',
+                        x: 52,
+                        y: ' . $yaxis_lot_2 . ',
+                      style:{
+                        color: \'#000000\',
+                      },
+          					}
+        				},{
+          					value : ' . $plotline_value_1 . ',
+          					//color : \'#FF0000\',
+                    color : \'#FFFFFF\',
+          					dashStyle : \'Dash\',
+          					width : 1,
+          					label : {
+          						text : \'' . format_number($plotline_value_1) . '\',
+                      align: \'right\',
+                      x: 52,
+                      y: ' . $yaxis_lot_1 . ',
+                      style:{
+                        color: \'#000000\',
+                      },
+          					}
+        				}]
+     			    },
+  					title : {
+  						text : \'SJC (Nghìn/lượng): ' . format_number(str_replace(',', '', $node->field_sjc_le_muavao[0]['value'] * 10)) . '/' . format_number(str_replace(',', '', $node->field_sjc_le_banra[0]['value'] * 10)) . '\',
+              style: {
+              	color: \'#000000\',
+              	fontSize: \'18px\',
+              },
+              align: \'left\',
+              x: 10,
+              y: 20,
+  					},
+  					subtitle : {
+  						text : \'Cập nhật lúc: ' . format_date($node->created, 'medium'). '\',
+              style: {
+              	color: \'#000000\',
+              	fontSize: \'11px\',
+                //fontWeight: \'bold\'
+              },
+              align: \'left\',
+              x: 10,
+              y: 40,
+  					},
+  			    tooltip: {
+  			    	pointFormat: \'<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> <br/>\',
+  			    	yDecimals: 3,
+              crosshairs: [true, true],
+  			    },
+  			    credits : {
+                		text: \'Doji.vn <br> <br>\',
+                		href: \'http://www.doji.vn\',
+  			    },
+      			navigator : {
+      				enabled : false,
+      			},
+           series: [{
+             name: \'Bán\',
+             color: \'#4c96c5\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_banra']) . '],
+             pointInterval: 3600 * 1000,
+             },{
+             name: \'Mua\',
+             color: \'#FF0000\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_muavao']) . '],
+             pointInterval: 3600 * 1000,
+            }],
+  			};
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+
+        // Set the datepicker\'s date format
+        $.datepicker.setDefaults({
+          dateFormat: \'yy-mm-dd\',
+          buttonImageOnly:true,
+          monthNames: [\'Tháng 1\', \'Tháng 2\', \'Tháng 3\', \'Tháng 4\', \'Tháng 5\', \'Tháng 6\',\'Tháng 7\', \'Tháng 8\', \'Tháng 9\', \'Tháng 10\', \'Tháng 11\', \'Tháng 12\'],
+          monthNamesShort: [\'Tháng 1\', \'Tháng 2\', \'Tháng 3\', \'Tháng 4\', \'Tháng 5\', \'Tháng 6\',\'Tháng 7\', \'Tháng 8\', \'Tháng 9\', \'Tháng 10\', \'Tháng 11\', \'Tháng 12\'],
+          dayNamesShort: [\'CN\', \'Thứ 2\', \'Thứ 3\', \'Thứ 4\', \'Thứ 5\', \'Thứ 6\', \'Thứ 7\'],
+          dayNames: [\'CN\', \'Thứ 2\', \'Thứ 3\', \'Thứ 4\', \'Thứ 5\', \'Thứ 6\', \'Thứ 7\'],
+          dayNamesMin: [\'CN\', \'Thứ 2\', \'Thứ 3\', \'Thứ 4\', \'Thứ 5\', \'Thứ 6\', \'Thứ 7\'],
+          prevText: \'\',
+          nextText: \'\',
+          changeMonth: true,
+          changeYear: true,
+          onSelect: function(dateText) {
+              this.onchange();
+              this.onblur();
+          }
+        });
+
+        chart = new Highcharts.StockChart(options);
+        setTimeout(function(){$(\'input.highcharts-range-selector\', $(\'#\'+chart.options.chart.renderTo)).datepicker()},0);
+
+        $(\'#print-export #print\').click(function(){
+          chart.print();
+        });
+        $(\'#print-export #export\').click(function(){
+          chart.exportChart();
+        });
+        $(\'#serie-mua-btn\').click(function(){
+          if (chart.series[1].visible) {
+            chart.series[1].hide();
+          }
+          else {
+            chart.series[1].show();
+          }
+        });
+        $(\'#serie-ban-btn\').click(function(){
+          if (chart.series[0].visible) {
+            chart.series[0].hide();
+          }
+          else {
+            chart.series[0].show();
+          }
+        });
+  		});
+    ';
+  }
+
+  drupal_add_js($jscontent, 'inline');  
+  drupal_add_js(drupal_get_path('module', 'doji_charts') .'/misc/highstock/js/highstock.src.js');
+  drupal_add_js(drupal_get_path('module', 'doji_charts') .'/misc/highstock/js/modules/exporting.src.js');
+  jquery_ui_add(array('ui.core', 'ui.datepicker'));
+
+  if (!$simple_view) {
+    $buttons = doji_charts_create_buttons($min_date, $max_date);
+    $buttons = '<div id="chart-buttons">' . $buttons . '</div>';
+  }
+
+  $serie_btns = array();
+  $serie_btns['ban'] = '<a href="#" id="serie-ban-btn" class="right m-r-10 p-t-5 d-block">' . theme('image', $path . '/misc/giaban-btn.png') . '</a>';
+  $serie_btns['mua'] = '<a href="#" id="serie-mua-btn" class="right m-r-10 p-t-5 d-block">' . theme('image', $path . '/misc/giamua-btn.png') . '</a>';
+  $serie_btns['timeline'] = '<span id="chart-timeline" class="right m-r-10 p-t-10 d-block size-12">' . format_date($node->created - 86400, 'custom', 'd/m/Y') . ' - ' . format_date($node->created, 'custom', 'd/m/Y') .'</span>';
+  $buttons .= '<div id="print-export"><span id="print" class="right"></span><span id="export" class="right m-r-5"></span>' . implode('', $serie_btns) . '</div>';
+  $price_labels = '        <span class="right-titlte-1 addtext">' . t('Nghìn<br>/lượng', array(), 'vi'). '</span>
+        <span class="right-subtitlte-1 addtext">' . t('(tg)', array(), 'vi') . '</span>';
+  $output = '<div id="doji-charts" class="clear-block">' . $price_labels . '<div id="container-charts" style="width:930px;height:500px"></div> ' . $buttons . '</div>';
+
+  if (!$simple_view) {
+   // $output .= drupal_get_form('doji_chart_short_form');
+    //$output .= '<iframe src="#" id="iframe-chart" style="width: 100%; border: medium none; overflow: hidden; height: 535px;display:none" scrolling="none"></iframe>';
+  }
+	//$output.= '<h3><span id="Cours1_lblLabel_GoldPrice">' . t('Giá vàng quốc tế, USD/VND', array(), 'vi') . '</span></h3>';
+  //return $output . doji_view_gia_vang_quocte();
+  return $output;
+}
+
+/**
+ * Menu callback; Chart view
+ */
+function doji_charts_small_view_1($params = array()) {
+  $node = doji_get_node('last', 'goldprice');
+  if (isset($node->nid)) {
+    $params = doji_get_params($params);
+    $sqlselect = 'SELECT ctg.field_' .  $params['middle_field'] . '_le_muavao_value, ctg.field_' .  $params['middle_field'] . '_le_banra_value, n.created
+      FROM {content_type_goldprice} ctg
+      INNER JOIN {node} n ON ctg.vid = n.vid
+      WHERE n.status = 1 AND n.created >= %d AND n.created <= %d
+      ORDER BY n.created ASC';
+
+    $result = db_query($sqlselect, $params['time1'], $params['time2']);
+    $row = array();
+    $basetime = mktime(0, 0, 0, date('m', time()), date('d', time()), date('y', time()));
+    $time1 = NULL;
+    $time2 = NULL;
+    $y_categories = array();
+    $y_min = 999999;
+    $y_max = 0;
+
+    while ($obj = db_fetch_object($result)) {
+      $obj->{"field_$params[middle_field]" . "_le_muavao_value"} = str_replace(',', '', $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) * 10;
+      $obj->{"field_$params[middle_field]"."_le_banra_value"} = str_replace(',', '', $obj->{"field_$params[middle_field]"."_le_banra_value"}) * 10;
+      $row['sjc_le_muavao'][$obj->created] =  '[' . $obj->created . '000,' . $obj->{"field_$params[middle_field]" . "_le_muavao_value"} . ']';
+      $row['sjc_le_banra'][$obj->created] =  '[' . $obj->created . '000,' . $obj->{"field_$params[middle_field]"."_le_banra_value"} . ']';
+      $plottime = format_date($obj->created, 'custom', 'H:i');
+      $x_categories[] = $plottime;
+
+      if ($y_min > $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+        $y_min = $obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+      }
+      if ($y_min > $obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+        $y_min = $obj->{"field_$params[middle_field]"."_le_banra_value"};
+      }
+      if ($y_max < $obj->{"field_$params[middle_field]" . "_le_muavao_value"}) {
+        $y_max = $obj->{"field_$params[middle_field]" . "_le_muavao_value"};
+      }
+      if ($y_max < $obj->{"field_$params[middle_field]"."_le_banra_value"}) {
+        $y_max = $obj->{"field_$params[middle_field]"."_le_banra_value"};
+      }
+    }
+
+    if ($params['tickInterval'] == 3600) {
+
+    }
+
+    if ($params['tickInterval'] == 86400) {
+
+    }
+
+    $params['yaxis-tickInterval'] = 50;
+    $params['yaxis-tickInterval'] = round(($y_max-$y_min)/50) * 10;
+
+    if ($params['yaxis-tickInterval'] < 25) {
+      $params['yaxis-tickInterval'] = 25;
+    }
+    else if ($params['yaxis-tickInterval'] > 25 && $params['yaxis-tickInterval'] < 75) {
+      $params['yaxis-tickInterval'] = 50;
+    }
+    //else if ($params['yaxis-tickInterval'] > 75 && $params['yaxis-tickInterval'] < 125) {
+    //  $params['yaxis-tickInterval'] = 125;
+    //}
+    else {
+      $params['yaxis-tickInterval'] = 125;
+    }
+
+    if (!$params['hide_title']) {
+      $title = $params['label'] . ' (nghìn/lượng): ' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value'])*10) . '/' . format_number(str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10);
+      $subtitle= 'Biểu đồ 24h';
+      $params['sub_title_top'] = $params['title_top'] + 20;
+      $params['x-legend'] = -40;
+      $params['y-legend'] = 25;
+      $addtext = "
+        <span class='right-titlte-1 addtext'>(Nghìn/<br/>lượng)</span>
+        <span class='right-subtitlte-1 addtext'>(tg)</span>
+      ";
+    }
+    else {
+      $title = NULL;
+      $subtitle= 'Biểu đồ 3 ngày';
+      $params['x-legend'] = -40;
+      $params['y-legend'] = 0;
+      $params['sub_title_top'] = $params['title_top'];
+      $addtext = "
+        <span class='right-titlte-2 addtext'>(Nghìn/<br/>lượng)</span>
+        <span class='right-subtitlte-2 addtext'>(tg)</span>
+      ";
+    }
+    $subtitle = 'subtitle : {
+  						text : \'' . $subtitle . '\',
+              style: {
+              	color: \'#000000\',
+              	//fontSize: \'' . $params['title_fontsize'] . '\'
+                fontSize: \'12px\'
+              },
+              align: \'left\',
+              x: 0,
+              y: ' . $params['sub_title_top'] . ',
+              //floating: true,
+  					},  ';
+    $legend = '
+        		legend: {
+        			//layout: \'vertical\',
+        			align: \'' . $params['align-legend'] . '\',
+        			verticalAlign: \' ' . $params['verticalalign-legend'] . ' \',
+        			x: ' . $params['x-legend'] . ',
+        			y: ' . $params['y-legend'] . ',
+        			floating: true,
+        			borderWidth: 0,
+              style: {
+                fontSize: \'12px\'
+              }
+        		},
+    ';
+
+    $params['credits_text'] = '<br /><br />';
+
+    if ($params['external_site']) {
+      //unset($addtext);
+      //unset($subtitle);
+      $params['redirect'] = 'parent.window.location="http://giavang.doji.vn";';
+      $params['external_class'] = ' external-view ';
+      $legend = '
+          		legend: {
+          			//layout: \'vertical\',
+          			align: \'' . $params['align-legend'] . '\',
+          			verticalAlign: \' ' . $params['verticalalign-legend'] . ' \',
+          			x: ' . $params['x-legend'] . ',
+          			y: ' . 18 . ',
+          			floating: true,
+          			borderWidth: 0,
+                enabled: true,
+                style: {
+                  fontSize: \'11px\'
+                }
+          		},
+      ';
+      $params['external_marginleft'] = 'marginLeft: 5,';
+      $params['credits_position'] = '
+        position: {
+        	align: \'right\',
+        	x: -10,
+        	verticalAlign: \'bottom\',
+        	y: 0
+        },
+        style: {
+          cursor: \'pointer\',
+          color: \'#000000\',
+          fontSize: \'10px\',
+          //fontWeight: \'bold\',
+
+        }
+      ';
+      $params['credits_text'] = 'Nguồn: www.giavang.doji.vn';
+    }
+
+    $plotline_value_1 = str_replace(',', '', $node->{"field_$params[middle_field]"."_le_muavao"}[0]['value']) * 10;
+    $plotline_value_2 = str_replace(',', '', $node->{"field_$params[middle_field]"."_le_banra"}[0]['value']) * 10;
+    $plotline_value_x = $plotline_value_2 - $plotline_value_1;
+
+    if ($plotline_value_x < 50) {
+      $params['plot-y-y2axis-1'] = -7;
+      $params['plot-y-y2axis-2'] = 7;
+    }
+
+    $jscontent = '
+  		$(function() {
+  			var seriesOptions = [],
+  				yAxisOptions = [],
+  				seriesCounter = 0,
+  				colors = Highcharts.getOptions().colors;
+          Highcharts.setOptions({
+            lang: {
+            		//months: [\'Tháng 1\', \'Tháng 2\', \'Tháng 3\', \'Tháng 4\', \'Tháng 5\', \'Tháng 6\',\'Tháng 7\', \'Tháng 8\', \'Tháng 9\', \'Tháng 10\', \'Tháng 11\', \'Tháng 12\'],
+            		//weekdays: [\'CN\', \'Thứ 2\', \'Thứ 3\', \'Thứ 4\', \'Thứ 5\', \'Thứ 6\', \'Thứ 7\'],
+              	rangeSelectorZoom: \'\',
+              	rangeSelectorFrom: \'\',
+              	rangeSelectorTo: \'\',
+                exportButtonTitle: \'Tải biểu đồ\',
+                printButtonTitle: \'In biểu đồ\',
+                downloadPDF: \'Tải biểu đồ với kiểu tập tin là :  là PDF\',
+                downloadJPEG: \'Tải biểu đồ với kiểu tập tin là :  là JPEG\',
+                downloadPNG: \'Tải biểu đồ với kiểu tập tin là :  là PNG\',
+                downloadSVG: \'Tải biểu đồ với kiểu tập tin là :  là SVG\',
+            }
+          });
+
+  			var options = {
+            chart: {
+  			        renderTo: \'' . $params['render-to'] . '\',
+                marginRight: ' . $params['marginright'] . ',
+                ' . $params['external_marginleft'] . '
+                defaultSeriesType: \'line\',
+                plotBorderColor: \'#c3c3c3\',
+                plotBorderWidth: 1,
+                spacingBottom: ' . $params['spacingbottom'] . ',
+                 events: {
+                      click: function(e) {
+                       // $.colorbox({iframe:true, width:975, height:575, scrolling:false, href:\'' . $chart_simple_onday_url . '\'});
+                         ' . $params['redirect'] . '
+                      }
+                   }
+  			        },
+        		   xAxis: {
+                  type: \'datetime\',
+                  showFirstLabel: true,
+                  minRange: 7,
+                  dateTimeLabelFormats: {
+                      second: \'%H:%M:%S %d/%m<br>%Y\',
+                      minute: \'%H:%M\',
+                      hour: \'%H:%M\',
+                      day: \'%d/%m\',
+                      week: \'%d/%m<br>%Y\',
+                      month: \'%m/%Y\',
+                      year: \'%Y\'
+                  },
+                  tickInterval: ' . $params['tickInterval'] * 1000 . ',
+        					title: {
+        					//	text: \'' . format_date($params['time1'], 'custom', 'd/m/Y H:i') . ' - ' . format_date($params['time2'], 'custom', 'd/m/Y H:i') . '\',
+                    //verticalAlign: \'top\',
+      					  },
+            			labels: {
+            				//align: \'left\',
+                    style:{
+                      fontSize: \'8px\',
+                      color: \'#959595\',
+                    },
+            			},
+        		   },
+      			   yAxis : [{
+      			       title: \'abc\',
+                    startOnTick: false,
+                    showFirstLabel: false,
+                    gridLineColor: \'#FFFFFF\',
+            			labels: {
+            				align: \'right\',
+                    enabled: false,
+            				x: 0,
+            				y: 16,
+            				formatter: function() {
+            					return Highcharts.numberFormat(this.value, 0);
+            				},
+                    style: {
+                      color: \'#959595\',
+                    }
+            			},
+                  plotLines : [{
+                      value : ' . $plotline_value_1 . ',
+//                      color : \'#FF0000\',
+                      color : \'#ffffff\',
+                      dashStyle : \'Dash\',
+                      width : 1,
+                      label : {
+                        align: \'right\',
+                				x: ' . $params['plot-x-y2axis-1'] . ',
+                				y: ' . $params['plot-y-y2axis-1'] . ',
+                        text : \'' . $plotline_value_1 . '\',
+                        style : {
+                          fontSize: \'9px\',
+                          color: \'#000000\',
+                        },
+            					}
+    				      }, {
+            					value : ' . $plotline_value_2 . ',
+            					//color : \'#00a2ff\',
+                      color : \'#ffffff\',
+            					dashStyle : \'Dash\',
+            					width : 1,
+            					label : {
+            					  align: \'right\',
+                				x: ' . $params['plot-x-y2axis-2'] . ',
+                				y: ' . $params['plot-y-y2axis-2'] . ',
+            						text : \'' . $plotline_value_2 . '\',
+                        style : {
+                          fontSize: \'9px\',
+                          color: \'#000000\',
+                        },
+            					}
+    				      }]
+
+      			   }, { // right y axis
+            			linkedTo: 0,
+            			gridLineWidth: 0,
+            			opposite: true,
+                  title: \'abc\',
+                  minorTickInterval: ' . $params['yaxis-tickInterval'] . ',
+                  tickInterval: ' . $params['yaxis-tickInterval'] . ',
+            			labels: {
+            				align: \'right\',
+                    //enabled: false,
+                    step: 0,
+            				x: ' . $params['x-y2axis'] . ',
+            				y: ' . $params['y-y2axis'] . ',
+                    style:{
+                      fontSize: \'8px\',
+                      color: \'#959595\',
+                    },
+            				formatter: function() {
+            				  if (' . $plotline_value_1 . ' == this.value || Math.abs(' . $plotline_value_1 . ' - this.value) < 25 || ' . $plotline_value_2 . ' == this.value || Math.abs(' . $plotline_value_2 . ' - this.value) < 25) {
+            				    //return \'\';
+            				  }
+            					return Highcharts.numberFormat(this.value, 0);
+            				}
+            			},
+            			showFirstLabel: true,
+      			   }],
+  					title : {
+  						text : \'' . $title . '\',
+              style: {
+              	color: \'#000000\',
+              	//fontSize: \'' . $params['title_fontsize'] . '\'
+                fontWeight: \'bold\',
+                fontSize: \'12px\'
+              },
+              align: \'left\',
+              x: 0,
+              y: ' . $params['title_top'] . ',
+              //floating: true,
+  					},
+            ' . $subtitle . '
+  			    tooltip: {
+             formatter: function() {
+               return \'<b>\'+ this.series.name +\'</b><br/>\'+ this.y + \' (nghìn/lượng)\';
+             },
+             crosshairs: [true, true],
+  			    },
+            ' . $legend . '
+  			    credits : {
+                		text: \'' . $params['credits_text'] . '\',
+                		href: \'http://giavang.doji.vn\',
+                    ' . $params['credits_position'] . '
+  			    },
+      			navigator : {
+      				enabled : false,
+      			},
+      			plotOptions: {
+      				series: {
+      					marker: {
+      						enabled: false,
+      						states: {
+      							hover: {
+      								enabled: true,
+      								radius: 3
+      							}
+      						}
+      					}
+      				},
+               line: {
+                lineWidth: 2,
+               },
+      			},
+           series: [{
+             name: \'Mua\',
+             color: \'#FF0000\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_muavao']) . ']
+            }, {
+             name: \'Bán\',
+             color: \'#00a2ff\',
+             width : 1,
+             data: [' . implode(',', $row['sjc_le_banra']) . ']
+        }],
+  			};
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+        chart = new Highcharts.Chart(options);
+  		});
+    ';
+
+    drupal_add_js($jscontent, 'inline');
+    drupal_set_title('');
+    drupal_add_js(drupal_get_path('module', 'doji_charts') .'/misc/highchart/js/highcharts.src.js');
+  }
+
+  $output = '<div id="' . $params['id'] . '" class="clear-block ' . $params['external_class'] . '">' . $addtext . '<div id="' . $params['render-to'] . '" style="width:' . $params['width'] . ';height:' .  $params['height'] . '"></div></div>';
+  return $output;
+}
+
+function doji_chart_step_fix($number) {
+  $step = $number%100;
+
+  if ($step < 30) {
+    $number -= $step;
+  }
+  else if ($step < 50) {
+    $number -= $step;
+    $number += 50;
+  }
+  else if ($step < 99) {
+    $number -= $step;
+    $number += 100;
+  }
+  return $number;
+}
+
+function doji_chart_get_data_path() {
+  $path = file_directory_path() .'/data';
+  file_check_directory($path, FILE_CREATE_DIRECTORY);
+  return $path;
+}
+
+function doji_chart_get_static_data($params = array()) {
+  $ret = array();
+  $data_path = doji_chart_get_data_path();
+
+  if (isset($params['chart_block']['time']) && is_string($params['chart_block']['time'])) {
+    $params['chart_block']['time'] = preg_replace('|[^0-9a-z\-\_]|i', '', $params['chart_block']['time']);
+
+    if (isset($params['chart_block']['simple_block'])) {
+      $params['chart_block']['time'] .= 'simple_block';
+    }
+    if (isset($params['chart_block']['mobile'])) {
+      $params['chart_block']['time'] .= 'mobile_' . $params['chart_block']['width'] . $params['chart_block']['height'];
+    }
+
+    $ret['jscontent']['filename'] = $params['chart_block']['time'] . '_jscontent_cached.dat';
+    $ret['output']['filename'] = $params['chart_block']['time'] . '_output_cached.dat';
+  }
+  else {
+    $ret['jscontent']['filename'] = 'external_jscontent_cached.dat';
+    $ret['output']['filename'] = 'external_output_cached.dat';
+  }
+
+  $dojigold_prefix_filename = variable_get('dojigold_prefix_filename', -32767);
+  $doji_chart_in_processing = variable_get('doji_chart_in_processing', 0);
+
+  if ($doji_chart_in_processing) {
+    $dojigold_prefix_filename--;
+  }
+
+  $ret['jscontent']['filepath'] = $data_path . '/' . 'ant' . $dojigold_prefix_filename . $ret['jscontent']['filename'];
+  $ret['output']['filepath'] = $data_path . '/' . 'ant' . $dojigold_prefix_filename . $ret['output']['filename'];
+  $ret['jscontent']['data'] = '';
+  $ret['output']['data'] = '';
+
+  if (file_exists($ret['jscontent']['filepath'])) {
+    $ret['jscontent']['data'] = file_get_contents($ret['jscontent']['filepath']);
+  }
+  if (file_exists($ret['output']['filepath'])) {
+    $ret['output']['data'] = file_get_contents($ret['output']['filepath']);
+  }
+
+  return $ret;
+}
+
+function doji_chart_delete_static_data() {
+  $filepaths = glob(doji_chart_get_data_path() . '/*.dat');
+  foreach ($filepaths as $filepath) {
+    file_delete($filepath);
+  }
+}
+

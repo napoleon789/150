@@ -1,0 +1,91 @@
+<?php
+/**
+ * Implementation of hook_install().
+ */
+function doji_area_install() {
+  drupal_install_schema('doji_area');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function doji_area_uninstall() {
+  drupal_uninstall_schema('doji_area');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function doji_area_schema() {
+  $schema['canhbao'] = array(
+    'description' => 'Lưu lịch sử cảnh báo.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+   'nid' => array(
+                      'type' => 'int',
+                      'not null' => TRUE,
+                      'default' => 0
+               ),
+       'uid' => array(
+               'type' => 'int',
+               'not null' => TRUE,
+               'default' => 0
+       ),
+        'nd' => array(
+              'type' => 'text',
+                      'not null' => TRUE,
+                      'size' => 'big',
+                      'description' => 'Day la nd canh bao',
+         ),
+          'ndpoup' => array(
+                       'type' => 'text',
+                       'not null' => TRUE,
+                       'size' => 'big',
+                       'description' => 'Day la nd canh bao popup',
+                  ),
+          'time' => array(
+                 'type' => 'int',
+                 'not null' => TRUE,
+                 'default' => 0
+          ),
+        'status' => array(
+                    'type' => 'int',
+                    'not null' => TRUE,
+                    'default' => 0
+             ),
+    ),
+    'primary key' => array('id'),
+  );
+    $schema['biendo'] = array(
+      'description' => 'Lưu biên độ cảnh báo.',
+      'fields' => array(
+        'id' => array(
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE
+        ),
+        'field_value' => array(
+                  'type' => 'varchar',
+                  'length' => 255,
+                  'not null' => TRUE,
+                  'default' => ''
+           ),
+         'biendo_mua' => array(
+                 'type' => 'int',
+                 'not null' => TRUE,
+                 'default' => 0
+          ),
+          'biendo_ban' => array(
+                  'type' => 'int',
+                  'not null' => TRUE,
+                  'default' => 0
+            ),
+      ),
+      'primary key' => array('id'),
+    );
+  return $schema;
+}

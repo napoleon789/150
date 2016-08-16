@@ -1,0 +1,6 @@
+; $Id: doji_charts.info,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+name = export to image
+package = Doji
+description = Doji Charts module
+core = 6.x
+version = VERSION

@@ -1,0 +1,12 @@
+name = Serial
+description = Defines atomic auto increment (serial) CCK field type.
+dependencies[] = content
+package = CCK
+core = 6.x
+
+; Information added by  packaging script on 2013-11-27
+version = "6.x-1.1"
+core = "6.x"
+project = "serial"
+datestamp = "1385585918"
+

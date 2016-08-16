@@ -1,0 +1,7 @@
+name = "Quan ly vang"
+description = "Module quan ly vang cho mobile application"
+core = "6.x"
+package = "Doji"
+version = "6.x-1.0"
+project = "giavang"
+

@@ -1,0 +1,204 @@
+<?php
+
+/**
+ * Implementation of hook_schema.
+ */
+
+function AppIphone_schema() {
+	
+	$schema = array();
+	
+	$schema['apns_devices'] = array(
+	  'description' => t('Store unique devices'),
+	  'fields' => array(
+		'pid' => array(
+		  'description' => t('Stores id of application'),
+		  'type' => 'serial',
+		  'unsigned' => TRUE,
+		  
+		),
+
+		'devicetoken' => array(
+		  'description' => t('stores devicetoken '),
+		  'type' => 'char',
+		  'length' => '64',
+		  'not null' => TRUE,
+		),
+		'created' => array(
+		  'description' => t('stores the date on which message created'),
+		  'type' => 'datetime',
+		  'length' => '25',
+		),
+	  ),
+	  'primary key' => array('pid'),
+	  
+	);
+  
+	$schema['apns_messages'] = array(
+	  'description' => t('Messages to push to APNS'),
+	  'fields' => array(
+		'pid' => array(
+		  'description' => t('stores id of application'),
+		  'type' => 'serial',
+		  'unsigned' => TRUE,
+		  'not null' => TRUE,
+		),
+		'fk_device' => array(
+		  'description' => t('stores the fk device value'),
+		  'type' => 'int',
+		  'unsigned' => TRUE,
+		  'not null' => TRUE,
+		),
+		'message' => array(
+		  'description' => t('stores the message to send'),
+		  'type' => 'varchar',
+		  'length' => '255',
+		  'not null' => TRUE,
+		),
+		'delivery' => array(
+		  'description' => t('stores the date of delivery'),
+		  'type' => 'datetime',
+		  'length' => '25',
+		),
+		'status' => array(
+		  'description' => t('status of application'),
+		   'type' => 'varchar',
+		  'length' => '255',
+		  'default' => 'queued',
+		),
+		'created' => array(
+		  'description' => t('stores created date'),
+		  'type' => 'datetime',
+		  'length' => '25',
+		),
+		'modified' => array(
+		  'description' => t('stores modified date'),
+		  'type' => 'datetime',
+		  'length' => '25',
+		),
+	  ),
+	  'primary key' => array('pid'),
+	  
+	);
+  
+	$schema['apns_device_history'] = array(
+	  'description' => t('Store unique device history'),
+	  'fields' => array(
+		'pid' => array(
+		  'description' => t('pid for history table'),
+		  'type' => 'serial',
+		  'unsigned' => TRUE,
+		  'not null' => TRUE,
+		),
+		'appname' => array(
+		  'description' => t('stores name of application'),
+		  'type' => 'varchar',
+		  'length' => '255',
+		  'not null' => TRUE,
+		),
+		'appversion' => array(
+		  'description' => t('stores application version'),
+		  'type' => 'varchar',
+		  'length' => '25',
+		  'not null' => FALSE,
+		),
+		'deviceuid' => array(
+		  'description' => t('stores uid of device'),
+		  'type' => 'char',
+		  'length' => '40',
+		  'not null' => TRUE,
+		),
+		'devicetoken' => array(
+		  'description' => t('stores device token'),
+		  'type' => 'char',
+		  'length' => '64',
+		  'not null' => TRUE,
+		),
+		'devicename' => array(
+		  'description' => t('stores device name'),
+		  'type' => 'varchar',
+		  'length' => '255',
+		  'not null' => TRUE,
+		),
+		'devicemodel' => array(
+		  'description' => t('stores device model'),
+		  'type' => 'varchar',
+		  'length' => '100',
+		  'not null' => TRUE,
+		),
+		'deviceversion' => array(
+		  'description' => t('stores version of device'),
+		  'type' => 'varchar',
+		  'length' => '25',
+		  'not null' => TRUE,
+		),
+		'pushbadge' => array(
+		  'description' => t('stores pushbadge value'),
+		  'type' => 'varchar',
+		  'length' => '25',
+		  
+		  'default' => 'disabled',
+		),
+		'pushalert' => array(
+		  'description' => t('stores push alert value'),
+		  'type' => 'varchar',
+		  'length' => '25',
+		  
+		  'default' => 'disabled',
+		),
+		'pushsound' => array(
+		  'description' => t('stores push sound value'),
+		  'type' => 'varchar',
+		  'length' => '25',
+		  
+		  'default' => 'disabled',
+		),
+		'development' => array(
+		  'description' => t('stores status of development'),
+		  'type' => 'varchar',
+		  'length' => '25',
+		  'not null' => TRUE,
+		  'default' => 'production',
+		),
+		'status' => array(
+		  'description' => t('stores status of application'),
+		  'type' => 'varchar',
+		  'length' => '25',
+		  'not null' => TRUE,
+		  'default' => 'active',
+		),
+		'archived' => array(
+		  'description' => t('stores archived value'),
+		  'type' => 'datetime',
+		  'length' => '25',
+		),
+	  ),
+	  'primary key' => array('pid'),
+	  'indexes' => array(
+		'appversion' => array('appversion'),
+		'archived' => array('archived'),
+		'development' => array('development'),
+		'devicemodel' => array('devicemodel'),
+		'devicename' => array('devicename'),
+		'devicetoken' => array('devicetoken'),
+		'deviceuid' => array('deviceuid'),
+		'deviceversion' => array('deviceversion'),
+		'pushalert' => array('pushalert'),
+		'pushbadge' => array('pushbadge'),
+		'pushsound' => array('pushsound'),
+		'status' => array('status'),
+	  ),
+	);
+
+
+return $schema;
+}
+
+function AppIphone_install() {
+  drupal_install_schema('AppIphone');
+}
+
+function AppIphone_uninstall() {
+  drupal_uninstall_schema('AppIphone');
+}
+?>

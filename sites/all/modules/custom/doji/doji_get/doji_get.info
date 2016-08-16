@@ -1,0 +1,6 @@
+; $Id: doji_get.info,v 1.0 2011/10/13 13:25:57 tvazone Exp $
+name = Doji Get
+package = Doji
+description = Doji get module
+core = 6.x
+version = VERSION

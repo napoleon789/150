@@ -1,0 +1,7 @@
+name = "Gán user cho giá vàng"
+description = "Module gán user vùng miền cho giá vang"
+core = "6.x"
+package = "Doji"
+version = "6.x-1.0"
+project = "giavang"
+

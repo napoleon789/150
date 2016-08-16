@@ -1,0 +1,231 @@
+/* $Id: doji_charts.css,v 1.0 2011/10/13 13:25:57 tvazone Exp */
+#doji-charts {
+  padding-bottom: 50px;
+  position: relative;
+  z-index: 2;
+}
+
+#doji-charts #input-nav {
+  bottom: 0 !important;
+  height: 37px !important;
+  left: 0;
+  position: absolute !important;
+  width: 410px;
+}
+
+#doji-charts #input-nav div {
+  left: 0;
+  top: 0 !important;
+}
+
+#doji-charts #input-nav div input {
+  background: transparent url(input-bg.png) repeat-x scroll 0 0;    
+  border: 1px solid #CCCCCC !important;
+  color: #555;
+  display: block;
+  float: left;
+  font-weight: bold;
+  height: 37px !important;
+  line-height: 37px;
+  margin-left: 0 !important;
+  margin-right: 3px !important;
+  padding: 0 8px;
+  text-align: right !important;
+  width: 140px !important;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;  
+  text-align: center;
+}
+
+#chart-buttons {
+  bottom: 0;
+  position: absolute;
+  right: 0;    
+}
+
+#chart-buttons ul.chartbuttons {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+#chart-buttons ul.chartbuttons li {
+  background: transparent none;
+  list-style: none;
+  display: block;
+  float: left;  
+}
+
+#chart-buttons ul.chartbuttons li a {
+  background: transparent url(button-bg.png) repeat-x scroll right 0;  
+  color: #555555;
+  cursor: pointer;
+  display: block;
+  font-weight: bold;
+  height: 35px;
+  line-height: 35px;
+  margin-left: 3px;
+  padding: 0;
+}
+
+#chart-buttons ul.chartbuttons li a span{
+  background: transparent url(button-bg.png) repeat-x scroll 0 0;
+  color: #555555;
+  cursor: pointer;
+  display: block;
+  margin-left: -3px;
+  margin-right: 13px;
+  padding-left: 15px;
+}
+
+#chart-buttons ul.chartbuttons li a.chart-actived, #chart-buttons ul.chartbuttons li a.chart-actived span {
+  background-image: url(button-bg-hover.png);
+}
+
+#print-export {
+  height: 35px;
+  position: absolute;
+  right: 73px;
+  top: 10px;
+  width: 500px;
+  z-index: 99999;
+}
+
+#print-export #print, #print-export #export {
+  background: transparent url(print-export-btn.png) no-repeat scroll 0 0;
+  display: block;
+  cursor: pointer;  
+  width: 35px;
+  height: 35px;
+}
+
+#print-export #print {
+  background-position: right 0;
+  float: right;
+}
+
+#form-charts {
+  position: relative;
+}
+
+#doji-chart-short-form {
+  margin-top: -37px;
+  padding-bottom: 40px;
+  padding-top: 2px;
+  position: relative;
+  width: 430px;
+  z-index: 5; 
+}
+
+#doji-chart-short-form .container-inline-date {
+    clear: none;
+    float: left;
+    margin: 0;
+}    
+
+#doji-chart-short-form .form-item .form-text, #doji-chart-short-form .form-item .form-select {
+    border: 1px solid #CCCCCC;
+    height: 28px;
+    line-height: 28px;
+    margin-right: 5px;
+    padding-left: 10px;
+    width: 155px;
+}    
+
+#doji-chart-short-form .form-item .description {
+  display: none;
+}
+
+#doji-chart-short-form .form-submit {
+  color: #000000;
+  display: none;
+  margin: 0;
+}    
+
+body#iframe-chart, body#simple-popup-chart {
+  background: transparent none;
+}
+
+body#iframe-chart #doji-charts, body#simple-popup-chart #doji-charts {
+  padding-bottom: 0;
+}
+
+#doji-charts-setting {
+  display: block;
+}
+
+#doji-charts-setting fieldset {
+  clear: both;  
+  overflow: hidden;
+}
+
+#doji-charts-setting fieldset legend {
+  display: block;
+  padding: 7px;
+}
+
+#doji-charts-setting .form-text, #doji-charts-setting .form-select {
+  padding: 7px;
+} 
+
+#doji-charts-setting .form-item {
+  float: left;
+  margin-right: 35px;
+}
+
+#doji-charts-setting .form-item label {
+  padding-bottom: 10px;
+}
+
+#chart-view-sjc {
+  padding-bottom: 10px;
+}
+
+#ui-datepicker-div .ui-datepicker .ui-datepicker-header {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#ui-datepicker-div {
+  display: none;
+}
+
+#doji-charts span.addtext {
+  font-size: 11px;
+  font-weight: bold;
+  position: absolute;
+  z-index: 999;
+}    
+
+#doji-charts span.right-titlte-1 {
+  right: 26px;
+  top: 10px;  
+}
+
+#doji-charts span.right-subtitlte-1 {
+  bottom: 85px;
+  right: 43px;
+}
+
+.external-view {
+  position: relative;
+}
+
+.external-view span.addtext {
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1;
+  position: absolute;
+  z-index: 999; 
+}
+
+.external-view span.right-titlte-1 {
+  right: 2px;
+  top: 20px;   
+}
+
+.external-view span.right-subtitlte-1  {
+  bottom: 13px;
+  right: 10px;
+}

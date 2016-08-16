@@ -1,0 +1,46 @@
+<?php
+/**
+ * Implementation of hook_install().
+ */
+function doji_group_install() {
+  drupal_install_schema('doji_group');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function doji_group_uninstall() {
+  drupal_uninstall_schema('doji_group');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function doji_group_schema() {
+  $schema['doji_group_field'] = array(
+    'description' => 'save group to user.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+
+       'uid' => array(
+               'type' => 'int',
+               'not null' => TRUE,
+               'default' => 0
+       ),
+     'group_name' => array(
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => ''
+      ),
+
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}

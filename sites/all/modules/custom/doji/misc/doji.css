@@ -1,0 +1,496 @@
+/* $Id: doji.css,v 1.0 2011/10/13 13:25:57 tvazone Exp */
+
+table.tbl-gold, table.admin-tbl-gold {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+table.tbl-gold caption, table.admin-tbl-gold caption  {
+  font-size: 18px;
+  font-weight: normal;
+  padding: 10px 0;
+  text-align: left;
+  text-transform: capitalize;
+}
+
+table.tbl-gold thead th, table.admin-tbl-gold thead th {
+  font-size: 18px;
+  font-weight: normal;
+  padding: 3px 10px;
+}
+
+table.tbl-gold tr td, table.admin-tbl-gold  tr td {
+  vertical-align: middle;
+  padding: 8px;
+}
+
+table.admin-tbl-gold  tr.odd td, table.admin-tbl-gold  tbody tr.odd td,
+table.admin-tbl-gold  tr.even td, table.admin-tbl-gold  tbody tr.even td {  
+  background: transparent none;
+}
+
+table.admin-tbl-gold  tr.odd, table.admin-tbl-gold  tbody tr.odd {
+  background: #F5F5F5 none;  
+}
+
+table.admin-tbl-gold  tr.even, table.admin-tbl-gold  tbody tr.even {
+  background: #EAEAEA none;  
+}
+
+table.tbl-gold tr td label {    
+}
+
+table.admin-tbl-gold input.fluid, table.tbl-gold input.fluid {
+  width: 100%;
+}   
+
+table.admin-tbl-gold td .grippie {
+  display: none;
+} 
+
+table.admin-tbl-gold tr:hover, table.tbl-gold tr:hover, 
+table.admin-tbl-gold tr.active, table.tbl-gold tr.active {
+  background: #F9FCE5 none;
+}
+
+table.tbl-gold input, table.tbl-gold  textarea,
+table.admin-tbl-gold input, table.admin-tbl-gold  textarea,
+fieldset.global-settings input {    
+  background-color: #FFFFFF;
+  border: 1px solid #CCCCCC;
+  border-radius: 5px 5px 5px 5px;
+  min-height: 30px;
+  line-height: 30px;
+  width: 99%;
+}  
+
+table.tbl-gold tr.odd .form-item, 
+table.tbl-gold tr.even .form-item {
+  width: 99%;  
+}
+
+input:invalid { 
+  border: 2px solid #F00; 
+} 
+
+table.admin-tbl-gold tr input:focus, table.admin-tbl-gold tr textarea:focus {
+  -moz-transform: scale(1.05)
+  box-shadow: 0 0 25px #CCCCCC;  
+}    
+
+form input.gold-price-input {
+  font-size: 24px;
+  text-align: right;
+  width: 95%;
+}
+
+div.vertical-tabs ul.vertical-tabs-list li {
+  list-style-image: none;
+}
+
+.gold-price-input-disabled, table.tbl-gold input.gold-price-input-disabled, table.admin-tbl-gold input.gold-price-input-disabled,
+input.all-disabled, table.tbl-gold input.all-disabled {
+  background: #EEF;
+}
+
+/* Gold Price View */
+table.goldprice-view {
+  width: 100%;
+  border: 1px solid #dfdfdf;
+  border-top:none;
+  border-left:none;
+}
+
+table.goldprice-view caption  {
+  background: #FADB61 none repeat scroll 0 0;
+  color: #668877;
+  font-weight: bold;
+  padding: 10px 0;
+  text-transform: uppercase;
+}
+
+table.goldprice-view tr.even, table.goldprice-view tr.odd {
+  border: medium none;
+}
+
+table.goldprice-view tr td {
+  background: transparent none repeat scroll 0 0;
+  padding: 8px;
+  vertical-align: middle;
+  border: 1px solid #dfdfdf; 
+}
+
+#bang-gia-theo-vung-mien table.goldprice-view thead th.first {
+	border: 1px solid #dfdfdf;
+	background:url(tb_header_bg.jpg) repeat-x;
+	padding-left:15px;
+}
+table.goldprice-view tr td.last, table.goldprice-view thead th.last {
+  border-right: medium none;
+}
+
+table.goldprice-view tr td.label {
+  font-weight: bold;
+}
+
+table.goldprice-view tr td.footer-message {
+  text-align: center;
+}
+
+table.goldprice-view tr td.active, table.goldprice-view  tbody tr td.active {
+  background: #E4F0F8 none repeat scroll 0 0;    
+  font-weight: bold;
+}
+
+
+table.goldprice-viewtr:hover, 
+table.goldprice-view tr.active {
+  background: #F9FCE5 none;
+}
+
+table.goldprice-view tr td  {
+  text-align: right;
+}
+
+table.goldprice-view tr td, #banggia-style-3 table.goldprice-view tr td {
+  background:#fff;
+}
+
+table.goldprice-view tr td.first {
+  text-align: left;
+  color:#666666;
+}
+
+table.goldprice-view thead th {
+  font-size: 12px;  
+  text-align: right;
+  color:#666666;  
+  border: 1px solid #dfdfdf;
+  background:url(./tb_header_bg.jpg) repeat-x;
+}
+
+table.goldprice-view thead th.first {
+  text-align: left;
+  border-top:none;
+  border-left:none;
+  background:none;
+}
+
+/* Home Page */
+body.page-doji .block {
+  padding-top: 25px;
+  margin-bottom: 0;
+}
+
+#giavangtrongnuoc span.price-bg {
+  border: 1px solid #CCCCCC;
+  display: block;
+  font-weight: bold;
+  padding: 7px 10px;
+  text-align: right;
+}
+
+#giavangtrongnuoc table.goldprice-view tr td {
+  font-weight: normal;
+  padding: 10px 35px;
+}
+
+#giavangtrongnuoc .ant-home-price table.goldprice-view tr td.form-footer-container .update-time {
+  color: #666666;
+  display: block;
+  font-size: 13px;
+  font-style: italic;  
+}
+
+#giavangtrongnuoc table.goldprice-view tr td.label, #giavangtrongnuoc table.goldprice-view thead th.first {
+  padding-left: 13px;
+}
+
+#giavangquocte table.goldprice-view thead th.first {
+	padding-left: 25px;
+}
+
+#giavangquocte table.goldprice-view tr td {
+	height: 41px;
+}
+#banggia-style-3 .right table {
+  border-left: medium none;
+}
+
+.goldprice-sxht fieldset legend {
+  border: 1px solid #C3C3C3;
+  padding: 4px 5px;
+}
+
+.goldprice-sxht fieldset select {
+  border: 1px solid #C3C3C3;
+  margin: 0;
+  padding: 3px;  
+}
+
+.goldprice-sxht tr td {
+  padding: 7px;
+}
+.wget-form-setting label.option {
+  margin: 0;
+  font-size: 85%;
+}
+.wget-form-setting label.option input {
+  display: block;
+}
+.wget-form-setting td.content-multiple-drag {
+  padding: 0 0 0 10px;
+}
+.wget-form-setting .draggable a.tabledrag-handle {
+  padding-left: 0;
+  padding-right: 0;
+}
+.ant-home-price  table.goldprice-view thead th.first, .ant-home-price  table.goldprice-view tr td.first, #giavangquocte table.goldprice-view tr td.first {
+  padding: 10px 30px;
+  text-align: left;
+  width: 40%;
+}
+
+.ant-home-price  table.goldprice-view  thead th, .ant-home-price  table.goldprice-view tr td,
+#giavangtrongnuoc .ant-home-price table.goldprice-view tr td, #bang-gia-theo-vung-mien table.goldprice-view  thead th {
+  padding: 12px 22px; 
+}
+
+.ant-home-price  table.goldprice-view tr td {
+  font-size: 24px;
+}
+
+.ant-home-price  table.goldprice-view tr td .form-footer-container .update-time {
+    color: #666666;
+    display: block;
+    font-size: 13px;
+    font-style: italic;
+    margin-top: 10px;  
+}
+
+#giavangtrongnuoc table.goldprice-view thead th {
+  font-weight: normal;
+  font-size: 18px;
+  text-align: right;
+}
+
+#chart-view {
+  margin-right: -10px;
+  padding-right: 10px;  
+  position: relative;
+}
+
+#chart-view {
+  padding-bottom: 19px;
+}
+
+.view-chart-small {
+  position: relative;
+  z-index: 3;
+
+}
+
+#chart-view span.addtext {
+  font-weight: normal;
+  font-size: 10px; 
+  position: absolute;
+  font-weight: bold;
+}
+
+#chart-view span.right-titlte-1 {  
+  position: absolute;
+  right: 8px;
+  text-align: center;
+  top: 20px;
+  width: 50px;
+  z-index: 5;
+}
+
+#chart-view span.right-subtitlte-1 {
+  position: absolute;
+  z-index: 5;  
+  right: 22px;
+  bottom: 0;
+}
+
+#chart-view span.right-subtitlte-1 {
+  bottom: 20px;
+}
+
+#chart-view span.right-titlte-2 {  
+  position: absolute;
+  right: 8px;
+  text-align: center;
+  top: 0px;
+  width: 50px;
+  z-index: 5;
+}
+
+#chart-view span.right-subtitlte-2 {
+  position: absolute;
+  z-index: 5;
+  right: 22px;  
+  bottom: 0;
+}
+
+#chart-view span.right-subtitlte-2 {
+  bottom: 20px;
+}
+
+/************************************************************************************
+smaller than 750
+*************************************************************************************/
+@media screen and (max-width: 750px) {	
+	#container {
+		padding:0 !important;
+		margin:0 !important;
+		width:100% !important;
+	}
+	
+	.site-logo2 {
+		top:15px !important;
+	}
+	
+	.site-logo2 img {
+		width:70px;
+		padding:5px;
+	}
+	
+	ul.primary {
+		left:90px!important;
+	}
+	#col-center-top {		
+    -moz-border-top-left-radius-: 0px;
+    -moz-border-top-right-radius-: 0px;
+    -webkit-border-top-left-radius: 0px;
+    -webkit-border-top-right-radius: 0px;
+    -khtml-border-top-left-radius: 0px;
+    -khtml-border-top-right-radius: 0px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+	}
+	
+	#gv-left {
+		width:100% !important;
+	}
+	#gv-right {
+		display:none;
+	}
+	
+	#giavangquocte div.right {
+		display:none;
+	}
+	
+	.goldprice-view, .width-565 {
+		width:100% !important;
+	}
+	
+    #col-center-middle {
+		width:100% !important;
+		padding:0 !important;
+		margin:0 !important;
+	}
+	
+	.table_title {
+		font-size:10pt!important;
+	}
+	#giavangquocte table thead tr th:nth-child(4), #giavangquocte table thead tr th:nth-child(5),
+	#giavangquocte table tbody tr td:nth-child(4), #giavangquocte table tbody tr td:nth-child(5) {
+		display:none;
+	} 	
+	
+	#giavangquocte, #bang-gia-theo-vung-mien {
+		background:none!important;
+		
+	}
+	
+	.ant-home-price  table.goldprice-view tr td, 
+	.ant-home-price  table.goldprice-view tr td.first span.title,
+	.ant-home-price  table.goldprice-view tr td.first span.sub-title {
+  		font-size: 14px !important;
+	}
+	ul.primary li:first-child {
+		display:none;
+	}
+	
+	body.page-doji .block {
+		padding-top:0px;
+	}
+	
+	#giavangquocte{
+		padding-top:0px!important;
+	}
+	
+	#container-charts {
+		width:100% !important;
+	}
+	
+	#bang-gia-theo-vung-mien, #bang-gia-theo-vung-mien table, #bang-gia-theo-vung-mien div.first, #bang-gia-theo-vung-mien div.last {
+		width:100% !important;
+	}
+	/********************
+	 * Bieu do
+	 ********************/
+	 
+	 #print-export #print, #print-export #export {
+	 	display:none !important;
+	 }
+	 
+	 #doji-charts {
+	 	padding-bottom:150px !important;
+	 }
+	 
+	 #print-export {
+	 	top: 510px !important;
+	 	right:0 !important;
+	 }
+	 
+	 .highcharts-title {
+	 	font-size:14px !important;
+	 }
+	 #doji-charts span.right-subtitlte-1 {
+	 	bottom:175px !important;
+	 	right:40px !important;
+	 }
+	 
+	 /********************
+	 * Tin tuc
+	 ********************/
+	  .news_entity {
+	  	padding:10px 0 !important;
+	  }
+	  
+	  .news_left {
+	  	width:25% !important;
+	  }
+	  
+	  .news_left img {
+	  	width:100% !important;
+	  }
+	  
+	  .news_right {
+	  	width: 70% !important;  	
+	  	
+	  }
+	  
+	  .news_desc {
+	  	display:none;
+	  }
+	  
+	  .news_title {
+	  	font-size:12pt !important;
+	  }
+	  
+	  #list-diadiem {
+	  	width:100% !important;
+	  	margin-top:20px;
+	  }
+	  
+	  #map-canvas {
+	  	height: 300px !important;
+	  }
+	  
+	  .diadiem_title {
+	  	font-size:14pt !important;
+	  }	  	 
+}

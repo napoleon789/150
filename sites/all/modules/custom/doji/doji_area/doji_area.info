@@ -1,0 +1,7 @@
+name = "gia vang vung mien"
+description = "Module quan ly qua trinh update cua vung mien"
+core = "6.x"
+package = "Doji"
+version = "6.x-1.0"
+project = "giavang"
+
