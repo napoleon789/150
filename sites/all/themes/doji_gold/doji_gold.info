@@ -6,7 +6,7 @@ engine = phptemplate
 
 stylesheets[screen,projection][] = css/doji_gold.css
 stylesheets[screen,projection][] = style.css
-stylesheets[screen,projection][] = duyen.css
+stylesheets[screen,projection][] = css/duyen.css
 stylesheets[screen,projection][] = css/admin-cuahang/stylesheets/store-style.css
 
 scripts[] = scripts/general.js

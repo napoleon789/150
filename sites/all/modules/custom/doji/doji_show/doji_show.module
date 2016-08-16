@@ -97,6 +97,7 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
 }
 
 function doji_show_setting_biendo() {
+  global $user;
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load(45748);
   $form = node_page_edit($node);
