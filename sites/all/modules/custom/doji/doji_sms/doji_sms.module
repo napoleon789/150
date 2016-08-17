@@ -12,21 +12,21 @@ function doji_sms_menu() {
     'page callback' => 'doji_sms_setting',
     'access arguments' => array('access administration pages'),
     'weight' => 10,
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
   $items['doji/admin/thong-ke-sms'] = array(
     'title' => t('Thống kê SMS', array(), 'vi'),
     'page callback' => 'doji_sms_report',
     'access arguments' => array('access administration pages'),
     'weight' => 10,
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
   );
   $items['doji/admin/view-sms'] = array(
     'title' => t('View SMS', array(), 'vi'),
     'page callback' => 'doji_sms_put_to_sqlserver',
     'access arguments' => array('access administration pages'),
     'weight' => 10,
-    'type' => MENU_CALLBACK,
+    'type' => MENU_NORMAL_ITEM,
   );
 
   $items['api/doji/sms'] = array(
@@ -34,7 +34,7 @@ function doji_sms_menu() {
     'page callback' => 'doji_sms_get_api',
     'access arguments' => array('access content'),
     'weight' => 10,
-    'type' => MENU_CALLBACK,
+    'type' => MENU_NORMAL_ITEM,
   );
   return $items;
 }

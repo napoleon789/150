@@ -64,7 +64,8 @@ function doji_show_get_allfield_from_nid($nid) {
 }
 
 function doji_show_select_vung() {
-  $user = doji_add_user_get();
+  $user = doji_show_uid_and_vung();
+  $user =  array('' => '--Chọn vùng miền--') + $user;
   $form['area'] = array(
     '#type' => 'select',
     '#title' => t('Chọn khu vực', array(), 'vi'),
@@ -83,6 +84,7 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
     case 'list':
       $blocks = array();
       $blocks['setting_biendo']['info'] = t('Thiết lập biên độ', array(), 'vi');
+      $blocks['show_bdo']['info'] = t('Hiển thị biên độ', array(), 'vi');
       return $blocks;
     case 'view' :
       $blocks = array();
@@ -90,6 +92,10 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
         case 'setting_biendo' :
           $blocks['subject'] = 'Thiết lập biên độ';
           $blocks['content'] = doji_show_setting_biendo();
+          break;
+        case 'show_bdo' :
+          $blocks['subject'] = 'Hiển thị biên độ';
+          $blocks['content'] = doji_show_biendo();
           break;
       }
       return $blocks;
@@ -118,4 +124,110 @@ function doji_show_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
      drupal_goto('<front>');
    }
  }
+}
+
+//Thiệp lập hiển thị biên độ: phần hiển thị ra trang chu user
+
+function doji_show_biendo() {
+  global $user;
+  $uid = $user -> uid;
+  $data = doji_add_user_get_data($uid);
+  if($uid == 1) {
+    $data = doji_add_user_get_data($uid,1);
+  }
+  $node_bd = doji_get_node('last');
+}
+
+/*
+ * Implement hook_user
+ */
+
+function doji_show_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+  $uid_t = $user -> uid;
+  if($uid_t == 1) {
+    switch($op) {
+      case 'insert':
+        $row['uid'] = $account -> uid;
+        if(!empty($edit['vung_mien']))
+          $row['vung_mien'] = '';
+        else
+          $row['vung_mien'] = $edit['vung_mien'];
+        drupal_write_record("doji_group_vung",$row);
+        break;
+      case 'update':
+        $vung_mien = $edit['vung_mien'];
+        $uid = $account -> uid;
+        $result = db_result(db_query('SELECT uid FROM {doji_group_vung} WHERE uid = %d',$account ->uid));
+        if($result){
+          db_query('UPDATE {doji_group_vung} SET vung_mien = "%s" WHERE uid = %d',$vung_mien,$uid);
+        }
+        else{
+          $row['uid'] = $account -> uid;
+          if(empty($edit['vung_mien']))
+            $row['vung_mien'] = '';
+          else
+            $row['vung_mien'] = $edit['vung_mien'];
+          drupal_write_record("doji_group_vung",$row);
+        }
+      case 'register':
+        $form['vung_mien'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Vùng miền')
+        );
+        return $form;
+        break;
+      case 'form':
+
+        $value = db_result(db_query('SELECT vung_mien FROM {doji_group_vung} WHERE uid = %d',$account -> uid));
+        $form['vung_mien'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Vùng miền'),
+          '#default_value' => $value?$value:''
+        );
+        return $form;
+        break;
+    }
+  }
+}
+
+//tra ve array gom uid va ten vung mien
+
+function doji_show_uid_and_vung() {
+  $query = db_query("SELECT uid,vung_mien FROM {doji_group_vung}");
+  while($row = db_fetch_array($query)) {
+    $rows[$row['uid']] = $row['vung_mien'];
+  }
+  return $rows;
+}
+
+function doji_show_quantri() {
+  global $user;
+  if($user -> uid ==1) {
+    $query = db_query("SELECT user.uid as uid,user.name as name, vung.vung_mien as vung FROM {users} as user INNER JOIN {doji_group_vung} vung ON user.uid = vung.uid");
+  }
+  else {
+    $query = db_query("SELECT user.uid as uid,user.name as name, vung.vung_mien as vung FROM {users} as user INNER JOIN {doji_group_vung} vung ON user.uid = vung.uid AND vung.uid = %d",$user -> uid);
+  }
+
+  $i = 0;
+  while($row= db_fetch_array($query)) {
+    $i++;
+    $data['tt'] = $i;
+    $data['name'] = $row['name'];
+    $data['qt'] = t('Quản trị');
+    $data['vung'] = $row['vung'];
+    $data['edit'] = '<a href ="user/'.$row['uid'].'/edit?destination=doji/admin">Sửa</a>';
+    $data['delete'] = '<a href ="user/logout">Thoát</a>';
+    if($user ->uid == 1)
+      $data['delete'] = '<a href ="user/'.$row['uid'].'/delete?destination=doji/admin">Xóa</a>';
+    $datas[] = $data;
+  }
+  $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Sửa', 'Thoát');
+  if($user -> uid == 1)
+    $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Sửa', 'Xóa');
+  $output = theme('table', $header, $datas, array('class' => 'user_qt'));
+  $output .= '<div class="add_u"><a href="admin/user/user/create?destination=doji/admin"> Thêm quản trị mới</a></div>';
+  return $output;
+
 }

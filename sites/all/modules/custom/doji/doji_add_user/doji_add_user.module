@@ -98,7 +98,7 @@ function doji_add_user_get_form() {
   );
   return  $form;
 }
-//Get
+//Get toan bo group nhap tay cua user neu khong ton tai ex, Get toan bo group nhap tay cua cac user khac neu ton tai $ex
 function doji_add_user_get_data($uid, $ex = null) {
   if(isset($ex)) {
     $field_user = 'AND user_d.field_dlieu_user_value != '.$uid;

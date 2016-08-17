@@ -1,6 +1,6 @@
 <?php
 
-//Lay tat ca group cua user
+//Lay tat ca group cua user: bao gom ca nhap tay va khong nhap tay
 function doji_group_getall_group($uid){
   $sql = "SELECT chon.field_dlieu_gia_value as field FROM {content_field_dlieu_gia} chon
           INNER JOIN {content_field_dlieu_user} user_d ON chon.nid = user_d.nid
