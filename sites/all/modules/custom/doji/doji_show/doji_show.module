@@ -202,7 +202,14 @@ function doji_show_uid_and_vung() {
 }
 
 function doji_show_quantri() {
-  $query = db_query("SELECT user.uid as uid,user.name as name, vung.vung_mien as vung FROM {users} as user INNER JOIN {doji_group_vung} vung ON user.uid = vung.uid}");
+  global $user;
+  if($user -> uid ==1) {
+    $query = db_query("SELECT user.uid as uid,user.name as name, vung.vung_mien as vung FROM {users} as user INNER JOIN {doji_group_vung} vung ON user.uid = vung.uid");
+  }
+  else {
+    $query = db_query("SELECT user.uid as uid,user.name as name, vung.vung_mien as vung FROM {users} as user INNER JOIN {doji_group_vung} vung ON user.uid = vung.uid AND vung.uid = %d",$user -> uid);
+  }
+
   $i = 0;
   while($row= db_fetch_array($query)) {
     $i++;
@@ -211,10 +218,14 @@ function doji_show_quantri() {
     $data['qt'] = t('Quản trị');
     $data['vung'] = $row['vung'];
     $data['edit'] = '<a href ="user/'.$row['uid'].'/edit?destination=doji/admin">Sửa</a>';
-    $data['delete'] = '<a href ="user/'.$row['uid'].'/delete?destination=doji/admin">Xóa</a>';
+    $data['delete'] = '<a href ="user/logout">Thoát</a>';
+    if($user ->uid == 1)
+      $data['delete'] = '<a href ="user/'.$row['uid'].'/delete?destination=doji/admin">Xóa</a>';
     $datas[] = $data;
   }
-  $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Sửa', 'Xóa');
+  $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Sửa', 'Thoát');
+  if($user -> uid == 1)
+    $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Sửa', 'Xóa');
   $output = theme('table', $header, $datas, array('class' => 'user_qt'));
   $output .= '<div class="add_u"><a href="admin/user/user/create?destination=doji/admin"> Thêm quản trị mới</a></div>';
   return $output;
