@@ -1,5 +1,5 @@
-.region-odd.region-count-3 .form-item .form-select,
-.count-4.with-block-editing .form-item .form-select{
+.region-odd.region-count-3 #edit-area-wrapper .form-select,
+.count-4.with-block-editing #edit-area-wrapper .form-select{
     border:1px solid #dfdfdf;
     line-height: 20px;
     padding: 0 5px;
@@ -8,18 +8,18 @@
     width: 190px;
     height: 30px;
 }
-.region-odd.region-count-3 .form-item:after{
+.region-odd.region-count-3 #edit-area-wrapper:after{
     clear: both;
     content: "";
     display: table;
 }
-.region-odd.region-count-3 .form-item label{
+.region-odd.region-count-3 #edit-area-wrapper label{
     display: none !important;
 }
-.region-odd.region-count-3 .form-item .form-select{
+.region-odd.region-count-3 #edit-area-wrapper .form-select{
     float: right;
 }
-.region-odd.region-count-3 .form-item label, .count-4.with-block-editing .form-item label{
+.region-odd.region-count-3 #edit-area-wrapper label, .count-4.with-block-editing .form-item label{
     display: inline-block;
     vertical-align: middle;
     margin-right: 5px;
@@ -29,6 +29,7 @@
     color: #A50119;
     font: 18px OpenSansSemibold;
     text-align: center;
+    margin-top:0;
 }
 
 .count-3.with-block-editing{
@@ -38,7 +39,18 @@
 .count-4.with-block-editing{
     float: right;
     width: 44%;
+    margin-top: 15px;
 }
+.count-4.with-block-editing h2.title_bang{
+    float: left;
+}
+.count-4.with-block-editing #doji-show-select-vung{
+    float: right;
+}
+.count-4.with-block-editing #doji-show-select-vung #edit-area-wrapper{
+    margin-top: 0;
+}
+
 .count-5.with-block-editing{
     clear: both;
 }
@@ -49,7 +61,7 @@
     display:none !important;
 }
 
-.pre_table{
+.pre_table, .add_u a{
     background-image: url("../images/button2-bg.png");
     border: medium none;
     height: 35px;
@@ -59,4 +71,23 @@
     margin-bottom: 20px;
     cursor: pointer;
 }
+
+.add_u{
+    text-align: right;
 }
+.add_u a{
+    display: inline-block;
+}
+
+table.user_qt{
+    width: 100%;
+    margin-bottom: 20px;
+}
+table.user_qt td, table.user_qt th{
+    padding: 8px 10px;
+}
+
+#group-bien-do-items .content-add-more{
+    margin-top: 0.5em;
+}
+
