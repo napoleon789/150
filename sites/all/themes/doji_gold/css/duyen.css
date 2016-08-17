@@ -1,0 +1,40 @@
+.region-odd.region-count-3 .form-item .form-select,
+.count-4.with-block-editing .form-item .form-select{
+    border:1px solid #dfdfdf;
+    line-height: 20px;
+    padding: 5px;
+    width: 20%;
+    vertical-align: middle;
+}
+.count-4.with-block-editing .form-item .form-select{
+    width: 45%;
+}
+.region-odd.region-count-3 .form-item label, .count-4.with-block-editing .form-item label{
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.title_bang{
+    color: #A50119;
+    font: 18px OpenSansSemibold;
+    text-align: center;
+}
+
+.count-3.with-block-editing{
+    float: left;
+    width: 50%;
+}
+.count-4.with-block-editing{
+    float: right;
+    width: 44%;
+}
+.count-5.with-block-editing{
+    clear: both;
+}
+.count-5.with-block-editing h3, .count-5.with-block-editing .vertical-tabs,
+#group_bien_do_values .content-multigroup-cell-field-bien-do label,
+#group_bien_do_values .content-multigroup-cell-field-bien-do-ban label
+{
+    display:none !important;
+}
