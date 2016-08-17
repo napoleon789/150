@@ -2,12 +2,22 @@
 .count-4.with-block-editing .form-item .form-select{
     border:1px solid #dfdfdf;
     line-height: 20px;
-    padding: 5px;
-    width: 20%;
+    padding: 0 5px;
     vertical-align: middle;
+    background: url("../images/input-canhbao.png")-3px -3px no-repeat;
+    width: 190px;
+    height: 30px;
 }
-.count-4.with-block-editing .form-item .form-select{
-    width: 45%;
+.region-odd.region-count-3 .form-item:after{
+    clear: both;
+    content: "";
+    display: table;
+}
+.region-odd.region-count-3 .form-item label{
+    display: none !important;
+}
+.region-odd.region-count-3 .form-item .form-select{
+    float: right;
 }
 .region-odd.region-count-3 .form-item label, .count-4.with-block-editing .form-item label{
     display: inline-block;
@@ -37,4 +47,16 @@
 #group_bien_do_values .content-multigroup-cell-field-bien-do-ban label
 {
     display:none !important;
+}
+
+.pre_table{
+    background-image: url("../images/button2-bg.png");
+    border: medium none;
+    height: 35px;
+    line-height: 35px;
+    width: 155px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
 }
