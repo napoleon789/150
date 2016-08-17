@@ -68,7 +68,7 @@ function doji_show_select_vung() {
   $user =  array('' => '--Chọn vùng miền--') + $user;
   $form['area'] = array(
     '#type' => 'select',
-    '#title' => t('Chọn khu vực', array(), 'vi'),
+    '#title' => '',
     '#default_value' => $vung,
     '#options' => $user,
   );
