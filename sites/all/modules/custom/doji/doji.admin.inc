@@ -6,7 +6,7 @@
  */
 function doji_admin_page($arg = NULL) {
   drupal_set_title('Trang quản trị', array(), 'vi');
-  return t('Trang này chưa được kích hoạt', array(), 'vi');
+  return doji_show_quantri();
 }
 
 /**

@@ -1,4 +1,4 @@
-name = "Hien thi gia vang cho tung user vung mien"
+name = "doji show - vung mien"
 description = "Thiết lập hiện thị cho gia vang"
 core = "6.x"
 package = "Doji"

@@ -41,6 +41,28 @@ function doji_group_schema() {
     ),
     'primary key' => array('id'),
   );
+$schema['doji_group_vung'] = array(
+    'description' => 'save vung to user',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      ),
+       'uid' => array(
+               'type' => 'int',
+               'not null' => TRUE,
+               'default' => 0
+       ),
+     'vung_mien' => array(
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => ''
+      ),
 
+    ),
+    'primary key' => array('id'),
+  );
   return $schema;
 }
