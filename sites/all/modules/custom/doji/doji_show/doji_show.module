@@ -35,7 +35,7 @@ function doji_show_gia_vang($uid = null) {
         }
       }
       if (count($group_access)) {
-        $output .= '<h2 class="title_bang"> Bảng giá tại'.$uid.'</h2>';
+        $output .= '<h2 class="title_bang"> Bảng giá tại'.doji_show_uid_to_vung($uid).'</h2>';
         $output .= theme('doji_goldprice_view_1', $node, NULL, NULL, $group_access);
       }
       else {
@@ -200,7 +200,7 @@ function doji_show_uid_and_vung() {
   }
   return $rows;
 }
-
+// hiển thị trang quantri.html
 function doji_show_quantri() {
   global $user;
   if($user -> uid ==1) {
@@ -230,4 +230,9 @@ function doji_show_quantri() {
   $output .= '<div class="add_u"><a href="admin/user/user/create?destination=doji/admin"> Thêm quản trị mới</a></div>';
   return $output;
 
+}
+
+function doji_show_uid_to_vung($uid) {
+  $vung = db_result(db_query("SELECT vung_mien FROM {doji_group_vung} WHERE uid = %d",$uid));
+  return $vung;
 }
