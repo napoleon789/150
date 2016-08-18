@@ -25,6 +25,10 @@
     margin-right: 5px;
 }
 
+.count-4.with-block-editing #edit-area-wrapper .form-select{
+    width: 150px;
+}
+
 .title_bang{
     color: #A50119;
     font: 18px OpenSansSemibold;

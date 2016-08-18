@@ -759,20 +759,27 @@ body.page-doji.front.ad_quantri #block-doji_area-setting_value_vung{
   background: none;
   border: none;
 }
-#bang-gia-theo-vung-mien table.goldprice-view tr td.label {
+#bang-gia-theo-vung-mien table.goldprice-view tr td.label,
+#block-block-6 table.goldprice-view tr td.label{
   color: #666666;
   font: 13px OpenSansRegular;
   text-align: left;
 }
-#bang-gia-theo-vung-mien table.goldprice-view tr td {
+#bang-gia-theo-vung-mien table.goldprice-view tr td,
+#block-block-6 table.goldprice-view tr td{
   font: 13px OpenSansSemibold;
   padding: 10px 10px 10px 14px;
 }
-#bang-gia-theo-vung-mien table.goldprice-view thead th {
+#bang-gia-theo-vung-mien table.goldprice-view thead th,
+#block-block-6 table.goldprice-view thead th{
   padding: 0px 10px 0px 22px;
 }
-#bang-gia-theo-vung-mien table.goldprice-view thead th.first {
+#bang-gia-theo-vung-mien table.goldprice-view thead th.first,
+#block-block-6 table.goldprice-view thead th.first{
   background: url("../images/name-title-col-bg.png") repeat-x scroll 0 0 transparent;
+}
+#block-block-6 table.goldprice-view{
+    height: auto !important;
 }
 
 #chart-view {
@@ -849,7 +856,8 @@ span#Cours1_lblLabel_GoldPrice {
 }
 /*Bang gia vang quoc te*/
 #block-doji-mobi_gia_vang_quoc_te h3 {display: none;}
-table.goldprice-view thead.tableHeader-processed tr th {
+table.goldprice-view thead.tableHeader-processed tr th, #bang-gia-theo-vung-mien table.goldprice-view thead tr th,
+#block-block-6 table.goldprice-view thead tr th{
   border: 1px solid #DFDFDF;
   font: 13px OpenSansSemibold;
   height: 48px;
