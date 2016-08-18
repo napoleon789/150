@@ -21,7 +21,7 @@ jQuery(document).ready(function() {
             url: url,
             type: "GET",
             success: function(data) {
-                $('.dn.midle').html('<div class="clear-block block-bg border-gray p-10 size-12">'+data+'</div>');
+                $('.dn.midle').html('<div class="clear-block block-bg border-gray p-10 size-12 noibat">'+data+'</div>');
             }
         })
     });
