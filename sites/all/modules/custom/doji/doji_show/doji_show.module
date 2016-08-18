@@ -1,5 +1,5 @@
 <?php
-function doj_show_init() {
+function doji_show_init() {
   drupal_add_js(drupal_get_path('module', 'doji_show') . '/js/doji_show.js');
 }
 function doji_user_setting_id_hienthi() {
