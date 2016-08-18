@@ -95,3 +95,11 @@ table.user_qt td, table.user_qt th{
     margin-top: 0.5em;
 }
 
+
+.noibat table{
+    box-shadow: 0 6px 3px -2px rgba(0, 0, 0, 0.4);
+}
+.noibat table thead th{
+    background: #a50119 !important;
+    color:#fff;
+}
