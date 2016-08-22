@@ -19,7 +19,26 @@ function doji_show_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 8,
   );
+  $items['doji/admin/showhome'] = array(
+    'title' => 'Hiển thị trang chủ',
+    'page callback' => 'doji_show_hienthi_home',
+    'access arguments' => array('administer users'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 9,
+  );
   return $items;
+}
+
+function doji_show_hienthi_home() {
+  global $user;
+  $uid = $user -> uid;
+  $nid_ht = db_result(db_query("SELECT nid FROM {content_type_show} WHERE field_set_user_value = %d",$uid));
+  module_load_include('inc', 'node', 'node.pages');
+  $node = node_load($nid_ht);
+  $output = node_page_edit($node);
+  $output = '<div id="doji_set" class="hidden">' . $output . '</div>';
+  $output = $output;
+  return $output;
 }
 
 function doji_show_phanquyen_user() {
@@ -252,6 +271,8 @@ function doji_show_user($op, &$edit, &$account, $category = NULL) {
           doji_group_create_node_pq_user($uid);
           // tạo node bien do
           doji_group_create_node_biendo($uid);
+          //tao node hien thi trang chu
+          doji_group_create_node_show($uid);
 
         }
 
