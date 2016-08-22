@@ -217,8 +217,44 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
   global $user;
   $uid = $user -> uid;
   if($form_id == 'bien_do_node_form') {
-   unset($form['title']);
-   unset($form['body_field']);
+    if(arg(2) =='biendo') {
+      unset($form['title']);
+      unset($form['body_field']);
+      unset($form['field_gan_user']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      unset($form['options']);
+      unset($form['menu']);
+      unset($form['path']);
+      unset($form['#content_extra_fields']);
+    }
+  }
+  if($form_id == 'show_node_form') {
+    if(arg(2) =='showhome') {
+      unset($form['title']);
+      unset($form['body_field']);
+      unset($form['field_set_user']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      unset($form['options']);
+      unset($form['menu']);
+      unset($form['path']);
+      unset($form['#content_extra_fields']);
+    }
+  }
+  if($form_id == 'pq_user_node_form') {
+    if(arg(2) =='phanquyen') {
+      dd($form);
+      unset($form['title']);
+      unset($form['body_field']);
+      unset($form['field_gantoi']);
+      unset($form['revision_information']);
+      unset($form['author']);
+      unset($form['options']);
+      unset($form['menu']);
+      unset($form['path']);
+      unset($form['#content_extra_fields']);
+    }
   }
   if($uid == 1) {
     if($form_id == 'user_register') {
