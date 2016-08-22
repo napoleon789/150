@@ -121,7 +121,8 @@ table.user_qt td, table.user_qt th{
 }
 
 #doji-show-select-vung .form-submit,
-#doji_set #node-form #edit-submit-1, #doji_set #node-form #edit-delete{
+#doji_set #node-form #edit-submit-1, #doji_set #node-form #edit-delete,
+#doji_set #node-form #edit-submit{
     background: url("../images/btn-bg.png")0 0 no-repeat;
     width: 70px;
     height: 30px;
@@ -168,4 +169,14 @@ table.user_qt td, table.user_qt th{
     margin: 0;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
+}
+#doji_set #edit-pathauto-perform-alias-wrapper{
+    display: none;
+}
+#doji_set #group-bien-do-items table select{
+    width: 190px;
+}
+
+.logged-in.page-doji #col-center-top #col-center-bottom ul.secondary{
+    margin-bottom: 20px;
 }
