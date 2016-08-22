@@ -91,6 +91,29 @@ function doji_group_create_node_pq_user($uid) {
   node_save($node);
 }
 
+//tao node hien thi trang chủ khi tao user vung mien
+
+function doji_group_create_node_show($uid) {
+  $group_uid = variable_get('group_'.$uid,1);
+  //$group_uid = doji_group_getall_group($uid);
+  $group_hn = doji_group_getall_group(1);
+  $name = doji_group_return_label($uid);
+  $vung = doji_show_uid_to_vung($uid);
+
+  $node = new StdClass();
+  $node->type = 'show';
+  $node->language = LANGUAGE_NONE;
+  $node -> uid = 1;
+  $node->title = 'Hiển thị trang chủ '.$vung;
+  $node->body[$node->language][0]['format']  = 2;
+  for($i = 0; $i < 5; $i ++ ) {
+    $node->field_set_select_data[$i]['value'] = $group_uid[$i];
+    $node->field_set_label[$i]['value'] = $name[$i];
+  }
+  $node -> field_set_user[0]['value'] = $uid;
+  node_save($node);
+}
+
 function doji_group_return_label($uid) {
   $name_vung = doji_show_uid_to_vung($uid);
   $row[] = 'Doji lẻ '.$name_vung;
