@@ -1,7 +1,7 @@
 .region-odd.region-count-3 #edit-area-wrapper .form-select,
 .count-4.with-block-editing #edit-area-wrapper .form-select,
 #doji-show-select-vung #edit-area-wrapper #edit-area,
-#edit-field-gan-user-value-wrapper .form-select{
+#doji_set #edit-field-gan-user-value-wrapper .form-select{
     border:1px solid #dfdfdf;
     line-height: 20px;
     padding: 0 5px;
@@ -121,7 +121,7 @@ table.user_qt td, table.user_qt th{
 }
 
 #doji-show-select-vung .form-submit,
-#node-form #edit-submit-1, #node-form #edit-delete{
+#doji_set #node-form #edit-submit-1, #doji_set #node-form #edit-delete{
     background: url("../images/btn-bg.png")0 0 no-repeat;
     width: 70px;
     height: 30px;
@@ -129,8 +129,43 @@ table.user_qt td, table.user_qt th{
     line-height: 30px;
     border:none;
 }
-#edit-field-gan-user-value-wrapper label{
+#doji_set #edit-field-gan-user-value-wrapper label{
     float: left;
     margin: 6px 10px 0 0;
 }
-.node-form #group-bien-do-items{}
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-hientai .form-item,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-chophep .form-item,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ban-hientai .form-item,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ba-chophep .form-item,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ban-hn .form-item,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-hn .form-item{
+    position: relative;
+}
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-hientai .form-item:after,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-chophep .form-item:after,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ban-hientai .form-item:after,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ba-chophep .form-item:after,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ban-hn .form-item:after,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-hn .form-item:after{
+    content: "";
+    position: absolute;
+    top:0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: transparent;
+    z-index: 2;
+}
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-hientai .form-item input,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-chophep .form-item input,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ban-hientai .form-item input,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ba-chophep .form-item input,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-ban-hn .form-item input,
+#doji_set #group-bien-do-items .content-multigroup-cell-field-mua-hn .form-item input{
+    border:none;
+    pointer-events: none;
+    width: 100%;
+    margin: 0;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
