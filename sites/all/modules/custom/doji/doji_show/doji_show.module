@@ -1,7 +1,9 @@
 <?php
 function doji_show_init() {
   drupal_add_js(drupal_get_path('module', 'doji_show') . '/js/doji_show.js');
+  drupal_add_js(drupal_get_path('module', 'doji_show') . '/js/jquery.bpopup.min.js');
 }
+
 function doji_user_setting_id_hienthi() {
   $query = db_query("SELECT field_set_user_value as uid FROM {content_type_user_setting}");
   while($row = db_fetch_array($query)) {
@@ -17,7 +19,6 @@ function doji_show_gia_vang($uid = null) {
   else {
     $user = array($uid => 'macdinh');
   }
-
   $output = '';
   foreach($user as $uid => $giatri) {
     $nid_node_show = db_result(db_query('SELECT nid from {content_type_show} WHERE field_set_user_value = %d',$uid));
@@ -114,9 +115,16 @@ function doji_show_setting_biendo() {
 }
 
 function doji_show_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+  $uid = $user -> uid;
   if($form_id == 'bien_do_node_form') {
    unset($form['title']);
    unset($form['body_field']);
+  }
+  if($uid == 1) {
+    if($form_id == 'user_register') {
+      $form['submit']['#suffix'] = doji_show_popup();
+    }
   }
 }
 
@@ -150,12 +158,23 @@ function doji_show_user($op, &$edit, &$account, $category = NULL) {
   if($uid_t == 1) {
     switch($op) {
       case 'insert':
-        $row['uid'] = $account -> uid;
-        if(!empty($edit['vung_mien']))
-          $row['vung_mien'] = '';
-        else
-          $row['vung_mien'] = $edit['vung_mien'];
-        drupal_write_record("doji_group_vung",$row);
+        $uid = $account -> uid;
+        if(isset($edit['roles'][3])) {
+          $row['uid'] = $account -> uid;
+          if(empty($edit['vung_mien']))
+            $row['vung_mien'] = '';
+          else
+            $row['vung_mien'] = $edit['vung_mien'];
+          drupal_write_record("doji_group_vung",$row);
+          //tao them 5 gia
+          doji_add_user_add_group($edit['vung_mien'],$uid);
+          //Tao node phan quyen
+          doji_group_create_node_pq_user($uid);
+          // tạo node bien do
+          doji_group_create_node_biendo($uid);
+
+        }
+
         break;
       case 'update':
         $vung_mien = $edit['vung_mien'];
@@ -180,7 +199,6 @@ function doji_show_user($op, &$edit, &$account, $category = NULL) {
         return $form;
         break;
       case 'form':
-
         $value = db_result(db_query('SELECT vung_mien FROM {doji_group_vung} WHERE uid = %d',$account -> uid));
         $form['vung_mien'] = array(
           '#type' => 'textfield',
@@ -195,13 +213,24 @@ function doji_show_user($op, &$edit, &$account, $category = NULL) {
 
 //tra ve array gom uid va ten vung mien
 
-function doji_show_uid_and_vung() {
-  $query = db_query("SELECT uid,vung_mien FROM {doji_group_vung}");
+function doji_show_uid_and_vung($uid = null) {
+  if(!isset($uid)) {
+    $query = db_query("SELECT uid,vung_mien FROM {doji_group_vung}");
+  }
+  else {
+    $query = db_query("SELECT uid,vung_mien FROM {doji_group_vung} WHERE uid = %d",$uid);
+  }
   while($row = db_fetch_array($query)) {
     $rows[$row['uid']] = $row['vung_mien'];
   }
   return $rows;
 }
+//Truyen vao uid tra ve ten vung mien
+function doji_show_uid_to_vung($uid) {
+  $query = db_result(db_query("SELECT vung_mien FROM {doji_group_vung} WHERE uid = %d",$uid));
+  return $query;
+}
+
 // hiển thị trang quantri.html
 function doji_show_quantri() {
   global $user;
@@ -234,7 +263,7 @@ function doji_show_quantri() {
 
 }
 
-function doji_show_uid_to_vung($uid) {
-  $vung = db_result(db_query("SELECT vung_mien FROM {doji_group_vung} WHERE uid = %d",$uid));
-  return $vung;
+function doji_show_popup() {
+  $output = '<div id ="noitce-message"> Xin chao</div>';
+  return $output;
 }

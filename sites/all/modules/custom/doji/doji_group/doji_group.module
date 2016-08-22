@@ -1,52 +1,112 @@
 <?php
 
 //Lay tat ca group cua user: bao gom ca nhap tay va khong nhap tay
-function doji_group_getall_group($uid){
-  $sql = "SELECT chon.field_dlieu_gia_value as field FROM {content_field_dlieu_gia} chon
-          INNER JOIN {content_field_dlieu_user} user_d ON chon.nid = user_d.nid
-          AND chon.delta = user_d.delta
-          AND user_d.field_dlieu_user_value = ".$uid;
-  $query = db_query($sql);
-  $data = array();
-  while($row = db_fetch_array($query)) {
-    $data[] = $row['field'];
+function  doji_group_getall_group($uid, $nhaptay = null){
+  $nid = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));
+  $node = node_load($nid);
+  if(!isset($nhaptay)) {
+    foreach($node-> field_dlieu_gia as $k => $value) {
+      $data['group'] = $node->field_dlieu_gia[$k]['value'];
+      $data['title'] = $node->field_label[$k]['value'];
+      $datas[] = $data;
+    }
   }
-  $query1 = db_query("SELECT group_name FROM {doji_group_field} WHERE uid = %d",$uid);
-  $data1 = array();
-  while($row1 = db_fetch_array($query1)) {
-    $data1[] = $row1['group_name'] ;
+  else{
+    for($i = 0; $i < 5; $i++) {
+      $group = $node->field_dlieu_gia[$i]['value'];
+      $data['field'] = str_replace('group_','',$group);
+      $data['title'] = $node->field_label[$i]['value'];
+      $datas[] = $data;
+    }
   }
-
-  $datas = array_merge($data1 , $data);
   return $datas;
 }
-
 //Get all field cua user neu isset uid, toan bo field neu !isset uid
 
-function doji_group_getall_field($uid = null) {
-  if(isset($uid)) {
-    $group = doji_group_getall_group($uid);
+function doji_group_all_field($uid = null) {
+  if(!isset($uid)) {
+    $all_group = doji_gold_price_group_options();
+    $all_group = array_keys($all_group);
+    foreach($all_group as $m => $data) {
+      $field = str_replace('group','field',$data);
+      $row[] = $field.'_muavao';
+      $row[] = $field.'_banra';
+      $row[] = $field.'_chenhlech';
+    }
   }
   else {
-    $group = doji_group_getall_group_all();
-
-  }
-  foreach($group as $k => $value) {
-   $field = str_replace('group','field',$value);
-   $row[] = $field.'_muavao';
-   $row[] = $field.'_banra';
-   $row[] = $field.'_chenhlech';
+    $nid = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));
+    $node = node_load($nid);
+    foreach($node-> field_dlieu_gia as $k => $value) {
+      $group = $value['value'];
+      $field = str_replace('group','field',$group);
+      $row[] = $field.'_muavao';
+      $row[] = $field.'_banra';
+      $row[] = $field.'_chenhlech';
+    }
   }
   return $row;
 }
 
-//all group trong content type goldprice
+//create node bien_do tu dong khi tao user moi
 
-function doji_group_getall_group_all() {
-  $query = db_query('SELECT group_name FROM {content_group} WHERE type_name = "goldprice"');
-  while($row = db_fetch_array($query)) {
-    $data[] = $row['group_name'];
+function doji_group_create_node_biendo($uid) {
+  $group_uid = variable_get('group_'.$uid,1);
+  $group_hn = doji_group_getall_group(1);
+  $vung = doji_show_uid_to_vung($uid);
+  $node = new StdClass();
+  $node -> uid = 1;
+  $node->type = 'bien_do';
+  $node->language = LANGUAGE_NONE;
+  $node->title = 'Biên độ cho '.$vung;
+  $node->body[$node->language][0]['format']  = 2;
+  for($i = 0; $i < 5; $i ++ ) {
+    $node->field_can_thamchieu[$i]['value'] = $group_uid[$i];
+    $node->field_gia_chuan[$i]['value'] = $group_hn[$i]['group'];
   }
-  return $data;
+  $node -> field_gan_user[0]['value'] = $uid;
+  node_save($node);
+}
+//create node phan quyen user co 5 truong ban dau nhap tay khi tao user moi
+
+function doji_group_create_node_pq_user($uid) {
+  $group_uid = variable_get('group_'.$uid,1);
+  //$group_uid = doji_group_getall_group($uid);
+  $group_hn = doji_group_getall_group(1);
+  $name = doji_group_return_label($uid);
+  $vung = doji_show_uid_to_vung($uid);
+
+  $node = new StdClass();
+  $node->type = 'pq_user';
+  $node->language = LANGUAGE_NONE;
+  $node -> uid = 1;
+  $node->title = 'Phân quyền cho '.$vung;
+  $node->body[$node->language][0]['format']  = 2;
+  for($i = 0; $i < 5; $i ++ ) {
+    $node->field_dlieu_gia[$i]['value'] = $group_uid[$i];
+    $node->field_label[$i]['value'] = $name[$i];
+    $node->field_nhaptay [$i]['value'] = 1;
+  }
+  $node -> field_gantoi[0]['value'] = $uid;
+  node_save($node);
 }
 
+function doji_group_return_label($uid) {
+  $name_vung = doji_show_uid_to_vung($uid);
+  $row[] = 'Doji lẻ '.$name_vung;
+  $row[] = 'Doji buôn '.$name_vung;
+  $row[] = 'Phi JSC '.$name_vung;
+  $row[] = 'Nguyên liệu 999 '.$name_vung;
+  $row[] = 'Nguyên liệu 9999 '.$name_vung;
+  return $row;
+}
+
+//add thêm group tới phân quyền khi user vung miền tạo thêm giá mới
+
+function doji_group_add_gia_to_phanquyen($uid,$group) {
+  $nid_pq = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));
+  $node = node_load($nid_pq);
+  $count = count($node-> field_dlieu_gia);
+  $node -> field_dlieu_gia[$count]['value'] = $group;
+  node_save($node);
+}

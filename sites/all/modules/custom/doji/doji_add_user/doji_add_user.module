@@ -100,31 +100,17 @@ function doji_add_user_get_form() {
 }
 //Get toan bo group nhap tay cua user neu khong ton tai ex, Get toan bo group nhap tay cua cac user khac neu ton tai $ex
 function doji_add_user_get_data($uid, $ex = null) {
-  if(isset($ex)) {
-    $field_user = 'AND user_d.field_dlieu_user_value != '.$uid;
-  }
-  else {
-    $field_user = ' AND user_d.field_dlieu_user_value = '.$uid;
-  }
-  $sql = "SELECT chon.field_dlieu_gia_value as field, label.field_label_value as title FROM {content_field_dlieu_gia} chon
-          INNER JOIN {content_field_dlieu_user} user_d ON chon.nid = user_d.nid
-          INNER JOIN {content_field_nhaptay} nhaptay ON nhaptay.nid = user_d.nid
-          INNER JOIN {content_field_label} label ON label.nid = nhaptay.nid
-          AND chon.delta = user_d.delta
-          AND user_d.delta = nhaptay.delta
-          AND label.delta = nhaptay.delta
-          AND nhaptay.field_nhaptay_value = 1
-  ".$field_user;
-  $query = db_query($sql);
-  while($row = db_fetch_array($query)) {
-    $field = $row['field'];
-    $field= str_replace('group_','',$field);
-    $data['field'] = $field;
-    $data['title'] = $row['title'];
+  $nid = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));
+  $node = node_load($nid);
+  for($i = 0; $i < 5; $i++) {
+    $group = $node->field_dlieu_gia[$i]['value'];
+    $data['field'] = str_replace('group_','',$group);
+    $data['title'] = $node->field_label[$i]['value'];
     $datas[] = $data;
   }
   return $datas;
 }
+
 
 function doji_add_user_theme() {
   return array(
@@ -139,8 +125,9 @@ function doji_add_user_theme() {
 function theme_doji_add_user_get_form ($form) {
   global $user;
   $uid = $user ->uid;
+  $vung = doji_show_uid_to_vung($uid);
   $headers = array();
-  $headers[] = array('data' => '<div>Giá vàng Hà Nội</div>', 'class' => 'first');
+  $headers[] = array('data' => '<div>Giá vàng '.$vung.'</div>', 'class' => 'first');
   $headers[] = array('data' => '<div>' . t('Mua', array(), 'vi') .'</div>');
   $headers[] = array('data' => '<div>' . t('Bán', array(), 'vi') .'</div>', 'class' => 'last');
 
@@ -318,3 +305,28 @@ function doji_gold_price_verify_page($op) {
   $node = doji_get_node('last', 'goldprice');
   doji_add_user_process($node);
 }
+
+function doji_add_user_add_group($vung,$uid) {
+  //tao gia nhap tay khi tao user vung
+  $row = array('SJC lẻ ','SJC buôn ','Phi SJC ','Nguyên liệu 999 ','Nguyên liệu 9999 ',' no_value ' );
+  foreach($row as $k => $value) {
+    module_load_include('inc', 'pathauto');
+    $_POST['name'] = $value.$vung;
+    $_POST['field_name'] = pathauto_cleanstring(preg_replace('|(.*?)\(.*|i', '\1', $value.$vung));
+    $_POST['field_name'] = preg_replace('|[^0-9a-z\_\-]|i', '', $_POST['field_name']);
+    $_POST['field_name'] = str_replace('-', '_', $_POST['field_name']);
+    while (1) {
+      $_POST['field_name'] = substr($_POST['field_name'], 0, mt_rand(2, 5)) . mt_rand(0, 9);
+      $group_name = 'group_' . $_POST['field_name'];
+      $obj = db_fetch_object(db_query_range('SELECT * FROM {content_group} WHERE type_name="%s" AND group_name="%s"', 'goldprice', $group_name, 0, 1));
+      if (!isset($obj->type_name)) {
+        break;
+      }
+    }
+    $data[] = $group_name;
+    features_revert(array('doji_gold_price' => array('content', 'fieldgroup')));
+    //ket thu tao gia
+  }
+  variable_set('group_'.$uid,$data);
+}
+

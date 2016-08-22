@@ -99,8 +99,7 @@ function doji_area_custom_update($nid) {
   $node -> vid = null;
   $node_app = node_load($nid);
   $user_app = $node_app -> uid;
-
-  $data_dn = doji_group_getall_field($user_app);
+  $data_dn = doji_group_all_field($user_app);
   foreach($data_dn as $dlieu_dn) {
     $node->{$dlieu_dn}[0]['value'] =  $node_app->{$dlieu_dn}[0]['value'];
   }
@@ -426,15 +425,6 @@ function doji_area_history_update() {
   $output .= '<ul>';
   $query = db_query_range("SELECT nid,changed,sticky,uid FROM {node} WHERE type = 'goldprice' ORDER BY nid DESC",0,8);
   while($row = db_fetch_array($query)) {
-
-    if($row['uid'] == 108) {
-      $output .= '<li class="table"><span class="table-left">ĐN cập nhật giá </span>';
-      $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
-    }
-    if($row['uid'] == 109) {
-      $output .= '<li class="table"><span class="table-left">HCM Cập nhật giá </span>';
-      $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
-    }
     if($row['uid'] == 1) {
       if(isset($row['sticky']) && $row['sticky'] == 1) {
         $output .= '<li class="table"><span class="table-left">HN đồng ý cập nhật HCM </span>';
@@ -449,6 +439,15 @@ function doji_area_history_update() {
         $output .= '<span class="table-right">'. date('h:i',$row['changed']).' '. date('d/m/Y',$row['changed']).'</span></li>';
       }
     }
+    if($row['uid'] == 108) {
+      $output .= '<li class="table"><span class="table-left">ĐN cập nhật giá </span>';
+      $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
+    }
+    if($row['uid'] == 109) {
+      $output .= '<li class="table"><span class="table-left">HCM Cập nhật giá </span>';
+      $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
+    }
+
   }
   $output .= '</ul>';
   return $output;
@@ -507,8 +506,8 @@ function doji_area_form_alter(&$form, &$form_state, $form_id) {
   if($form_id == 'goldprice_node_form') {
     global $user;
     $uid = $user -> uid;
-    $field_u = doji_group_getall_field($uid);
-    $field_all = doji_group_getall_field();
+    $field_u = doji_group_all_field($uid);
+    $field_all = doji_group_all_field();
     foreach($field_all as $k1 => $value1) {
       $form[$value1]['#access'] = FALSE;
     }

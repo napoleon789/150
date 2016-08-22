@@ -734,14 +734,10 @@ function doji_gold_price_add_new_field_submit($form, &$form_state) {
       break;
     }
   }
-  //ghi vao bang doji_group_field by mr.vantri
+  //add to node phan quyen
   global $user;
   $uid = $user -> uid;
-  if($uid > 1) {
-    $row['uid'] = $uid;
-    $row['group_name'] = $group_name;
-    drupal_write_record('doji_group_field',$row);
-  }
+  doji_group_add_gia_to_phanquyen($uid,$group_name);
 
   features_revert(array('doji_gold_price' => array('content', 'fieldgroup')));
 }
