@@ -462,3 +462,11 @@ div.node .column-side .column-wrapper {
   font-weight:normal;
   font-size:16px;
   }
+
+#noitce-message{
+    left:50% !important;
+    text-align: center;
+    -webkit-transform:translateX(-50%);
+    transform:translateX(-50%);
+    color:#fff;
+}
