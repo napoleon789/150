@@ -44,7 +44,10 @@ function doji_show_hienthi_home() {
 function doji_show_phanquyen_user() {
   drupal_set_title('');
   $form  = drupal_get_form('doji_show_select_vung');
-  $uid = $_GET['area'];
+  if(isset($_GET['area']))
+    $uid = $_GET['area'];
+  else
+    $uid = 1;
   $nid_pq = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load($nid_pq);
@@ -56,9 +59,11 @@ function doji_show_phanquyen_user() {
 function doji_show_setting_biendo() {
   drupal_set_title('');
   $form  = drupal_get_form('doji_show_select_vung');
-  $uid = $_GET['area'];
+  if(isset($_GET['area']))
+    $uid = $_GET['area'];
+  else
+    $uid = 109;
   $nid_bd = db_result(db_query("SELECT nid FROM {content_type_bien_do} WHERE field_gan_user_value = %d",$uid));
-
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load($nid_bd);
   $output = node_page_edit($node);
