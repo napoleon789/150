@@ -43,7 +43,7 @@ function doji_show_setting_biendo() {
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load($nid_bd);
   $output = node_page_edit($node);
-  $output = '<div class="hidden">' . $output . '</div>';
+  $output = '<div id="doji_set" class="hidden">' . $output . '</div>';
   $output = $form.$output;
   return $output;
 }
