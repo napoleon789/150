@@ -1,16 +1,9 @@
 <?php
-$m = false;
-
-if(!$m) {
-  $i= 0;
-  for($n = 0; $n <3; $n++) {
-    $i++;
-    echo $i.'<br />';
-  }
-
-  return;
-  if($i == 2) {
-    echo '123';
-  }
+$m = array(1,2,3,4,5,6,7,8,9,10);
+$i = 0;
+foreach($m as $k => $value) {
+  $i++;
+  if($value % 3 ==0)
+    continue;
+  echo $i;
 }
-?>
