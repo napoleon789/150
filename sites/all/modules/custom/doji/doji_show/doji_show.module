@@ -23,7 +23,7 @@ function doji_show_menu() {
 }
 
 function doji_show_phanquyen_user() {
-  drupal_set_title('Phân quyền quản trị');
+  drupal_set_title('');
   $form  = drupal_get_form('doji_show_select_vung');
   $uid = $_GET['area'];
   $nid_pq = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));
@@ -35,7 +35,7 @@ function doji_show_phanquyen_user() {
   return $output;
 }
 function doji_show_setting_biendo() {
-  drupal_set_title('Thiết lập biên độ');
+  drupal_set_title('');
   $form  = drupal_get_form('doji_show_select_vung');
   $uid = $_GET['area'];
   $nid_bd = db_result(db_query("SELECT nid FROM {content_type_bien_do} WHERE field_gan_user_value = %d",$uid));
@@ -313,6 +313,7 @@ function doji_show_uid_to_vung($uid) {
 
 // hiển thị trang quantri.html
 function doji_show_quantri() {
+  drupal_set_title('');
   global $user;
   if($user -> uid ==1) {
     $query = db_query("SELECT user.uid as uid,user.name as name, vung.vung_mien as vung FROM {users} as user INNER JOIN {doji_group_vung} vung ON user.uid = vung.uid");
