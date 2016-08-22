@@ -4,6 +4,32 @@ function doji_show_init() {
   drupal_add_js(drupal_get_path('module', 'doji_show') . '/js/jquery.bpopup.min.js');
 }
 
+function doji_show_menu() {
+  $items['doji/admin/biendo'] = array(
+    'title' => t('Thiết lập biên độ', array(), 'vi'),
+    'page callback' => 'doji_show_setting_biendo',
+    'access arguments' => array('administer users'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 7,
+  );
+  return $items;
+}
+
+function doji_show_setting_biendo() {
+  drupal_set_title('Thiết lập biên độ');
+  $form  = drupal_get_form('doji_show_select_vung');
+  $uid = $_GET['area'];
+  $nid_bd = db_result(db_query("SELECT nid FROM {content_type_bien_do} WHERE field_gan_user_value = %d",$uid));
+
+  module_load_include('inc', 'node', 'node.pages');
+  $node = node_load($nid_bd);
+  $output = node_page_edit($node);
+  $output = '<div class="clear-form goldprice-sxht">' . $output . '</div>';
+  $output = $form.$output;
+  return $output;
+}
+
+
 function doji_user_setting_id_hienthi() {
   $query = db_query("SELECT field_set_user_value as uid FROM {content_type_user_setting}");
   while($row = db_fetch_array($query)) {
@@ -66,18 +92,36 @@ function doji_show_get_allfield_from_nid($nid) {
   return $rows;
 }
 
-function doji_show_select_vung() {
+function doji_show_select_vung($form, &$form_state) {
   $user = doji_show_uid_and_vung();
   $user =  array('' => '--Chọn vùng miền--') + $user;
+  $form = array();
   $form['area'] = array(
     '#type' => 'select',
     '#title' => '',
     '#default_value' => $vung,
     '#options' => $user,
   );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Tìm kiếm',
+  );
   return $form;
 }
 
+function doji_show_select_vung_validate($form, &$form_stat){
+
+}
+
+function doji_show_select_vung_submit($form, &$form_state){
+  $area = $form_state['values']['area'];
+  $form_state['redirect'] = array(
+    'doji/admin/biendo',
+    array(
+      'area' => $area,
+    ),
+  );
+}
 /**
  * implement hook_block
  */
@@ -105,7 +149,7 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
-function doji_show_setting_biendo() {
+function doji_show_setting_biendo1() {
   global $user;
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load(45748);
@@ -248,15 +292,16 @@ function doji_show_quantri() {
     $data['name'] = $row['name'];
     $data['qt'] = t('Quản trị');
     $data['vung'] = $row['vung'];
+    $data['biendo'] = '<a href ="doji/admin/biendo?area='.$row['uid'].'">Thiết lập</a>';
     $data['edit'] = '<a href ="user/'.$row['uid'].'/edit?destination=doji/admin">Sửa</a>';
     $data['delete'] = '<a href ="user/logout">Thoát</a>';
     if($user ->uid == 1)
       $data['delete'] = '<a href ="user/'.$row['uid'].'/delete?destination=doji/admin">Xóa</a>';
     $datas[] = $data;
   }
-  $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Sửa', 'Thoát');
+  $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Thiết lập biên độ','Sửa', 'Thoát');
   if($user -> uid == 1)
-    $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Sửa', 'Xóa');
+    $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Thiết lập biên độ','Sửa', 'Xóa');
   $output = theme('table', $header, $datas, array('class' => 'user_qt'));
   $output .= '<div class="add_u"><a href="admin/user/user/create?destination=doji/admin"> Thêm quản trị mới</a></div>';
   return $output;

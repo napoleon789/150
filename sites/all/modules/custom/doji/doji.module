@@ -111,7 +111,7 @@ function doji_menu() {
     'page arguments' => array('list'),
     'access arguments' => array('administer users'),
     'file' => 'doji.admin.inc',
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_NORMAL_ITEM,
     'weight' => $weight++,
   );
   $items['doji/admin/user/list'] = array(
