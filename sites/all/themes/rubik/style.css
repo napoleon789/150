@@ -469,4 +469,5 @@ div.node .column-side .column-wrapper {
     -webkit-transform:translateX(-50%);
     transform:translateX(-50%);
     color:#fff;
+    display: none;
 }

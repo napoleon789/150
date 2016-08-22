@@ -1,5 +1,7 @@
 .region-odd.region-count-3 #edit-area-wrapper .form-select,
-.count-4.with-block-editing #edit-area-wrapper .form-select{
+.count-4.with-block-editing #edit-area-wrapper .form-select,
+#doji-show-select-vung #edit-area-wrapper #edit-area,
+#edit-field-gan-user-value-wrapper .form-select{
     border:1px solid #dfdfdf;
     line-height: 20px;
     padding: 0 5px;
@@ -103,4 +105,32 @@ table.user_qt td, table.user_qt th{
     background: #a50119 !important;
     color:#fff;
 }
+.hidden .vertical-tabs.clear-block{
+    display: none !important;
+}
 
+
+/* thiet lap bien do */
+#doji-show-select-vung{
+    margin-bottom: 15px;
+}
+#doji-show-select-vung #edit-area-wrapper{
+    float: left;
+    width: 190px;
+    margin: 0 10px 0 0;
+}
+
+#doji-show-select-vung .form-submit,
+#node-form #edit-submit-1, #node-form #edit-delete{
+    background: url("../images/btn-bg.png")0 0 no-repeat;
+    width: 70px;
+    height: 30px;
+    background-size: 100% 100%;
+    line-height: 30px;
+    border:none;
+}
+#edit-field-gan-user-value-wrapper label{
+    float: left;
+    margin: 6px 10px 0 0;
+}
+.node-form #group-bien-do-items{}
