@@ -470,6 +470,7 @@ div.node .column-side .column-wrapper {
     transform:translateX(-50%);
     color:#fff;
     display: none;
+    font-size: 18px;
 }
 
 .sk-circle {
