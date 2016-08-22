@@ -329,4 +329,3 @@ function doji_add_user_add_group($vung,$uid) {
   }
   variable_set('group_'.$uid,$data);
 }
-

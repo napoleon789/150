@@ -12,9 +12,28 @@ function doji_show_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 7,
   );
+  $items['doji/admin/phanquyen'] = array(
+    'title' => t('Phân quyền user', array(), 'vi'),
+    'page callback' => 'doji_show_phanquyen_user',
+    'access arguments' => array('administer users'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 8,
+  );
   return $items;
 }
 
+function doji_show_phanquyen_user() {
+  drupal_set_title('Phân quyền quản trị');
+  $form  = drupal_get_form('doji_show_select_vung');
+  $uid = $_GET['area'];
+  $nid_pq = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));
+  module_load_include('inc', 'node', 'node.pages');
+  $node = node_load($nid_pq);
+  $output = node_page_edit($node);
+  $output = '<div id="doji_set" class="hidden">' . $output . '</div>';
+  $output = $form.$output;
+  return $output;
+}
 function doji_show_setting_biendo() {
   drupal_set_title('Thiết lập biên độ');
   $form  = drupal_get_form('doji_show_select_vung');
@@ -93,6 +112,9 @@ function doji_show_get_allfield_from_nid($nid) {
 }
 
 function doji_show_select_vung($form, &$form_state) {
+  if(isset($_GET['area'])) {
+    $vung = $_GET['area'];
+  }
   $user = doji_show_uid_and_vung();
   $user =  array('' => '--Chọn vùng miền--') + $user;
   $form = array();
@@ -102,10 +124,13 @@ function doji_show_select_vung($form, &$form_state) {
     '#default_value' => $vung,
     '#options' => $user,
   );
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => 'Tìm kiếm',
-  );
+  if(arg(1) =='admin') {
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Tìm kiếm',
+    );
+  }
+
   return $form;
 }
 
@@ -115,12 +140,23 @@ function doji_show_select_vung_validate($form, &$form_stat){
 
 function doji_show_select_vung_submit($form, &$form_state){
   $area = $form_state['values']['area'];
-  $form_state['redirect'] = array(
-    'doji/admin/biendo',
-    array(
-      'area' => $area,
-    ),
-  );
+  if(arg(2) =='biendo') {
+    $form_state['redirect'] = array(
+      'doji/admin/biendo',
+      array(
+        'area' => $area,
+      ),
+    );
+  }
+  if(arg(2) == 'phanquyen') {
+    $form_state['redirect'] = array(
+      'doji/admin/phanquyen',
+      array(
+        'area' => $area,
+      ),
+    );
+  }
+
 }
 /**
  * implement hook_block
@@ -138,7 +174,7 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
       switch ($delta) {
         case 'setting_biendo' :
           $blocks['subject'] = 'Thiết lập biên độ';
-          $blocks['content'] = doji_show_setting_biendo();
+          $blocks['content'] = doji_show_block_biendo();
           break;
         case 'show_bdo' :
           $blocks['subject'] = 'Hiển thị biên độ';
@@ -149,7 +185,7 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
-function doji_show_setting_biendo1() {
+function doji_show_block_biendo() {
   global $user;
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load(45748);
@@ -293,6 +329,7 @@ function doji_show_quantri() {
     $data['qt'] = t('Quản trị');
     $data['vung'] = $row['vung'];
     $data['biendo'] = '<a href ="doji/admin/biendo?area='.$row['uid'].'">Thiết lập</a>';
+    $data['pq'] = '<a href ="doji/admin/phanquyen?area='.$row['uid'].'">Phân quyền</a>';
     $data['edit'] = '<a href ="user/'.$row['uid'].'/edit?destination=doji/admin">Sửa</a>';
     $data['delete'] = '<a href ="user/logout">Thoát</a>';
     if($user ->uid == 1)
@@ -301,14 +338,13 @@ function doji_show_quantri() {
   }
   $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Thiết lập biên độ','Sửa', 'Thoát');
   if($user -> uid == 1)
-    $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Thiết lập biên độ','Sửa', 'Xóa');
+    $header = array("Thứ tự",'Tên đăng nhập', 'Vai trò','Vùng miền','Thiết lập biên độ','Phân quyền','Sửa', 'Xóa');
   $output = theme('table', $header, $datas, array('class' => 'user_qt'));
   $output .= '<div class="add_u"><a href="admin/user/user/create?destination=doji/admin"> Thêm quản trị mới</a></div>';
   return $output;
 
 }
-
 function doji_show_popup() {
-  $output = '<div id ="noitce-message"><img src="/150/sites/all/themes/doji_gold/images/loading-big.gif"><p>Hệ thống đang thiết lập tự động, bạn vui lòng chờ trong vài phút!</p></div>';
+  $output = '<div id ="noitce-message"><img src="/sites/all/themes/doji_gold/images/loading-big.gif"><p>Hệ thống đang thiết lập tự động, bạn vui lòng chờ trong vài phút!</p></div>';
   return $output;
 }
