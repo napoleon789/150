@@ -1,5 +1,14 @@
 <?php
+//tra toan bo group cua user,mang co dang array(group1,group2)
 
+function doji_group_show_group($uid) {
+  $nid = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));
+  $node = node_load($nid);
+  foreach($node-> field_dlieu_gia as $k => $value) {
+    $data[] = $value['value'];
+  }
+  return $data;
+}
 //Lay tat ca group cua user: bao gom ca nhap tay va khong nhap tay
 function  doji_group_getall_group($uid, $nhaptay = null){
   $nid = db_result(db_query("SELECT nid FROM {content_type_pq_user} WHERE field_gantoi_value = %d",$uid));

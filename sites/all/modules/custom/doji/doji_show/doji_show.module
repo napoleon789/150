@@ -205,12 +205,7 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
 }
 
 function doji_show_block_biendo() {
-  global $user;
-  module_load_include('inc', 'node', 'node.pages');
-  $node = node_load(45748);
-  $form = node_page_edit($node);
-  $form = '<div class="clear-form goldprice-sxht">' . $form . '</div>';
-  return $form;
+ return "123";
 }
 
 function doji_show_form_alter(&$form, &$form_state, $form_id) {
@@ -223,6 +218,7 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
       unset($form['field_gan_user']);
       unset($form['revision_information']);
       unset($form['author']);
+      unset($form['buttons']['delete']);
       unset($form['options']);
       unset($form['menu']);
       unset($form['path']);
@@ -239,6 +235,7 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
       unset($form['options']);
       unset($form['menu']);
       unset($form['path']);
+      unset($form['buttons']['delete']);
       unset($form['#content_extra_fields']);
     }
   }
@@ -251,6 +248,7 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
       unset($form['revision_information']);
       unset($form['author']);
       unset($form['options']);
+      unset($form['buttons']['delete']);
       unset($form['menu']);
       unset($form['path']);
       unset($form['#content_extra_fields']);
@@ -264,10 +262,14 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
 }
 
 function doji_show_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
- if($node -> type == 'bien_do') {
    if($op == 'update') {
-     drupal_goto('<front>');
-   }
+     $type = $node -> type;
+     if(in_array($type,array('bien_do','show','pq_user'))) {
+       drupal_set_message('Thiết lập thành công');
+       global $base_root;
+       $current_url = $base_root . request_uri();
+       drupal_goto($current_url);
+     }
  }
 }
 

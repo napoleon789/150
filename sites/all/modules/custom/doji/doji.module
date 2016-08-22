@@ -623,6 +623,8 @@ function theme_doji_goldprice_wget_node_form($form) {
 
 function theme_doji_formula_table($form) {
   global $user;
+  $group_all = doji_group_show_group($user->uid);
+  dd($group_all);
   $formula_groups = variable_get('formula_groups', array());
   $ascii_code = '65';
   $maxcolumns = 6;
@@ -657,6 +659,7 @@ function theme_doji_formula_table($form) {
   $formula_form = &$form['formula_groups'];
   $inc = 0;
   $doji_i = 0;
+
   foreach ($formula_form as $k => &$element) {
     if (is_object($element)) {
       $element = (array)$element;
@@ -673,13 +676,14 @@ function theme_doji_formula_table($form) {
     if (!isset($element[$fieldname .'_muavao'])) {
       continue;
     }
-
+    $group_uid = $element['group_name']['#default_value'];
     $inc++;
     $row = array();
     $row[] = $inc;
     $group_status = 0;
     $output = '';
-
+    if(in_array($group_uid,$group_all) == 0)
+      continue;
     foreach ($suffix as $id=>$suffix_value) {
       if (isset($element[$fieldname . $suffix_value])) {
         if (!isset($row['label'])) {
@@ -709,23 +713,10 @@ function theme_doji_formula_table($form) {
       }
     }
     drupal_render($element);
-    $group_ele = $element['group_name']['#value'];
-    $group_uid = doji_group_getall_group($user ->uid);
-    if(in_array($group_ele,$group_uid)) {
-      $row['operator'] = '<a href="#" class="do-edit" onclick="return false;">' . t('Sửa', array(), 'vi') . '</a><span class="cancel-save hide"><a href="#" class="do-cancel" onclick="return false;">' . t('Hủy', array(), 'vi') . '</a>&nbsp;|&nbsp;<a href="#" class="do-save" action="' . url('doji/thiet-lap-gia/thiet-lap-cong-thuc') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t('Lưu lại', array(), 'vi') . '</a></span>';
-      $row['status'] = '<a href="#" class="do-update-status" action="' . url('doji/thiet-lap-gia/cai-dat-truong-gia') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t($group_status ? 'Bật' : 'Tắt', array(), 'vi') . '</a></span>';
-    }
-    else {
-      $row['operator'] = '<a href="#" class="do-edit_save" onclick="return false;">' . t('Sửa', array(), 'vi') . '</a><span class="cancel-save hide"><a href="#" class="do-cancel" onclick="return false;">' . t('Hủy', array(), 'vi') . '</a>&nbsp;|&nbsp;<a href="#" class="do-save" action="' . url('doji/thiet-lap-gia/thiet-lap-cong-thuc') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t('Lưu lại', array(), 'vi') . '</a></span>';
-      $row['status'] = '<a href="#" class="do-update-status" action="' . url('doji/thiet-lap-gia/cai-dat-truong-gia') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t($group_status ? 'Bật' : 'Tắt', array(), 'vi') . '</a></span>';
-    }
-    if($inc % 30 == 0) {
-      $doji_i++;
-      $rows[] = array('data' => $row,'class' => "vantri".$doji_i);
-    }
-    else
-      $rows[] = $row;
+    $row['operator'] = '<a href="#" class="do-edit" onclick="return false;">' . t('Sửa', array(), 'vi') . '</a><span class="cancel-save hide"><a href="#" class="do-cancel" onclick="return false;">' . t('Hủy', array(), 'vi') . '</a>&nbsp;|&nbsp;<a href="#" class="do-save" action="' . url('doji/thiet-lap-gia/thiet-lap-cong-thuc') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t('Lưu lại', array(), 'vi') . '</a></span>';
+    $row['status'] = '<a href="#" class="do-update-status" action="' . url('doji/thiet-lap-gia/cai-dat-truong-gia') . '/' . $k . '/' . $fieldname . $suffix_value . '" onclick="return false;">' . t($group_status ? 'Bật' : 'Tắt', array(), 'vi') . '</a></span>';
 
+    $rows[] = $row;
   }
 
   if (count($rows)) {
