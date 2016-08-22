@@ -23,4 +23,9 @@ jQuery(document).ready(function() {
         });
 
     }
+    $('.logged-in.page-admin .column-main #edit-submit-1').click(function(){
+        $('#noitce-message').bPopup();
+        console.log('123');
+       return false;
+    });
 });

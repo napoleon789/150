@@ -309,6 +309,6 @@ function doji_show_quantri() {
 }
 
 function doji_show_popup() {
-  $output = '<div id ="noitce-message"> Xin chao</div>';
+  $output = '<div id ="noitce-message"><img src="/150/sites/all/themes/doji_gold/images/loading-big.gif"><p>Hệ thống đang thiết lập tự động, bạn vui lòng chờ trong vài phút!</p></div>';
   return $output;
 }
