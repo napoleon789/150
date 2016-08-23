@@ -12094,3 +12094,47 @@ Array
     [6] => group_ki7
 )
 
+Array
+(
+    [0] => group_sjc_le
+    [1] => group_sjc_buon
+    [2] => group_phi_sjc_9999
+    [3] => group_nguyen_lieu_999
+    [4] => group_nguyen_lieu_99
+    [5] => group_nhan_loc1
+    [6] => group_ki7
+)
+
+Array
+(
+    [0] => group_sjc_le
+    [1] => group_sjc_buon
+    [2] => group_phi_sjc_9999
+    [3] => group_nguyen_lieu_999
+    [4] => group_nguyen_lieu_99
+    [5] => group_nhan_loc1
+    [6] => group_ki7
+)
+
+Array
+(
+    [0] => group_sjc_le
+    [1] => group_sjc_buon
+    [2] => group_phi_sjc_9999
+    [3] => group_nguyen_lieu_999
+    [4] => group_nguyen_lieu_99
+    [5] => group_nhan_loc1
+    [6] => group_ki7
+)
+
+Array
+(
+    [0] => group_sjc_le
+    [1] => group_sjc_buon
+    [2] => group_phi_sjc_9999
+    [3] => group_nguyen_lieu_999
+    [4] => group_nguyen_lieu_99
+    [5] => group_nhan_loc1
+    [6] => group_ki7
+)
+

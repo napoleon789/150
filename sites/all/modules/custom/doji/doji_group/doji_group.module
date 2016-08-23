@@ -142,3 +142,20 @@ function doji_group_add_gia_to_phanquyen($uid,$group) {
   $node -> field_dlieu_gia[$count]['value'] = $group;
   node_save($node);
 }
+
+//lựa chọn thêm group để hiển thị trong phần thiết lập giá
+
+function doji_group_add_thietlap($uid) {
+  $nid_ht = db_result(db_query("SELECT nid FROM {content_type_show} WHERE field_set_user_value = %d",$uid));
+  $node = node_load($nid_ht);
+  $gia = $node -> field_gia_hienthi ;
+  $count = count($gia);
+  if($count > 0) {
+    foreach($gia as $k => $value) {
+      $row[] = $value['value'];
+    }
+  }
+  else
+    $row = array();
+  return $row;
+}

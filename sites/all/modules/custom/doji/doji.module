@@ -624,7 +624,8 @@ function theme_doji_goldprice_wget_node_form($form) {
 function theme_doji_formula_table($form) {
   global $user;
   $group_all = doji_group_show_group($user->uid);
-  dd($group_all);
+  $group_ad = doji_group_add_thietlap($user->uid);
+  $group_all = array_merge($group_all,$group_ad);
   $formula_groups = variable_get('formula_groups', array());
   $ascii_code = '65';
   $maxcolumns = 6;

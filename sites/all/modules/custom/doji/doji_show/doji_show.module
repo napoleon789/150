@@ -26,7 +26,26 @@ function doji_show_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 9,
   );
+  $items['doji/thiet-lap-gia/chongia'] = array(
+    'title' => t('Chọn giá hiển thị', array(), 'vi'),
+    'page callback' => 'doji_show_select_price',
+    'access arguments' => array('create goldprice content'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
   return $items;
+}
+
+function doji_show_select_price() {
+  global $user;
+  $uid = $user -> uid;
+  $nid_ht = db_result(db_query("SELECT nid FROM {content_type_show} WHERE field_set_user_value = %d",$uid));
+  module_load_include('inc', 'node', 'node.pages');
+  $node = node_load($nid_ht);
+  $output = node_page_edit($node);
+  $output = '<div id="doji_set" class="hidden chongia">' . $output . '</div>';
+  $output = $output;
+  return $output;
 }
 
 function doji_show_hienthi_home() {
@@ -35,6 +54,7 @@ function doji_show_hienthi_home() {
   $nid_ht = db_result(db_query("SELECT nid FROM {content_type_show} WHERE field_set_user_value = %d",$uid));
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load($nid_ht);
+  dpm($node);
   $output = node_page_edit($node);
   $output = '<div id="doji_set" class="hidden">' . $output . '</div>';
   $output = $output;
@@ -231,7 +251,8 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
     }
   }
   if($form_id == 'show_node_form') {
-    if(arg(2) =='showhome') {
+    if(in_array(arg(2),array('showhome','chongia'))) {
+      dpm($form);
       unset($form['title']);
       unset($form['body_field']);
       unset($form['field_set_user']);
