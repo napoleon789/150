@@ -54,7 +54,7 @@ function doji_show_hienthi_home() {
   $nid_ht = db_result(db_query("SELECT nid FROM {content_type_show} WHERE field_set_user_value = %d",$uid));
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load($nid_ht);
-  dpm($node);
+
   $output = node_page_edit($node);
   $output = '<div id="doji_set" class="hidden">' . $output . '</div>';
   $output = $output;
@@ -252,7 +252,7 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
   }
   if($form_id == 'show_node_form') {
     if(in_array(arg(2),array('showhome','chongia'))) {
-      dpm($form);
+
       unset($form['title']);
       unset($form['body_field']);
       unset($form['field_set_user']);
