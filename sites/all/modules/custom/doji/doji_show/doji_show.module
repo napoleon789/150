@@ -49,15 +49,17 @@ function doji_show_select_price() {
 }
 
 function doji_show_hienthi_home() {
-  global $user;
-  $uid = $user -> uid;
+  $form  = drupal_get_form('doji_show_select_vung');
+  if(isset($_GET['area']))
+    $uid = $_GET['area'];
+  else
+    $uid = 1;
   $nid_ht = db_result(db_query("SELECT nid FROM {content_type_show} WHERE field_set_user_value = %d",$uid));
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load($nid_ht);
-  dpm($node);
   $output = node_page_edit($node);
   $output = '<div id="doji_set" class="hidden">' . $output . '</div>';
-  $output = $output;
+  $output = $form.$output;
   return $output;
 }
 
@@ -92,7 +94,6 @@ function doji_show_setting_biendo() {
   return $output;
 }
 
-
 function doji_user_setting_id_hienthi() {
   $query = db_query("SELECT field_set_user_value as uid FROM {content_type_user_setting}");
   while($row = db_fetch_array($query)) {
@@ -111,30 +112,25 @@ function doji_show_gia_vang($uid = null) {
   $output = '';
   foreach($user as $uid => $giatri) {
     $nid_node_show = db_result(db_query('SELECT nid from {content_type_show} WHERE field_set_user_value = %d',$uid));
-    $all_field = doji_show_get_allfield_from_nid($nid_node_show);
-    $data_path_details = doji_get_data_path_details();
-    $data_path_details['filepath'] = $data_path_details['path'] . '/'  . $data_path_details['prefix'] .  '_vungmien_' . $uid . '.dat';
-    $output = file_get_contents($data_path_details['filepath']);
-    if (empty($output) || !$output) {
-      $node = doji_get_node('last', 'goldprice');
-      $node1 = node_load($nid_node_show);
-
-      foreach ($node1->field_set_select_data as $k => $v) {
-        $m = $node1->{field_set_select_data}[$k]['value'];
-        $group_access[$m] = NULL;
-        if (isset($node1->field_set_label[$k]['value']) && $node1->field_set_label[$k]['value']) {
-          $group_access[$node1->field_set_select_data[$k]['value']]['label'] =  $node1->field_set_label[$k]['value'];
-        }
+    $node = doji_get_node('last', 'goldprice');
+    $node1 = node_load($nid_node_show);
+    foreach ($node1->field_set_select_data as $k => $v) {
+      $m = $node1->{field_set_select_data}[$k]['value'];
+      $group_access[$m] = NULL;
+      if (isset($node1->field_set_label[$k]['value']) && $node1->field_set_label[$k]['value']) {
+        $group_access[$node1->field_set_select_data[$k]['value']]['label'] =  $node1->field_set_label[$k]['value'];
       }
-      if (count($group_access)) {
-        $output .= '<h2 class="title_bang"> Bảng giá tại '.doji_show_uid_to_vung($uid).'</h2>';
-        $output .= theme('doji_goldprice_view_1', $node, NULL, NULL, $group_access);
-      }
-      else {
-        $output = t('Hiện không có dữ liệu phù hợp', array(), 'vi');
-      }
-      file_save_data($output, $data_path_details['filepath'], FILE_EXISTS_REPLACE);
     }
+    if (count($group_access)) {
+      $output .= '<h2 class="title_bang"> Bảng giá tại '.doji_show_uid_to_vung($uid).'</h2>';
+      $output .= theme('doji_goldprice_view_1', $node, NULL, NULL, $group_access);
+    }
+    else {
+      $output = t('Hiện không có dữ liệu phù hợp', array(), 'vi');
+    }
+
+    file_save_data($output, 'sites/default/files/data/hienthi/vungmien_'.$uid.'.dat', FILE_EXISTS_REPLACE);
+    $output = file_get_contents('sites/default/files/data/hienthi/vungmien_'.$uid.'.dat');
   }
   return $output;
 }
@@ -200,6 +196,14 @@ function doji_show_select_vung_submit($form, &$form_state){
       ),
     );
   }
+  if(arg(2) == 'showhome') {
+    $form_state['redirect'] = array(
+      'doji/admin/showhome',
+      array(
+        'area' => $area,
+      ),
+    );
+  }
 
 }
 /**
@@ -252,10 +256,8 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
   }
   if($form_id == 'show_node_form') {
     if(in_array(arg(2),array('showhome','chongia'))) {
-      dpm($form);
       unset($form['title']);
       unset($form['body_field']);
-      unset($form['field_set_user']);
       unset($form['revision_information']);
       unset($form['author']);
       unset($form['options']);
@@ -267,7 +269,6 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
   }
   if($form_id == 'pq_user_node_form') {
     if(arg(2) =='phanquyen') {
-      dd($form);
       unset($form['title']);
       unset($form['body_field']);
       unset($form['field_gantoi']);
@@ -293,6 +294,26 @@ function doji_show_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
      if(in_array($type,array('bien_do','show','pq_user'))) {
        drupal_set_message('Thiết lập thành công');
        global $base_root;
+       if($type == 'show') {
+         $uid = $node ->field_set_user[0]['value'];
+         $node_gold = doji_get_node('last', 'goldprice');
+         foreach ($node->field_set_select_data as $k => $v) {
+           $m = $node->{field_set_select_data}[$k]['value'];
+           $group_access[$m] = NULL;
+           if (isset($node->field_set_label[$k]['value']) && $node->field_set_label[$k]['value']) {
+             $group_access[$node->field_set_select_data[$k]['value']]['label'] =  $node->field_set_label[$k]['value'];
+           }
+         }
+         if (count($group_access)) {
+           $output .= '<h2 class="title_bang"> Bảng giá tại '.doji_show_uid_to_vung($uid).'</h2>';
+           $output .= theme('doji_goldprice_view_1', $node_gold, NULL, NULL, $group_access);
+         }
+         else {
+           $output = t('Hiện không có dữ liệu phù hợp', array(), 'vi');
+         }
+         file_save_data($output, 'sites/default/files/data/hienthi/vungmien_'.$uid.'.dat', FILE_EXISTS_REPLACE);
+       }
+
        $current_url = $base_root . request_uri();
        drupal_goto($current_url);
      }
@@ -337,9 +358,7 @@ function doji_show_user($op, &$edit, &$account, $category = NULL) {
           doji_group_create_node_biendo($uid);
           //tao node hien thi trang chu
           doji_group_create_node_show($uid);
-
         }
-
         break;
       case 'update':
         $vung_mien = $edit['vung_mien'];

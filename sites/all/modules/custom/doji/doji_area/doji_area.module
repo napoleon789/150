@@ -103,12 +103,12 @@ function doji_area_custom_update($nid) {
   foreach($data_dn as $dlieu_dn) {
     $node->{$dlieu_dn}[0]['value'] =  $node_app->{$dlieu_dn}[0]['value'];
   }
-  $node -> sticky = 2;
-  $node -> status =1;
+  $node -> sticky = $user_app;
+  $node -> status = 1;
   db_query("UPDATE {canhbao} set status = 1 WHERE nid = %d",$nid);
-
-
   node_save($node);
+  doji_area_save_to_file(1);
+  doji_area_save_to_file($user_app);
 }
 
 /**
@@ -381,8 +381,11 @@ function doji_area_show_popup() {
 
 function doji_area_tuchoi() {
   $nid = arg(2);
+  $uid = db_result(db_query("SELECT uid FROM {canhbao} WHERE nid= %d",$nid));
   db_query("UPDATE {node} set status = 2,changed = %d,sticky = 3 WHERE nid = %d",time(),$nid);
   db_query("UPDATE {canhbao} set status = 2 WHERE nid = %d",$nid);
+  doji_area_save_to_file(1);
+  doji_area_save_to_file($uid);
 }
 
 function doji_area_form_biendo() {
@@ -426,27 +429,20 @@ function doji_area_history_update() {
   $query = db_query_range("SELECT nid,changed,sticky,uid FROM {node} WHERE type = 'goldprice' ORDER BY nid DESC",0,8);
   while($row = db_fetch_array($query)) {
     if($row['uid'] == 1) {
-      if(isset($row['sticky']) && $row['sticky'] == 1) {
-        $output .= '<li class="table"><span class="table-left">HN đồng ý cập nhật HCM </span>';
+      if(isset($row['sticky']) ) {
+        $output .= '<li class="table"><span class="table-left">HN đồng ý cập nhật '.doji_show_uid_to_vung($row['sticky']).' </span>';
         $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
-      }
-      if(isset($row['sticky']) && $row['sticky'] == 2) {
-        $output .= '<li class="table"><span class="table-left">HN đồng ý cập nhật giá ĐN </span>';
-        $output .= '<span class="table-right">'. date('d:s d/m/Y',$row['changed']).'</span></li>';
       }
       else {
         $output .= '<li class="table"><span class="table-left">HN cập nhật giá </span>';
         $output .= '<span class="table-right">'. date('h:i',$row['changed']).' '. date('d/m/Y',$row['changed']).'</span></li>';
       }
     }
-    if($row['uid'] == 108) {
-      $output .= '<li class="table"><span class="table-left">ĐN cập nhật giá </span>';
+    else {
+      $output .= '<li class="table"><span class="table-left">'.doji_show_uid_to_vung($row['uid']).' cập nhật giá </span>';
       $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
     }
-    if($row['uid'] == 109) {
-      $output .= '<li class="table"><span class="table-left">HCM Cập nhật giá </span>';
-      $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
-    }
+
 
   }
   $output .= '</ul>';
@@ -694,22 +690,17 @@ function doji_area_path_ajax() {
 function doji_area_canhbao_ajax() {
   global $user;
   $rows = array();
-
   if ($user->uid == 1) {
     $status = ' WHERE status = 0';
   }
   else {
-    $status =' WHERE uid = '.$user ->uid;
+    $status =' WHERE status != 3 AND uid = '.$user ->uid;
   }
 
   $num = db_result(db_query('SELECT COUNT(id) FROM {canhbao}' . $status));
 
   if($num == 0) {
-    $arr = array('noidung' => 'Không có cập nhật vi phạm');
-    if(arg(0) == 'canhbao') {
-      drupal_json($arr);
-      die;
-    }
+
   }
   else {
     $query = db_query_range('SELECT * FROM {canhbao} ' . $status . ' ORDER BY ID DESC', 0, 6);
@@ -756,13 +747,14 @@ function doji_area_canhbao_ajax() {
       $content['class'] = $row['status'];
       $rows[] = $content;
     }
-
     if(arg(0) == 'canhbao') {
-      $m = json_encode($rows);
-      echo $m;
+      $uid = $user -> uid;
+      $data = file_get_contents('sites/default/files/data/canhbao/canhbao_'.$uid.'.dat');
+      echo $data;
+     // $m = json_encode($rows);
+     // echo $m;
       exit;
     }
-
     return $rows;
   }
 }
@@ -794,19 +786,13 @@ function doji_erea_static_change_capnhat() {
   while($row = db_fetch_array($query)) {
     $content['stt'] = $i+1;
     $content['time'] = date('H:i m/d/Y',$row['changed']);
-    if($row['uid'] == 108) {
-      $content['noidung'] = 'DN cập nhật giá';
-      $content['user'] = 'ĐN';
-    }
-    if($row['uid'] == 109) {
-      $content['noidung'] = 'HCM cập nhật giá ';
-      $content['user'] = 'HCM';
-    }
+    $content['noidung'] = doji_show_uid_to_vung($row['uid']).' cập nhật giá';
+    $content['user'] = doji_show_uid_to_vung($row['uid']);
+
+
     if($row['uid'] == 1) {
-      if(isset($row['sticky']) && $row['sticky'] == 1)
-        $content['noidung'] = 'HN đồng ý cập nhật giá HCM ';
-      if(isset($row['sticky']) && $row['sticky'] == 2)
-        $content['noidung'] = 'HN đồng ý cập nhật giá DN ';
+      if(isset($row['sticky']) )
+        $content['noidung'] = doji_show_uid_to_vung($row['uid']).' đồng ý cập nhật giá HCM ';
       else
         $content['noidung'] = 'HN cập nhật giá ';
       $content['user'] = 'HN';
@@ -860,6 +846,8 @@ function doji_area_check_status() {
   while($data = db_fetch_array($query)) {
     db_query("UPDATE {canhbao} SET status = 3 WHERE nid != %d AND status = 0 AND uid = %d",$data['nid'],$user ->uid);
   }
+  doji_area_save_to_file(1);
+  doji_area_save_to_file($user -> uid);
 }
 
 function doji_area_term_report() {
@@ -927,4 +915,64 @@ function doji_area_biendo_capnhat($node_giavang) {
       node_save($node);
     }
  }
+}
+
+function doji_area_save_to_file($uid) {
+  $rows = array();
+  if ($uid == 1) {
+    $status = ' WHERE status = 0';
+  }
+  else {
+    $status =' WHERE status !=3 AND uid = '.$uid;
+  }
+  $num = db_result(db_query('SELECT COUNT(id) FROM {canhbao}' . $status));
+  if($num == 0) {
+    $rows = array('noidung' => 'Không có cập nhật vi phạm');
+  }
+  else {
+    $query = db_query_range('SELECT * FROM {canhbao} ' . $status . ' ORDER BY ID DESC', 0, 15);
+    while($row = db_fetch_array($query)) {
+      $content['id'] = $row['nid'];
+      $content['uid'] = $row['uid'];
+      $nd_exp = explode(",",$row['nd']);
+      array_pop($nd_exp);
+      $content['noidung'] = $nd_exp;
+      $nd_popup =  $row['ndpoup'];
+      $m = explode(';',$nd_popup);
+      array_pop($m);
+      $tt = '';
+
+      foreach($m as $n) {
+        $tt[] = explode(',',$n);
+      }
+
+      $vn ='';
+
+      foreach($tt as $b => $kk) {
+        $dn['title'] = $content['noidung'][$b];
+        $dn['error'] = $kk;
+        $vn[] = $dn;
+      }
+
+      $content['ndpoup'] = $vn;
+      $content['time'] = date('H:i d/m/Y', $row['time']);
+
+      switch($row['status']) {
+        case 0 :
+          $trangthai = 'Chờ duyệt';
+          break;
+        case 1:
+          $trangthai = 'Đã duyệt';
+          break;
+        case 2:
+          $trangthai = 'Từ chối';
+          break;
+      }
+      $content['status'] = $trangthai;
+      $content['class'] = $row['status'];
+      $rows[] = $content;
+    }
+  }
+  $rows = json_encode($rows);
+  file_save_data($rows, 'sites/default/files/data/canhbao/canhbao_'.$uid.'.dat', FILE_EXISTS_REPLACE);
 }

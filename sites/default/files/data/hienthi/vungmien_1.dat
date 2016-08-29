@@ -1,0 +1,8 @@
+<h2 class="title_bang"> Bảng giá tại Hà Nội</h2><table class="goldprice-view sticky-enabled" width="100%">
+ <thead><tr><th class="first"><div>Loại</div></th><th><div>Mua vào</div></th><th class="last"><div>Bán ra</div></th> </tr></thead>
+<tbody>
+ <tr class="odd"><td class="label first">SJC lẻ HN</td><td class="goldprice-td goldprice-td-0 group_sjc_le"><span class="">3527</span></td><td class="goldprice-td goldprice-td-1 group_sjc_le last"><span class="">3530</span></td> </tr>
+ <tr class="even"><td class="label first">SJC buôn HN</td><td class="goldprice-td goldprice-td-0 group_sjc_buon"><span class="">3524</span></td><td class="goldprice-td goldprice-td-1 group_sjc_buon last"><span class="">3527</span></td> </tr>
+ <tr class="odd"><td class="label first">Vàng 24k</td><td class="goldprice-td goldprice-td-0 group_vang_24k"><span class="">3183</span></td><td class="goldprice-td goldprice-td-1 group_vang_24k last"><span class="">3258</span></td> </tr>
+</tbody>
+</table>

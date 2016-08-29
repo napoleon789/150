@@ -1,0 +1,249 @@
+
+  		$(function() {
+  			var seriesOptions = [],
+  				yAxisOptions = [],
+  				seriesCounter = 0,
+  				colors = Highcharts.getOptions().colors;
+          Highcharts.setOptions({
+            lang: {
+            		//months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6','Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+            		//weekdays: ['CN', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'],
+              	rangeSelectorZoom: '',
+              	rangeSelectorFrom: '',
+              	rangeSelectorTo: '',
+                exportButtonTitle: 'Tải biểu đồ',
+                printButtonTitle: 'In biểu đồ',
+                downloadPDF: 'Tải biểu đồ với kiểu tập tin là :  là PDF',
+                downloadJPEG: 'Tải biểu đồ với kiểu tập tin là :  là JPEG',
+                downloadPNG: 'Tải biểu đồ với kiểu tập tin là :  là PNG',
+                downloadSVG: 'Tải biểu đồ với kiểu tập tin là :  là SVG',
+            }
+          });
+
+  			var options = {
+            chart: {
+  			        renderTo: 'chart-container-ant-0',
+                marginRight: 45,
+                
+                defaultSeriesType: 'line',
+                plotBorderColor: '#c3c3c3',
+                plotBackgroundColor: '#ffffff',
+                backgroundColor: 'none',
+                plotBorderWidth: 1,
+                spacingBottom: 15,
+                 events: {
+                      click: function(e) {
+                       // $.colorbox({iframe:true, width:975, height:575, scrolling:false, href:''});
+                         
+                      }
+                   }
+  			        },
+        		   xAxis: {
+                  type: 'datetime',
+                  showFirstLabel: true,
+                  minRange: 4,
+                  dateTimeLabelFormats: {
+                      second: '%H:%M:%S %d/%m<br>%Y',
+                      minute: '%H:%M',
+                      hour: '%H:%M',
+                      day: '%d/%m',
+                      week: '%d/%m<br>%Y',
+                      month: '%m/%Y',
+                      year: '%Y'
+                  },
+                  tickInterval: 14400000,
+        					title: {
+        					//	text: '23/08/2016 08:49 - 24/08/2016 08:49',
+                    //verticalAlign: 'top',
+      					  },
+            			labels: {
+            				//align: 'left',
+                    style:{
+                      fontSize: '8px',
+                      color: '#959595',
+                    },
+            			},
+        		   },
+      			   yAxis : [{
+      			        title: 'seositetools.net',
+                    startOnTick: false,
+              			showFirstLabel: true,
+                    showLastLabel: true,
+                    gridLineColor: '#FFFFFF',
+                    minorTickInterval: 40,
+                    tickInterval: 40,
+                    
+       min: 35200,
+       max: 35400,
+    
+            			labels: {
+            				align: 'right',
+                    enabled: false,
+            				x: 0,
+            				y: 16,
+            				formatter: function() {
+            					return Highcharts.numberFormat(this.value, 0);
+            				},
+                    style: {
+                      color: '#959595',
+                    }
+            			},
+                  plotLines : [{
+                      value : 35250,
+//                    color : '#FF0000',
+                      color : '#ffffff',
+                      dashStyle : 'Dash',
+                      width : 1,
+                      id: 'line1st',
+                      label : {
+                        align: 'right',
+                				x: 37,
+                				y: 3,
+                        text : '35250',
+                        style : {
+                          fontSize: '9px',
+                          color: '#000000',
+                        },
+            					}
+    				      }, {
+            					value : 35300,
+            					//color : '#00a2ff',
+                      color : '#ffffff',
+            					dashStyle : 'Dash',
+            					width : 1,
+                      id: 'line2nd',
+            					label : {
+            					  align: 'right',
+                				x: 37,
+                				y: 3,
+            						text : '35300',
+                        style : {
+                          fontSize: '9px',
+                          color: '#000000',
+                        },
+            					}
+    				      }]
+
+      			   }, { // right y axis
+            			linkedTo: 0,
+            			gridLineWidth: 0,
+            			opposite: true,
+                  title: 'tvazone',
+                  minorTickInterval: 40,
+                  tickInterval: 40,
+            			showFirstLabel: true,
+                  showLastLabel: true,
+                  
+       min: 35200,
+       max: 35400,
+    
+                  customControl: 'tvazone',
+                  gridCount: 6,
+            			labels: {
+            				align: 'right',
+                    //enabled: false,
+                    step: 0,
+            				x: 35,
+            				y: 0,
+                    style:{
+                      fontSize: '8px',
+                      color: '#959595',
+                    },
+            				formatter: function() {
+            				  if (35250 == this.value || Math.abs(35250 - this.value) < 20 || 35300 == this.value || Math.abs(35300 - this.value) < 20) {
+            				    return '';
+            				  }
+            					return Highcharts.numberFormat(this.value, 0);
+            				}
+            			},
+      			   }],
+  					title : {
+  						text : 'SJC (nghìn/lượng): 35,250/35,300',
+              style: {
+              	color: '#000000',
+              	//fontSize: '16px'
+                fontWeight: 'bold',
+                fontSize: '12px'
+              },
+              align: 'left',
+              x: 0,
+              y: 20,
+              //floating: true,
+  					},
+            subtitle : {
+  						text : 'Biểu đồ 24h',
+              style: {
+              	color: '#000000',
+              	//fontSize: '16px'
+                fontSize: '12px',
+                fontWeight: 'italic',
+              },
+              align: 'left',
+              x: 0,
+              y: 35,
+              //floating: true,
+  					},  
+  			    tooltip: {
+             formatter: function() {
+               return '<b>'+ this.series.name +'</b><br/>'+ this.y + ' (nghìn/lượng)';
+             },
+             crosshairs: [true, true],
+  			    },
+            
+        		legend: {
+        			//layout: 'vertical',
+        			align: 'right',
+        			verticalAlign: ' top ',
+        			x: -40,
+        			y: 15,
+        			floating: true,
+        			borderWidth: 0,
+              style: {
+                fontSize: '12px'
+              }
+        		},
+    
+  			    credits : {
+                		text: '<br /><br />',
+                		href: 'http://giavang.doji.vn',
+                    
+  			    },
+      			navigator : {
+      				enabled : false,
+      			},
+      			plotOptions: {
+      				series: {
+      					marker: {
+      						enabled: false,
+      						states: {
+      							hover: {
+      								enabled: true,
+      								radius: 3
+      							}
+      						}
+      					}
+      				},
+               line: {
+                lineWidth: 2,
+               },
+      			},
+           series: [{
+             name: 'Mua',
+             color: '#FF0000',
+             width : 1,
+             data: [[1472003382000,35250],[1471917083000,35250],[1472003483000,35250]]
+            }, {
+             name: 'Bán',
+             color: '#00a2ff',
+             width : 1,
+             data: [[1472003382000,35300],[1471917083000,35300],[1472003483000,35300]]
+        }],
+  			};
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+        chart = new Highcharts.Chart(options);
+  		});
+    

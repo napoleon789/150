@@ -1,0 +1,4 @@
+<div id="chart-view" class="clear-block ">
+        <span class='right-titlte-2 addtext'>(Nghìn/<br/>lượng)</span>
+        <span class='right-subtitlte-2 addtext'>(tg)</span>
+      <div id="chart-container-ant-1" style="width:335px;height:220px"></div></div>

@@ -348,12 +348,13 @@ function doji_gold_price_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
       $nd_error_popup .= $error_count[2];
       if($user ->uid == 1 ) {
         drupal_get_messages();
+        db_query('UPDATE {node} SET status = 1 WHERE vid = %d', $node->vid);
         drupal_set_message(t('Giá vàng cập nhật thành công', array(), 'vi'));
         $dojigold_prefix_filename = variable_get('dojigold_prefix_filename', -32767);
         $dojigold_prefix_filename++;
         variable_set('dojigold_prefix_filename', $dojigold_prefix_filename);
-        $_SESSION['doji_gold_update'] = 1;
 
+        $_SESSION['doji_gold_update'] = 1;
       }
       else {
         if ($error == 0) {
@@ -373,9 +374,11 @@ function doji_gold_price_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
           db_query("INSERT INTO {canhbao} (nid,uid,nd,ndpoup,time,status) VALUES ('%s','%s','%s','%s','%s','%s')",$row['nid'],$row['uid'],$row['nd'],$row['ndpoup'], $row['time'],$row['status']);
           //drupal_write_record('canhbao',$row);
           drupal_set_message(t('Giá vàng vừa cập nhật đang chờ duyệt', array(), 'vi'));
+
         }
         db_query("DELETE FROM {cache_page}");
         doji_area_check_status();
+
       }
 
       drupal_goto('<front>');

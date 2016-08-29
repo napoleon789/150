@@ -922,7 +922,6 @@ function doji_goldprice_field_setting_submit($form, &$form_state) {
  */
 function doji_get_data_path_details() {
   static $ret;
-
   if (!isset($ret)) {
     $ret = array();
     $ret['path'] = file_directory_path() .'/data/hienthi';

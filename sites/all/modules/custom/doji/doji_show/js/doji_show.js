@@ -2,7 +2,7 @@ jQuery(document).ready(function() {
     $("#block-block-6 .form-select").change(function() {
         var uid = $(this).val();
         console.log(uid);
-        var url = 'sites/default/files/data/hienthi/ant-32572_vungmien_'+uid+'.dat';
+        var url = 'sites/default/files/data/hienthi/vungmien_'+uid+'.dat';
         $.ajax({
             url: url,
             type: "GET",
@@ -16,7 +16,7 @@ jQuery(document).ready(function() {
     $("#block-block-3 .form-select").change(function() {
         var uid = $(this).val();
         console.log(uid);
-        var url = 'sites/default/files/data/hienthi/ant-32572_vungmien_'+uid+'.dat';
+        var url = 'sites/default/files/data/hienthi/vungmien_'+uid+'.dat';
         $.ajax({
             url: url,
             type: "GET",
