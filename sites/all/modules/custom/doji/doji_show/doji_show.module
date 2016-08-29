@@ -57,6 +57,10 @@ function doji_show_hienthi_home() {
   $nid_ht = db_result(db_query("SELECT nid FROM {content_type_show} WHERE field_set_user_value = %d",$uid));
   module_load_include('inc', 'node', 'node.pages');
   $node = node_load($nid_ht);
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
   $output = node_page_edit($node);
   $output = '<div id="doji_set" class="hidden">' . $output . '</div>';
   $output = $form.$output;
