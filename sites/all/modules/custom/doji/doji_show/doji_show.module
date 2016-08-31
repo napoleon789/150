@@ -316,6 +316,7 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
 }
 
 function doji_show_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  dpm($op);
    if($op == 'update') {
      $type = $node -> type;
      if(in_array($type,array('bien_do','show','pq_user'))) {
@@ -340,11 +341,33 @@ function doji_show_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
          }
          file_save_data($output, 'sites/default/files/data/hienthi/vungmien_'.$uid.'.dat', FILE_EXISTS_REPLACE);
        }
-
        $current_url = $base_root . request_uri();
        drupal_goto($current_url);
      }
- }
+   }
+  if($op == 'prepare') {
+    $type = $node -> type;
+    if($type == 'bien_do') {
+     $node_gold = doji_get_node('last');
+     $tham_chieu = $node -> field_can_thamchieu ;
+     $field = $node -> field_gia_chuan;
+      foreach($field as $k => $value) {
+        $group = $value['value'];
+        $group = str_replace('group','field',$group);
+        $mua_vao_hn = $node_gold -> {$group.'_muavao'}[0]['value'];
+        $ban_ra_hn = $node_gold -> {$group.'_banra'}[0]['value'];
+        $node->field_mua_hn[$k]['value'] = $mua_vao_hn;
+        $node->field_ban_hn[$k]['value'] = $ban_ra_hn;
+
+        $field_ht =  $node -> field_can_thamchieu[$k]['value'];
+        $field_ht = str_replace('group','field',$field_ht);
+        $mua_vao_ht = $node_gold -> {$field_ht.'_muavao'}[0]['value'];
+        $ban_ra_ht = $node_gold -> {$field_ht.'_banra'}[0]['value'];
+        $node ->field_mua_hientai[$k]['value'] = $mua_vao_ht;
+        $node ->field_ban_hientai[$k]['value'] = $ban_ra_ht;
+      }
+    }
+  }
 }
 
 //Thiệp lập hiển thị biên độ: phần hiển thị ra trang chu user
