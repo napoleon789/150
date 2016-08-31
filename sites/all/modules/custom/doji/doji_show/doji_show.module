@@ -221,7 +221,7 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array();
       switch ($delta) {
         case 'setting_biendo' :
-          $blocks['subject'] = 'Thiết lập biên độ';
+          $blocks['subject'] = 'Biên độ cập nhật';
           $blocks['content'] = doji_show_block_biendo();
           break;
         case 'show_bdo' :
@@ -234,7 +234,34 @@ function doji_show_block($op = 'list', $delta = 0, $edit = array()) {
 }
 
 function doji_show_block_biendo() {
- return "123";
+ global $user;
+ $uid = 109;
+ $title = doji_show_label_gia_nhaptay($uid);
+ $nid = doji_show_get_nid_from_type($uid,'bien_do');
+ $node_gold = doji_get_node('last');
+ $node = node_load($nid);
+ $chuan = $node-> field_gia_chuan;
+ foreach($chuan as $k => $value) {
+   $m = $k *2;
+   $ban = $k*2+1;
+   $bien_mua = $node-> field_bien_do[$k]['value'];
+   $bien_ban = $node-> field_bien_do_ban[$k]['value'];
+   $group_chuan = $value['value'];
+   $field_chuan = str_replace('group','field',$group_chuan);
+   $chuan_mua = $node_gold -> {$field_chuan.'_muavao'}[0]['value'];
+   $chuan_ban = $node_gold -> {$field_chuan.'_banra'}[0]['value'];
+   $row['label'] = $title[$m];
+   $row['mua_duoi'] = $chuan_mua - $bien_mua;
+   $row['mua_tren'] = $chuan_mua + $bien_mua;
+   $rows[] = $row;
+   $row1['label'] = $title[$ban];
+   $row1['ban_duoi'] = $chuan_ban - $bien_ban;
+   $row1['ban_tren'] = $chuan_ban + $bien_ban;
+   $rows[] = $row1;
+ }
+ $header = array('Loại giá','Thấp nhất','Cao nhất');
+ $output = theme('table',$header,$rows,array('class' => 'biendo'));
+ return $output;
 }
 
 function doji_show_form_alter(&$form, &$form_state, $form_id) {
@@ -447,7 +474,6 @@ function doji_show_quantri() {
   $output = theme('table', $header, $datas, array('class' => 'user_qt'));
   $output .= '<div class="add_u"><a href="admin/user/user/create?destination=doji/admin"> Thêm quản trị mới</a></div>';
   return $output;
-
 }
 function doji_show_popup() {
   $output = '<div id ="noitce-message"><div class="sk-circle">
@@ -465,4 +491,42 @@ function doji_show_popup() {
   <div class="sk-circle12 sk-child"></div>
 </div><p>Hệ thống đang thiết lập tự động, bạn vui lòng chờ trong vài phút!</p></div>';
   return $output;
+}
+
+// Trả về nid tương ứng với uid của cá node: bien_do,show,pq_user
+
+function doji_show_get_nid_from_type($uid,$type) {
+  $field = '';
+  if($type == 'bien_do') {
+     $field .= ' field_gan_user_value = '.$uid;
+     $table = '{content_type_bien_do}';
+  }
+  if($type == 'pq_user') {
+    $field .= ' field_gantoi_value = '.$uid;
+    $table = '{content_type_pq_user}';
+  }
+  if($type == 'show') {
+    $field .= ' field_set_user_value = '.$uid;
+    $table = '{content_type_show}';
+  }
+  $sql = "SELECT nid FROM ".$table .' WHERE'.$field;
+  $nid = db_result(db_query($sql));
+  return $nid;
+}
+
+function doji_show_label_gia_nhaptay($uid) {
+  $vung = doji_show_uid_to_vung($uid);
+  $row = array(
+    0 => 'Doji lẻ '.$vung. ' mua vào',
+    1 => 'Doji lẻ '.$vung. ' bán ra',
+    2 => 'Doji buôn '.$vung. ' mua vào',
+    3 => 'Doji buôn '.$vung. ' bán ra',
+    4 => 'Phi JSC lẻ '.$vung. ' mua vào',
+    5 => 'Phi JSC lẻ '.$vung. ' bán ra',
+    6 => 'Nguyên liệu  999 '.$vung. ' mua vào',
+    7 => 'Nguyên liệu  999 '.$vung. ' bán ra',
+    8 => 'Nguyên liệu 9999 '.$vung. ' mua vào',
+    9 => 'Nguyên liệu 9999 '.$vung. ' bán ra',
+  );
+  return $row;
 }
