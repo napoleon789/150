@@ -260,7 +260,7 @@ function doji_show_block_biendo() {
    $rows[] = $row1;
  }
  $header = array('Loại giá','Thấp nhất','Cao nhất');
- $output = theme('table',$header,$rows,array('class' => 'biendo'));
+ $output = theme('table',$header,$rows,array('class' => 'goldprice-view'));
  return $output;
 }
 
