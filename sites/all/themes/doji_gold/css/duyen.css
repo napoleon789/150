@@ -60,6 +60,10 @@
 }
 .count-4.with-block-editing #doji-show-select-vung #edit-area-wrapper{
     margin-top: 0;
+    width: 150px;
+}
+.count-4.with-block-editing #doji-show-select-vung #edit-area-wrapper select{
+    width: 150px !important;
 }
 
 .count-5.with-block-editing{
@@ -193,3 +197,16 @@ table.user_qt td, table.user_qt th{
     display: block;
 }
 
+
+#block-doji_show-setting_biendo{
+    width: 474px;
+    float: left;
+}
+#block-doji_show-setting_biendo table tr td:first-child,
+#block-doji_show-setting_biendo table tr th:first-child{
+    text-align: left;
+}
+
+.content-add-more.clear-block{
+    margin-top: 0.5em;
+}

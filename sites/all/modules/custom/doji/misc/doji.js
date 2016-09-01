@@ -29,15 +29,26 @@ jQuery(document).ready(function() {
     $('.logged-in.page-admin .column-side #edit-submit').click(function(){
         $('#noitce-message').bPopup().show();
     });
+    $('#doji_set #group-bien-do-items .content-multigroup-cell-field-bien-do input').each(function(){
+        var minfirst = parseInt($(this).parents('tr').find('.content-multigroup-cell-field-mua-hn input').val()) - parseInt($(this).val());
+        var maxfirst = parseInt($(this).parents('tr').find('.content-multigroup-cell-field-mua-hn input').val()) + parseInt($(this).val());
+        $(this).parents('tr').find('.content-multigroup-cell-field-mua-chophep input').val(minfirst + ' - ' + maxfirst);
+    });
 
     $('#doji_set #group-bien-do-items .content-multigroup-cell-field-bien-do input').change(function(){
         var min = parseInt($(this).parents('tr').find('.content-multigroup-cell-field-mua-hn input').val()) - parseInt($(this).val());
         var max = parseInt($(this).parents('tr').find('.content-multigroup-cell-field-mua-hn input').val()) + parseInt($(this).val());
-        $(this).parents('tr').find('.content-multigroup-cell-field-mua-chophep input').val(min + '-' + max);
+        $(this).parents('tr').find('.content-multigroup-cell-field-mua-chophep input').val(min + ' - ' + max);
+    });
+
+    $('#doji_set #group-bien-do-items .content-multigroup-cell-field-bien-do-ban input').each(function(){
+        var min = parseInt($(this).parents('tr').find('.content-multigroup-cell-field-ban-hn input').val()) - parseInt($(this).val());
+        var max = parseInt($(this).parents('tr').find('.content-multigroup-cell-field-ban-hn input').val()) + parseInt($(this).val());
+        $(this).parents('tr').find('.content-multigroup-cell-field-ba-chophep input').val(min + ' - ' + max);
     });
     $('#doji_set #group-bien-do-items .content-multigroup-cell-field-bien-do-ban input').change(function(){
         var min = parseInt($(this).parents('tr').find('.content-multigroup-cell-field-ban-hn input').val()) - parseInt($(this).val());
         var max = parseInt($(this).parents('tr').find('.content-multigroup-cell-field-ban-hn input').val()) + parseInt($(this).val());
-        $(this).parents('tr').find('.content-multigroup-cell-field-ba-chophep input').val(min + '-' + max);
+        $(this).parents('tr').find('.content-multigroup-cell-field-ba-chophep input').val(min + ' - ' + max);
     });
 });
