@@ -429,7 +429,7 @@ function doji_area_history_update() {
   $query = db_query_range("SELECT nid,changed,sticky,uid FROM {node} WHERE type = 'goldprice' ORDER BY nid DESC",0,8);
   while($row = db_fetch_array($query)) {
     if($row['uid'] == 1) {
-      if(isset($row['sticky']) ) {
+      if($row['sticky'] > 0 ) {
         $output .= '<li class="table"><span class="table-left">HN đồng ý cập nhật '.doji_show_uid_to_vung($row['sticky']).' </span>';
         $output .= '<span class="table-right">'. date('h:i d/m/Y',$row['changed']).'</span></li>';
       }

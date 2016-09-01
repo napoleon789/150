@@ -1,0 +1,11 @@
+<h2 class="title_bang"> Bảng giá tại Ninh Bình</h2><table class="goldprice-view sticky-enabled" width="100%">
+ <thead><tr><th class="first"><div>Loại</div></th><th><div>Mua vào</div></th><th class="last"><div>Bán ra</div></th> </tr></thead>
+<tbody>
+ <tr class="odd"><td class="label first">Doji lẻ Ninh Bình</td><td class="goldprice-td goldprice-td-0 group_sjc_77"><span class="">3527</span></td><td class="goldprice-td goldprice-td-1 group_sjc_77 last"><span class="">3525</span></td> </tr>
+ <tr class="even"><td class="label first">Doji buôn Ninh Bình</td><td class="goldprice-td goldprice-td-0 group_sj05"><span class="">3525</span></td><td class="goldprice-td goldprice-td-1 group_sj05 last"><span class="">3525</span></td> </tr>
+ <tr class="odd"><td class="label first">Phi JSC Ninh Bình</td><td class="goldprice-td goldprice-td-0 group_phi_2"><span class="">3525</span></td><td class="goldprice-td goldprice-td-1 group_phi_2 last"><span class="">3525</span></td> </tr>
+ <tr class="even"><td class="label first">Nguyên liệu 999 Ninh Bình</td><td class="goldprice-td goldprice-td-0 group_ng95"><span class="">3525</span></td><td class="goldprice-td goldprice-td-1 group_ng95 last"><span class="">3525</span></td> </tr>
+ <tr class="odd"><td class="label first">Nguyên liệu 9999 Ninh Bình</td><td class="goldprice-td goldprice-td-0 group_ng13"><span class="">3525</span></td><td class="goldprice-td goldprice-td-1 group_ng13 last"><span class="">3525</span></td> </tr>
+ <tr class="even"><td class="label first">JSC Doji</td><td class="goldprice-td goldprice-td-0 group_sj3"><span class="">35240</span></td><td class="goldprice-td goldprice-td-1 group_sj3 last"><span class="">35270</span></td> </tr>
+</tbody>
+</table>
