@@ -52,13 +52,15 @@ jQuery(document).ready(function() {
 
         if (dojiLeMua > dojiBuonBan){
             error = 1
-            $('#doji-add-user-get-form tbody tr:first-child td:nth-child(2) input').addClass('error')
+            $('#doji-add-user-get-form tbody tr:first-child td:nth-child(2) input').addClass('error');
+            $('#doji-add-user-get-form tbody tr:nth-child(2) td:nth-child(3) input').addClass('error');
             $ul.append('<li class="error">'+ TT_dojiLeMua +' không được lớn hơn '+ TT_dojiBuonBan+ '</li>');
         }
 
         if (dojiLeMua > dojiBuonMua){
             error = 1
-            $('#doji-add-user-get-form tbody tr:first-child td:nth-child(2) input').addClass('error')
+            $('#doji-add-user-get-form tbody tr:first-child td:nth-child(2) input').addClass('error');
+            $('#doji-add-user-get-form tbody tr:nth-child(2) td:nth-child(2) input').addClass('error');
             $ul.append('<li class="error">'+ TT_dojiLeMua +' không được lớn hơn '+ TT_dojiBuonMua+ '</li>');
         }
 
@@ -70,12 +72,14 @@ jQuery(document).ready(function() {
         var TT_NL_9999Mua = $('#doji-add-user-get-form tbody tr:nth-child(5) td:nth-child(2) input').attr("name_t");
         if (NL_999Mua > NL_9999Ban){
             error = 1;
-            $('#doji-add-user-get-form tbody tr:nth-child(4) td:nth-child(2) input').addClass('error')
+            $('#doji-add-user-get-form tbody tr:nth-child(4) td:nth-child(2) input').addClass('error');
+            $('#doji-add-user-get-form tbody tr:nth-child(5) td:nth-child(3) input').addClass('error');
             $ul.append('<li class="error">'+ TT_NL_999Mua +' không được lớn hơn '+ TT_NL_9999Ban+ '</li>');
         }
         if (NL_999Mua > NL_9999Mua){
             error = 1;
-            $('#doji-add-user-get-form tbody tr:nth-child(4) td:nth-child(2) input').addClass('error')
+            $('#doji-add-user-get-form tbody tr:nth-child(4) td:nth-child(2) input').addClass('error');
+            $('#doji-add-user-get-form tbody tr:nth-child(5) td:nth-child(2) input').addClass('error');
             $ul.append('<li class="error">'+ TT_NL_999Mua +' không được lớn hơn '+ TT_NL_9999Mua+ '</li>');
         }
 
@@ -83,7 +87,8 @@ jQuery(document).ready(function() {
         var TT_NL_999Ban = $('#doji-add-user-get-form tbody tr:nth-child(4) td:nth-child(3) input').attr("name_t");
         if (NL_999Ban > NL_9999Ban){
             error = 1;
-            $('#doji-add-user-get-form tbody tr:nth-child(4) td:nth-child(3) input').addClass('error')
+            $('#doji-add-user-get-form tbody tr:nth-child(4) td:nth-child(3) input').addClass('error');
+            $('#doji-add-user-get-form tbody tr:nth-child(5) td:nth-child(3) input').addClass('error');
             $ul.append('<li class="error">'+ TT_NL_999Ban +' không được lớn hơn '+ TT_NL_9999Ban+ '</li>');
         }
 
