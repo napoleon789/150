@@ -1,0 +1,8 @@
+<h2 class="title_bang"> Bảng giá tại Đà Nẵng</h2><table class="goldprice-view sticky-enabled" width="100%">
+ <thead><tr><th class="first"><div>Loại</div></th><th><div>Mua vào</div></th><th class="last"><div>Bán ra</div></th> </tr></thead>
+<tbody>
+ <tr class="odd"><td class="label first">Doji DN lẻ</td><td class="goldprice-td goldprice-td-0 group_doji_8"><span class="">35230</span></td><td class="goldprice-td goldprice-td-1 group_doji_8 last"><span class="">35350</span></td> </tr>
+ <tr class="even"><td class="label first">Doji DN buôn</td><td class="goldprice-td goldprice-td-0 group_doj4"><span class="">35240</span></td><td class="goldprice-td goldprice-td-1 group_doj4 last"><span class="">35300</span></td> </tr>
+ <tr class="odd"><td class="label first">Nhẫn tài</td><td class="goldprice-td goldprice-td-0 group_nhan_tai5"><span class="">17625</span></td><td class="goldprice-td goldprice-td-1 group_nhan_tai5 last"><span class="">17650</span></td> </tr>
+</tbody>
+</table>

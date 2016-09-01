@@ -316,7 +316,6 @@ function doji_show_form_alter(&$form, &$form_state, $form_id) {
 }
 
 function doji_show_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  dpm($op);
    if($op == 'update') {
      $type = $node -> type;
      if(in_array($type,array('bien_do','show','pq_user'))) {
