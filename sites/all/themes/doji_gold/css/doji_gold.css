@@ -778,7 +778,7 @@ body.page-doji.front.ad_quantri #block-doji_area-setting_value_vung{
 #block-block-6 table.goldprice-view thead th.first{
   background: url("../images/name-title-col-bg.png") repeat-x scroll 0 0 transparent;
 }
-#block-block-6 table.goldprice-view{
+#block-block-6 table.goldprice-view, #block-doji_show-setting_biendo table.goldprice-view{
     height: auto !important;
 }
 

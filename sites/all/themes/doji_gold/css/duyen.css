@@ -38,9 +38,9 @@
 
 .title_bang{
     color: #A50119;
-    font: 18px OpenSansSemibold;
+    font: 13px OpenSansSemibold;
     text-align: center;
-    margin-top:0;
+    margin-top:7px;
 }
 
 .count-3.with-block-editing{
@@ -67,7 +67,7 @@
 }
 
 .count-5.with-block-editing{
-    clear: both;
+    /*clear: both;*/
 }
 .count-5.with-block-editing h3, .count-5.with-block-editing .vertical-tabs,
 #group_bien_do_values .content-multigroup-cell-field-bien-do label,
@@ -121,7 +121,7 @@ table.user_qt td, table.user_qt th{
 
 /* thiet lap bien do */
 #doji-show-select-vung{
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 #doji-show-select-vung #edit-area-wrapper{
     float: left;
@@ -210,3 +210,10 @@ table.user_qt td, table.user_qt th{
 .content-add-more.clear-block{
     margin-top: 0.5em;
 }
+.group-bien-do .content-add-more {display: none;}
+ #edit-field-set-user-value-wrapper{display: none;}
+
+/*#doji-gold-price-short-form table.goldprice-view{*/
+    /*height: auto !important;*/
+    /*padding-bottom: 0;*/
+/*}*/
